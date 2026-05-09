@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { WardenError } from "@warden/core";
-import { agentTokens, agents, wallets, type Db } from "@warden/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { agentTokens, agents, and, eq, isNull, wallets, type Db } from "@warden/db";
 
 export interface ResolvedAgent {
   agentId: string;

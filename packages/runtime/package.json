@@ -13,12 +13,13 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.63",
     "@warden/core": "workspace:*",
     "@warden/db": "workspace:*",
     "@warden/policy": "workspace:*",
     "@warden/wallet": "workspace:*",
     "@warden/x402": "workspace:*",
-    "drizzle-orm": "^0.45.2",
+    "ai": "^6.0.177",
     "zod": "^4.4.3"
   },
   "devDependencies": {

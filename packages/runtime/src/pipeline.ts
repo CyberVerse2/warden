@@ -1,8 +1,7 @@
 import { newId, WardenError } from "@warden/core";
-import { approvals, receipts, type Db } from "@warden/db";
+import { and, approvals, eq, receipts, type Db } from "@warden/db";
 import { evaluate, type PolicyDecision } from "@warden/policy";
 import type { WalletService } from "@warden/wallet";
-import { and, eq } from "drizzle-orm";
 import {
   hashRequest,
   parseChallenge,
@@ -12,14 +11,21 @@ import {
   type ProofBuilder,
 } from "@warden/x402";
 import { resolveAgentById, resolveAgentByToken } from "./auth";
+import {
+  createOpenAiRiskAnalyzer,
+  type AiRiskAnalyzer,
+  type AiRiskResult,
+} from "./ai-risk";
 import { loadActivePolicy } from "./policy-loader";
 import { getDailySpend, incrementDailySpend } from "./spend";
+import { findMaliciousX402 } from "./threat-intel";
 
 export interface RuntimeDeps {
   db: Db;
   walletService: WalletService;
   proofBuilder: ProofBuilder;
   fetchImpl?: FetchLike;
+  riskAnalyzer?: AiRiskAnalyzer;
 }
 
 export interface ExecutePaidRequestInput {
@@ -54,7 +60,13 @@ export interface Runtime {
 }
 
 export function createRuntime(deps: RuntimeDeps): Runtime {
-  const { db, walletService, proofBuilder, fetchImpl } = deps;
+  const {
+    db,
+    walletService,
+    proofBuilder,
+    fetchImpl,
+    riskAnalyzer = createOpenAiRiskAnalyzer(),
+  } = deps;
 
   async function executePaidRequest(
     input: ExecutePaidRequestInput,
@@ -114,6 +126,41 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       allowedTokens: policy.allowedTokens,
     }, initial.headers);
 
+    const threat = findMaliciousX402({
+      url: input.request.url,
+      host,
+      challenge,
+    });
+    if (threat) {
+      const receiptId = newId.receipt();
+      await db.insert(receipts).values({
+        id: receiptId,
+        agentId: agent.agentId,
+        walletId: agent.walletId,
+        policyId,
+        url: input.request.url,
+        method: input.request.method.toUpperCase(),
+        host,
+        amountRaw: challenge.requirement.amountRaw,
+        amountUsd: challenge.requirement.amountUsd,
+        currency: challenge.requirement.token,
+        network: challenge.requirement.network,
+        recipient: challenge.requirement.recipient,
+        challengeHash: challenge.hash,
+        requestHash: reqHash,
+        responseStatus: 402,
+        decision: "deny",
+        decisionReason: `${threat.rule}: ${threat.reason}`,
+        ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+      });
+      return {
+        kind: "denied",
+        receiptId,
+        reason: threat.reason,
+        rule: threat.rule,
+      };
+    }
+
     // 6. Evaluate (the critical control point)
     const decision = input.skipPolicy
       ? ({ kind: "allow" } as const)
@@ -165,39 +212,7 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     }
 
     if (decision.kind === "requires_approval") {
-      const pending = await db
-        .select({
-          id: approvals.id,
-          requestSnapshot: approvals.requestSnapshot,
-        })
-        .from(approvals)
-        .where(
-          and(
-            eq(approvals.agentId, agent.agentId),
-            eq(approvals.status, "pending"),
-          ),
-        );
-      const existing = pending.find((row) => {
-        const snapshot = row.requestSnapshot as
-          | { requestHash?: string; challengeHash?: string }
-          | null;
-        return (
-          snapshot?.requestHash === reqHash &&
-          snapshot.challengeHash === challenge.hash
-        );
-      });
-      if (existing) {
-        return {
-          kind: "approval_required",
-          approvalId: existing.id,
-          reason: decision.reason,
-          rule: decision.rule,
-        };
-      }
-
-      const approvalId = newId.approval();
-      await db.insert(approvals).values({
-        id: approvalId,
+      const approval = await findOrCreateApproval({
         agentId: agent.agentId,
         amountUsd: challenge.requirement.amountUsd,
         triggeringRule: decision.rule,
@@ -208,13 +223,49 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
           challengeHash: challenge.hash,
           taskId: input.taskId,
         },
-        status: "pending",
+        requestHash: reqHash,
+        challengeHash: challenge.hash,
       });
       return {
         kind: "approval_required",
-        approvalId,
+        approvalId: approval.id,
         reason: decision.reason,
         rule: decision.rule,
+      };
+    }
+
+    const aiRisk =
+      !input.skipPolicy && riskAnalyzer
+        ? await riskAnalyzer.analyze({
+            request: input.request,
+            host,
+            challenge,
+            policy,
+            spendToDateUsd: dayUsd,
+          })
+        : undefined;
+
+    if (aiRisk?.level === "high_risk") {
+      const approval = await findOrCreateApproval({
+        agentId: agent.agentId,
+        amountUsd: challenge.requirement.amountUsd,
+        triggeringRule: "aiRisk.high_risk",
+        requestSnapshot: {
+          request: input.request,
+          challenge: challenge.requirement,
+          requestHash: reqHash,
+          challengeHash: challenge.hash,
+          taskId: input.taskId,
+          aiRisk,
+        },
+        requestHash: reqHash,
+        challengeHash: challenge.hash,
+      });
+      return {
+        kind: "approval_required",
+        approvalId: approval.id,
+        reason: aiRisk.summary,
+        rule: "aiRisk.high_risk",
       };
     }
 
@@ -266,7 +317,7 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       ...(proof.txSignature !== undefined ? { txSignature: proof.txSignature } : {}),
       decision: succeeded ? "allow" : "failed",
       decisionReason: succeeded
-        ? input.skipPolicy?.reason ?? "policy.allow"
+        ? input.skipPolicy?.reason ?? allowReason(aiRisk)
         : `payment_failed:${paid.status}`,
       ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
     });
@@ -312,9 +363,20 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       },
       initial.headers,
     );
+    const threat = findMaliciousX402({
+      url: input.request.url,
+      host: urlHost(input.request.url),
+      challenge,
+    });
+    if (threat) {
+      return {
+        kind: "deny" as const,
+        reason: threat.reason,
+        rule: threat.rule,
+      };
+    }
     const dayUsd = await getDailySpend(db, agent.agentId);
-
-    return evaluate({
+    const decision = evaluate({
       agent: { id: agent.agentId, status: agent.status },
       challenge: {
         amountUsd: challenge.requirement.amountUsd,
@@ -330,7 +392,74 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       spendToDate: { dayUsd },
       policy,
     });
+    if (decision.kind !== "allow") return decision;
+
+    const aiRisk = riskAnalyzer
+      ? await riskAnalyzer.analyze({
+          request: input.request,
+          host: urlHost(input.request.url),
+          challenge,
+          policy,
+          spendToDateUsd: dayUsd,
+        })
+      : undefined;
+    if (aiRisk?.level === "high_risk") {
+      return {
+        kind: "requires_approval" as const,
+        reason: aiRisk.summary,
+        rule: "aiRisk.high_risk",
+      };
+    }
+    return decision;
   }
 
   return { executePaidRequest, dryRun };
+
+  async function findOrCreateApproval(args: {
+    agentId: string;
+    amountUsd: number;
+    triggeringRule: string;
+    requestSnapshot: Record<string, unknown>;
+    requestHash: string;
+    challengeHash: string;
+  }) {
+    const pending = await db
+      .select({
+        id: approvals.id,
+        requestSnapshot: approvals.requestSnapshot,
+      })
+      .from(approvals)
+      .where(
+        and(
+          eq(approvals.agentId, args.agentId),
+          eq(approvals.status, "pending"),
+        ),
+      );
+    const existing = pending.find((row) => {
+      const snapshot = row.requestSnapshot as
+        | { requestHash?: string; challengeHash?: string }
+        | null;
+      return (
+        snapshot?.requestHash === args.requestHash &&
+        snapshot.challengeHash === args.challengeHash
+      );
+    });
+    if (existing) return { id: existing.id };
+
+    const approvalId = newId.approval();
+    await db.insert(approvals).values({
+      id: approvalId,
+      agentId: args.agentId,
+      amountUsd: args.amountUsd,
+      triggeringRule: args.triggeringRule,
+      requestSnapshot: args.requestSnapshot,
+      status: "pending",
+    });
+    return { id: approvalId };
+  }
+}
+
+function allowReason(aiRisk: AiRiskResult | undefined) {
+  if (!aiRisk) return "policy.allow";
+  return `policy.allow; aiRisk.${aiRisk.level}: ${aiRisk.summary}`;
 }

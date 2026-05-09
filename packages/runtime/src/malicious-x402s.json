@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-09",
+  "entries": [
+    {
+      "id": "mal_x402_fake_quicknode",
+      "reputation": "malicious",
+      "hosts": ["quicknode-payments.example"],
+      "urlPrefixes": ["https://quicknode-payments.example/"],
+      "reasons": ["domain impersonation", "fake x402 provider"],
+      "source": "warden-seed"
+    },
+    {
+      "id": "mal_x402_solana_drain_demo",
+      "reputation": "malicious",
+      "hosts": ["solana-rpc-premium.example"],
+      "recipients": ["Drain111111111111111111111111111111111111111"],
+      "reasons": ["known malicious recipient", "excessive price"],
+      "source": "warden-seed"
+    },
+    {
+      "id": "mal_x402_bad_facilitator",
+      "reputation": "blocked",
+      "facilitators": ["https://facilitator.invalid/x402"],
+      "reasons": ["blocked facilitator"],
+      "source": "warden-seed"
+    }
+  ]
+}

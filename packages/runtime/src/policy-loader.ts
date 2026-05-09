@@ -4,8 +4,7 @@ import {
   WardenError,
   type PolicyConfig,
 } from "@warden/core";
-import { policies, type Db } from "@warden/db";
-import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, policies, type Db } from "@warden/db";
 
 export interface LoadedPolicy {
   policyId: string;

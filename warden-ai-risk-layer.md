@@ -12,6 +12,20 @@ request -> x402 challenge -> threat intel -> deterministic policy -> AI risk ann
 
 The runtime still signs only after deterministic checks pass. AI explains, classifies, summarizes, and flags risk.
 
+Implementation entry points:
+
+- `packages/runtime/src/malicious-x402s.json`: local malicious/blocked x402 seed list.
+- `packages/runtime/src/threat-intel.ts`: deterministic hard-deny lookup.
+- `packages/runtime/src/ai-risk.ts`: GPT-5.4 Mini risk analyzer using Vercel AI SDK structured output (`generateText` + `Output.object`).
+- `packages/runtime/src/pipeline.ts`: runtime ordering before signing.
+
+Runtime env:
+
+```text
+OPENAI_API_KEY=...
+WARDEN_AI_RISK_MODEL=gpt-5.4-mini
+```
+
 ## Threat Intel Database
 
 Warden should maintain a database of known x402 providers and suspicious or malicious x402 endpoints. This is separate from per-agent policy. Policy says what an operator wants an agent to do. Threat intel says what Warden knows about the outside world.

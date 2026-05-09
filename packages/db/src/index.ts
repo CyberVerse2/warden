@@ -16,3 +16,4 @@ export function createDb(url?: string) {
 
 export * from "./schema";
 export { schema };
+export { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
