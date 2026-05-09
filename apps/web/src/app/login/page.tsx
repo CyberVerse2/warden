@@ -2,6 +2,7 @@
 
 import { PrivyProvider, useLogin, usePrivy } from "@privy-io/react-auth";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 function LoginPanel() {
   const search = useSearchParams();
@@ -44,7 +45,9 @@ export default function LoginPage() {
 
   return (
     <PrivyProvider appId={appId}>
-      <LoginPanel />
+      <Suspense fallback={null}>
+        <LoginPanel />
+      </Suspense>
     </PrivyProvider>
   );
 }
