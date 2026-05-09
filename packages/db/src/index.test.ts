@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDb } from "./index.js";
+import { createDb } from "./index";
 
 afterEach(() => {
   vi.unstubAllEnvs();

@@ -3,10 +3,10 @@ import { agentTokens, agents, receipts, type Db } from "@warden/db";
 import type { WalletService } from "@warden/wallet";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { hashToken, resolveAgentByToken } from "./auth.js";
-import { loadActivePolicy } from "./policy-loader.js";
-import { createRuntime, type Runtime } from "./pipeline.js";
-import { getDailySpend } from "./spend.js";
+import { hashToken, resolveAgentByToken } from "./auth";
+import { loadActivePolicy } from "./policy-loader";
+import { createRuntime, type Runtime } from "./pipeline";
+import { getDailySpend } from "./spend";
 import { discoverPayServices, type ProofBuilder } from "@warden/x402";
 
 /**

@@ -9,7 +9,7 @@ import { newId, WardenError, type Network } from "@warden/core";
 import { wallets, type Db } from "@warden/db";
 import { eq } from "drizzle-orm";
 import nacl from "tweetnacl";
-import { decryptSecret, encryptSecret } from "./crypto.js";
+import { decryptSecret, encryptSecret } from "./crypto";
 
 const USDC_MINT: Record<Network, string> = {
   "solana-mainnet": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",

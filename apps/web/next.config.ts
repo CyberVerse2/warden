@@ -21,6 +21,9 @@ for (const file of [resolve(process.cwd(), "../../.env"), resolve(process.cwd(),
 }
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: resolve(process.cwd(), "../.."),
+  },
   transpilePackages: [
     "@warden/core",
     "@warden/db",
@@ -28,14 +31,6 @@ const nextConfig: NextConfig = {
     "@warden/runtime",
     "@warden/wallet",
   ],
-  webpack: (config) => {
-    config.resolve = config.resolve || {};
-    config.resolve.extensionAlias = {
-      ...(config.resolve.extensionAlias ?? {}),
-      ".js": [".ts", ".tsx", ".js", ".jsx"],
-    };
-    return config;
-  },
 };
 
 export default nextConfig;

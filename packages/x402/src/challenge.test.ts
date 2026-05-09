@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseChallenge } from "./challenge.js";
+import { parseChallenge } from "./challenge";
 
 describe("parseChallenge", () => {
   it("parses a USDC devnet challenge and converts amount to USD", () => {

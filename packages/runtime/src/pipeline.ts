@@ -11,9 +11,9 @@ import {
   type HttpRequest,
   type ProofBuilder,
 } from "@warden/x402";
-import { resolveAgentById, resolveAgentByToken } from "./auth.js";
-import { loadActivePolicy } from "./policy-loader.js";
-import { getDailySpend, incrementDailySpend } from "./spend.js";
+import { resolveAgentById, resolveAgentByToken } from "./auth";
+import { loadActivePolicy } from "./policy-loader";
+import { getDailySpend, incrementDailySpend } from "./spend";
 
 export interface RuntimeDeps {
   db: Db;

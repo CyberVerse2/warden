@@ -1,6 +1,6 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
-import * as schema from "./schema.js";
+import * as schema from "./schema";
 
 export type Db = ReturnType<typeof createDb>;
 
@@ -14,5 +14,5 @@ export function createDb(url?: string) {
   return drizzle(client, { schema });
 }
 
-export * from "./schema.js";
+export * from "./schema";
 export { schema };

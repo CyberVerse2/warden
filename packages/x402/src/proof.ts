@@ -5,7 +5,7 @@ import { ExactSvmScheme, type ClientSvmSigner } from "@x402/svm";
 import { ExactSvmSchemeV1 } from "@x402/svm/exact/v1/client";
 import { encodePaymentSignatureHeader } from "@x402/core/http";
 import { address, type SignatureBytes } from "@solana/kit";
-import type { ParsedChallenge } from "./challenge.js";
+import type { ParsedChallenge } from "./challenge";
 
 export interface ProofBuilder {
   build(args: {

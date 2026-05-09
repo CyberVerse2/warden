@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PolicyConfig } from "@warden/core";
-import { evaluate, type PolicyInput } from "./evaluate.js";
+import { evaluate, type PolicyInput } from "./evaluate";
 
 const basePolicy: PolicyConfig = {
   allowedHosts: ["x402.example.com"],
