@@ -8,6 +8,7 @@ import { createWalletService } from "@warden/wallet";
 import { createX402SvmProofBuilder } from "@warden/x402";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "~/lib/db";
+import { loadServerEnv } from "~/lib/env";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -146,6 +147,7 @@ export async function POST(
   req: Request,
   ctx: { params: Promise<{ agentId: string }> },
 ) {
+  loadServerEnv();
   const { agentId } = await ctx.params;
   const token = authHeader(req);
   if (!token) {

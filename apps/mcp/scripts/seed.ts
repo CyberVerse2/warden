@@ -9,7 +9,7 @@
  */
 import { createHash } from "node:crypto";
 import { createDb, agents, agentTokens, policies, receipts, approvals, users, wallets, spendWindows } from "@warden/db";
-import { newId, type PolicyConfig } from "@warden/core";
+import { loadServerEnv, newId, type PolicyConfig } from "@warden/core";
 import { createWalletService } from "@warden/wallet";
 import { sql } from "drizzle-orm";
 
@@ -80,6 +80,8 @@ const AGENTS: SeedAgentInput[] = [
 ];
 
 async function main() {
+  loadServerEnv();
+
   if (!process.env.WARDEN_MASTER_KEY) {
     throw new Error("WARDEN_MASTER_KEY env var is required");
   }
@@ -99,14 +101,14 @@ async function main() {
   });
 
   console.log("→ wiping existing data");
-  await db.run(sql`DELETE FROM receipts`);
-  await db.run(sql`DELETE FROM approvals`);
-  await db.run(sql`DELETE FROM spend_windows`);
-  await db.run(sql`DELETE FROM agent_tokens`);
-  await db.run(sql`DELETE FROM policies`);
-  await db.run(sql`DELETE FROM wallets`);
-  await db.run(sql`DELETE FROM agents`);
-  await db.run(sql`DELETE FROM users`);
+  await db.execute(sql`DELETE FROM receipts`);
+  await db.execute(sql`DELETE FROM approvals`);
+  await db.execute(sql`DELETE FROM spend_windows`);
+  await db.execute(sql`DELETE FROM agent_tokens`);
+  await db.execute(sql`DELETE FROM policies`);
+  await db.execute(sql`DELETE FROM wallets`);
+  await db.execute(sql`DELETE FROM agents`);
+  await db.execute(sql`DELETE FROM users`);
 
   const userId = process.env.DEV_OPERATOR_USER_ID;
   const email = process.env.DEV_OPERATOR_EMAIL;

@@ -385,7 +385,7 @@ Receipts should be queryable locally and exportable.
 - Define simple policies.
 - Run Warden MCP server.
 - Execute paid x402 HTTP requests.
-- Record receipts in SQLite or Postgres.
+- Record receipts in Postgres.
 - Expose wallet balances and remaining budget.
 - Provider allowlists.
 - Per-request and daily caps.

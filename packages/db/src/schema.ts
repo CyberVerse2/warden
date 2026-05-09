@@ -1,53 +1,57 @@
-import { sql } from "drizzle-orm";
 import {
+  doublePrecision,
   index,
   integer,
-  real,
-  sqliteTable,
+  jsonb,
+  pgTable,
+  primaryKey,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 
-const timestamp = (name: string) =>
-  integer(name, { mode: "timestamp_ms" }).notNull().default(sql`(unixepoch() * 1000)`);
+const createdAt = (name: string) =>
+  timestamp(name, { withTimezone: true }).notNull().defaultNow();
 
-export const users = sqliteTable("users", {
+const dateTime = (name: string) => timestamp(name, { withTimezone: true });
+
+export const users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email").unique(),
   name: text("name"),
-  createdAt: timestamp("created_at"),
+  createdAt: createdAt("created_at"),
 });
 
-export const magicLinks = sqliteTable(
+export const magicLinks = pgTable(
   "magic_links",
   {
     id: text("id").primaryKey(),
     email: text("email").notNull(),
     tokenHash: text("token_hash").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-    consumedAt: integer("consumed_at", { mode: "timestamp_ms" }),
-    createdAt: timestamp("created_at"),
+    expiresAt: dateTime("expires_at").notNull(),
+    consumedAt: dateTime("consumed_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({
-    hashIdx: uniqueIndex("magic_links_hash_idx").on(t.tokenHash),
-    emailIdx: index("magic_links_email_idx").on(t.email),
-  }),
+  (t) => [
+    uniqueIndex("magic_links_hash_idx").on(t.tokenHash),
+    index("magic_links_email_idx").on(t.email),
+  ],
 );
 
-export const sessions = sqliteTable(
+export const sessions = pgTable(
   "sessions",
   {
     id: text("id").primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-    createdAt: timestamp("created_at"),
+    expiresAt: dateTime("expires_at").notNull(),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({ userIdx: index("sessions_user_idx").on(t.userId) }),
+  (t) => [index("sessions_user_idx").on(t.userId)],
 );
 
-export const agents = sqliteTable(
+export const agents = pgTable(
   "agents",
   {
     id: text("id").primaryKey(),
@@ -58,12 +62,12 @@ export const agents = sqliteTable(
     status: text("status", { enum: ["active", "revoked"] })
       .notNull()
       .default("active"),
-    createdAt: timestamp("created_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({ userIdx: index("agents_user_idx").on(t.userId) }),
+  (t) => [index("agents_user_idx").on(t.userId)],
 );
 
-export const agentTokens = sqliteTable(
+export const agentTokens = pgTable(
   "agent_tokens",
   {
     id: text("id").primaryKey(),
@@ -72,17 +76,17 @@ export const agentTokens = sqliteTable(
       .references(() => agents.id, { onDelete: "cascade" }),
     tokenHash: text("token_hash").notNull(),
     label: text("label"),
-    lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
-    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
-    createdAt: timestamp("created_at"),
+    lastUsedAt: dateTime("last_used_at"),
+    revokedAt: dateTime("revoked_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({
-    hashIdx: uniqueIndex("agent_tokens_hash_idx").on(t.tokenHash),
-    agentIdx: index("agent_tokens_agent_idx").on(t.agentId),
-  }),
+  (t) => [
+    uniqueIndex("agent_tokens_hash_idx").on(t.tokenHash),
+    index("agent_tokens_agent_idx").on(t.agentId),
+  ],
 );
 
-export const wallets = sqliteTable(
+export const wallets = pgTable(
   "wallets",
   {
     id: text("id").primaryKey(),
@@ -98,15 +102,15 @@ export const wallets = sqliteTable(
     status: text("status", { enum: ["active", "revoked"] })
       .notNull()
       .default("active"),
-    createdAt: timestamp("created_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({
-    agentIdx: index("wallets_agent_idx").on(t.agentId),
-    pubkeyIdx: uniqueIndex("wallets_pubkey_idx").on(t.publicKey),
-  }),
+  (t) => [
+    index("wallets_agent_idx").on(t.agentId),
+    uniqueIndex("wallets_pubkey_idx").on(t.publicKey),
+  ],
 );
 
-export const policies = sqliteTable(
+export const policies = pgTable(
   "policies",
   {
     id: text("id").primaryKey(),
@@ -114,20 +118,17 @@ export const policies = sqliteTable(
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
     version: integer("version").notNull(),
-    config: text("config", { mode: "json" }).notNull(),
-    activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
-    createdAt: timestamp("created_at"),
+    config: jsonb("config").notNull(),
+    activatedAt: dateTime("activated_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({
-    agentIdx: index("policies_agent_idx").on(t.agentId),
-    agentVersionIdx: uniqueIndex("policies_agent_version_idx").on(
-      t.agentId,
-      t.version,
-    ),
-  }),
+  (t) => [
+    index("policies_agent_idx").on(t.agentId),
+    uniqueIndex("policies_agent_version_idx").on(t.agentId, t.version),
+  ],
 );
 
-export const receipts = sqliteTable(
+export const receipts = pgTable(
   "receipts",
   {
     id: text("id").primaryKey(),
@@ -141,7 +142,7 @@ export const receipts = sqliteTable(
     method: text("method").notNull(),
     host: text("host").notNull(),
     amountRaw: text("amount_raw"),
-    amountUsd: real("amount_usd"),
+    amountUsd: doublePrecision("amount_usd"),
     currency: text("currency"),
     network: text("network"),
     recipient: text("recipient"),
@@ -154,52 +155,50 @@ export const receipts = sqliteTable(
     }).notNull(),
     decisionReason: text("decision_reason"),
     taskId: text("task_id"),
-    createdAt: timestamp("created_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({
-    agentIdx: index("receipts_agent_idx").on(t.agentId),
-    createdIdx: index("receipts_created_idx").on(t.createdAt),
-    decisionIdx: index("receipts_decision_idx").on(t.decision),
-  }),
+  (t) => [
+    index("receipts_agent_idx").on(t.agentId),
+    index("receipts_created_idx").on(t.createdAt),
+    index("receipts_decision_idx").on(t.decision),
+  ],
 );
 
-export const approvals = sqliteTable(
+export const approvals = pgTable(
   "approvals",
   {
     id: text("id").primaryKey(),
     agentId: text("agent_id")
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
-    requestSnapshot: text("request_snapshot", { mode: "json" }).notNull(),
+    requestSnapshot: jsonb("request_snapshot").notNull(),
     triggeringRule: text("triggering_rule").notNull(),
-    amountUsd: real("amount_usd").notNull(),
+    amountUsd: doublePrecision("amount_usd").notNull(),
     status: text("status", {
       enum: ["pending", "approved", "denied", "expired"],
     })
       .notNull()
       .default("pending"),
     decidedBy: text("decided_by"),
-    decidedAt: integer("decided_at", { mode: "timestamp_ms" }),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-    createdAt: timestamp("created_at"),
+    decidedAt: dateTime("decided_at"),
+    expiresAt: dateTime("expires_at"),
+    createdAt: createdAt("created_at"),
   },
-  (t) => ({
-    agentIdx: index("approvals_agent_idx").on(t.agentId),
-    statusIdx: index("approvals_status_idx").on(t.status),
-  }),
+  (t) => [
+    index("approvals_agent_idx").on(t.agentId),
+    index("approvals_status_idx").on(t.status),
+  ],
 );
 
-export const spendWindows = sqliteTable(
+export const spendWindows = pgTable(
   "spend_windows",
   {
     agentId: text("agent_id")
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
     windowKey: text("window_key").notNull(),
-    amountUsd: real("amount_usd").notNull().default(0),
-    updatedAt: timestamp("updated_at"),
+    amountUsd: doublePrecision("amount_usd").notNull().default(0),
+    updatedAt: createdAt("updated_at"),
   },
-  (t) => ({
-    pk: uniqueIndex("spend_windows_pk").on(t.agentId, t.windowKey),
-  }),
+  (t) => [primaryKey({ columns: [t.agentId, t.windowKey] })],
 );

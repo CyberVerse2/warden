@@ -17,9 +17,9 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.3",
     "@warden/core": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.7"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",

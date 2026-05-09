@@ -6,7 +6,7 @@
 - **Monorepo:** pnpm workspaces + Turborepo
 - **Web app:** Next.js 15 (App Router), Tailwind, shadcn/ui
 - **MCP server:** Node, `@modelcontextprotocol/sdk` (stdio for local, streamable HTTP for hosted)
-- **Database:** Postgres (prod), SQLite (dev/local) via Drizzle ORM
+- **Database:** Postgres via Drizzle ORM
 - **Auth (web):** Auth.js with email + GitHub
 - **Auth (MCP):** per-agent API tokens, hashed at rest
 - **Chain:** Solana (`@solana/web3.js`, SPL token for USDC)
