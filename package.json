@@ -9,6 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "smoke:workflow": "pnpm --filter @warden/mcp exec tsx ../../scripts/smoke-workflow.ts",
     "db:push": "turbo run db:push --filter=@warden/db",
     "db:studio": "turbo run db:studio --filter=@warden/db"
   },
