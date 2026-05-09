@@ -8,6 +8,7 @@ import { StatusGlyph } from "~/components/status-glyph";
 import { FeedRow } from "~/components/feed-row";
 import { MCPSnippets } from "~/components/mcp-snippets";
 import { ConfirmSubmitButton } from "~/components/confirm-submit-button";
+import { CopyButton } from "~/components/copy-button";
 import { fmtRelative, fmtUsd, shortKey } from "~/lib/format";
 import { getOrigin } from "~/lib/origin";
 import { getAgent, getApprovals, getReceipts } from "~/lib/queries";
@@ -43,6 +44,22 @@ export default async function AgentDetailPage({ params }: Props) {
   const customAllowedHosts = agent.policy.allowedHosts.filter(
     (host) => !providerHosts.has(host),
   );
+  const mcpSlug = agent.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  const tokenValue = "<YOUR_AGENT_TOKEN>";
+  const codexConfig = `[mcp_servers.warden-${mcpSlug}]\nurl = "${mcpUrl}"\nheaders = { Authorization = "Bearer ${tokenValue}" }\n`;
+  const claudeConfig = JSON.stringify(
+    {
+      mcpServers: {
+        [`warden-${mcpSlug}`]: {
+          type: "http",
+          url: mcpUrl,
+          headers: { Authorization: `Bearer ${tokenValue}` },
+        },
+      },
+    },
+    null,
+    2,
+  );
 
   return (
     <Shell active="/agents">
@@ -62,6 +79,12 @@ export default async function AgentDetailPage({ params }: Props) {
             {agent.status === "active" ? "ACTIVE" : "REVOKED"}
           </span>
           <div className="ml-auto flex gap-2">
+            <a
+              href={`/agents/${agent.id}/chat`}
+              className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors"
+            >
+              OPEN CHAT
+            </a>
             {agent.network === "solana-devnet" && (
               <form action={airdropDevnetSol.bind(null, agent.id)}>
                 <ConfirmSubmitButton
@@ -204,274 +227,344 @@ export default async function AgentDetailPage({ params }: Props) {
         <Section
           id="policy"
           code="01.B"
-          title="Active policy"
-          meta="v1 · activated"
+          title="Control"
+          meta={`${agent.policy.mode} · v1`}
         >
-          <div className="flex flex-col gap-0">
-            <PolicyRow label="Allowed hosts" rule="policy.allowedHosts">
-              {agent.policy.mode === "managed" ? (
-                <span className="text-signal mono text-[12.5px]">
-                  ● Warden-managed provider decisions
-                </span>
-              ) : agent.policy.allowedHosts.length === 0 ? (
-                <span className="text-pending mono text-[12.5px]">
-                  ○ unrestricted by host
-                </span>
-              ) : (
-                <ul className="flex flex-col gap-1">
-                  {agent.policy.allowedHosts.map((h) => (
-                    <li
-                      key={h}
-                      className="mono text-t1 text-[12.5px] flex items-center gap-2"
-                    >
-                      <span className="text-allow">●</span> {h}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </PolicyRow>
-            <PolicyRow label="Networks" rule="policy.allowedNetworks">
-              <span className="mono text-t1 text-[12.5px]">
-                {agent.policy.allowedNetworks.join(" · ")}
-              </span>
-            </PolicyRow>
-            <PolicyRow label="Tokens" rule="policy.allowedTokens">
-              <span className="mono text-t1 text-[12.5px]">
-                {agent.policy.allowedTokens.join(" · ")}
-              </span>
-            </PolicyRow>
-            <PolicyRow label="Per-request cap" rule="policy.maxUsdPerRequest">
-              <span className="label-num text-t1 text-[14px]">
-                {fmtUsd(agent.policy.maxUsdPerRequest)}
-              </span>
-            </PolicyRow>
-            <PolicyRow label="Daily cap" rule="policy.maxUsdPerDay">
-              <span className="label-num text-t1 text-[14px]">
-                {fmtUsd(agent.policy.maxUsdPerDay)}
-              </span>
-            </PolicyRow>
-            <PolicyRow label="Risk posture" rule="policy.riskPosture">
-              <span className="mono text-t1 text-[12.5px]">
-                {(agent.policy.riskPosture ?? "balanced").toUpperCase()}
-              </span>
-            </PolicyRow>
-            {agent.policy.purpose && (
-              <PolicyRow label="Purpose" rule="policy.purpose">
-                <span className="text-t2 text-[12.5px] leading-relaxed">
-                  {agent.policy.purpose}
-                </span>
-              </PolicyRow>
-            )}
-            {agent.policy.approvalThresholdUsd !== undefined && (
-              <PolicyRow
-                label="Approval threshold"
-                rule="policy.approvalThresholdUsd"
-              >
-                <span className="label-num text-pending text-[14px]">
-                  ≥ {fmtUsd(agent.policy.approvalThresholdUsd)}
-                </span>
-              </PolicyRow>
-            )}
-          </div>
-
-          {pending.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-hairline">
-              <span className="label">PENDING REQUESTS · {pending.length}</span>
-              <div className="mt-3 flex flex-col gap-2">
-                {pending.map((p) => (
-                  <a
-                    href="/approvals"
-                    key={p.id}
-                    className="flex items-baseline gap-3 py-2 hover:bg-bg-row/40 px-1 transition-colors"
-                  >
-                    <span className="label-num text-pending text-[14px]">
-                      {fmtUsd(p.amountUsd)}
+          <div className="flex flex-col gap-8">
+            <div>
+              <div className="grid grid-cols-2 border border-hairline-strong">
+                <PolicyTile
+                  label="Mode"
+                  value={agent.policy.mode.toUpperCase()}
+                  tone="signal"
+                />
+                <PolicyTile
+                  label="Daily cap"
+                  value={fmtUsd(agent.policy.maxUsdPerDay)}
+                />
+                <PolicyTile
+                  label="Per request"
+                  value={fmtUsd(agent.policy.maxUsdPerRequest)}
+                />
+                <PolicyTile
+                  label="Risk"
+                  value={(agent.policy.riskPosture ?? "balanced").toUpperCase()}
+                />
+                <PolicyTile
+                  label="Network"
+                  value={agent.policy.allowedNetworks.join(" · ")}
+                />
+                <PolicyTile
+                  label="Token"
+                  value={agent.policy.allowedTokens.join(" · ")}
+                />
+              </div>
+              <div className="mt-4 flex flex-col gap-3 border-b border-hairline pb-4">
+                <CompactPolicyLine label="Hosts">
+                  {agent.policy.mode === "managed" ? (
+                    <span className="text-signal">
+                      Warden-managed provider decisions
                     </span>
-                    <span className="text-t2 text-[12.5px] truncate">
-                      {p.provider}
-                    </span>
-                    <span className="ml-auto mono text-t4 text-[11px]">
-                      {fmtRelative(p.createdAt)}
-                    </span>
-                  </a>
-                ))}
+                  ) : agent.policy.allowedHosts.length === 0 ? (
+                    <span className="text-pending">unrestricted by host</span>
+                  ) : (
+                    <span>{agent.policy.allowedHosts.length} allowed hosts</span>
+                  )}
+                </CompactPolicyLine>
+                {agent.policy.approvalThresholdUsd !== undefined && (
+                  <CompactPolicyLine label="Approval">
+                    ≥ {fmtUsd(agent.policy.approvalThresholdUsd)}
+                  </CompactPolicyLine>
+                )}
+                {agent.policy.purpose && (
+                  <CompactPolicyLine label="Purpose">
+                    {agent.policy.purpose}
+                  </CompactPolicyLine>
+                )}
               </div>
             </div>
-          )}
 
-          <form
-            action={updatePolicy.bind(null, agent.id)}
-            className="mt-8 pt-6 border-t border-hairline flex flex-col gap-3"
-          >
-            <span className="label">MANAGED POLICY</span>
-            <p className="text-t3 text-[12.5px] leading-relaxed">
-              Set the spend envelope. Warden handles provider decisions and
-              only escalates high-risk requests.
-            </p>
-            <input type="hidden" name="policyMode" value="managed" />
-            <input type="hidden" name="network" value={agent.network} />
-            <Field label="Daily budget">
-              <input
-                name="dailyBudgetUsd"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={agent.policy.maxUsdPerDay}
-                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
-              />
-            </Field>
-            <Field label="Risk posture">
-              <select
-                name="riskPosture"
-                defaultValue={agent.policy.riskPosture ?? "balanced"}
-                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 text-[12px] text-t1 outline-none"
-              >
-                <option value="conservative">Conservative</option>
-                <option value="balanced">Balanced</option>
-                <option value="aggressive">Aggressive</option>
-              </select>
-            </Field>
-            <Field label="Agent purpose">
-              <input
-                name="purpose"
-                defaultValue={agent.policy.purpose ?? "General x402 spend"}
-                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 text-[12px] text-t1 outline-none"
-              />
-            </Field>
-            <button className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors">
-              SAVE MANAGED POLICY
-            </button>
-          </form>
-
-          <form
-            action={updatePolicy.bind(null, agent.id)}
-            className="mt-8 pt-6 border-t border-hairline flex flex-col gap-3"
-          >
-            <span className="label">ADVANCED POLICY</span>
-            <p className="text-t3 text-[12.5px] leading-relaxed">
-              Use manual host rules only when this agent needs a strict
-              provider allowlist.
-            </p>
-            <input type="hidden" name="policyMode" value="advanced" />
-            <Field label="Allowed x402 providers">
-              {payServices.length === 0 ? (
-                <p className="text-t3 text-[12.5px] leading-relaxed">
-                  Provider catalog unavailable. Use custom hosts below.
-                </p>
-              ) : (
-                <div className="max-h-[280px] overflow-auto border border-hairline-strong divide-y divide-hairline">
-                  {payServices.map((service) => {
-                    const host = new URL(service.serviceUrl).host;
-                    return (
-                      <label
-                        key={service.fqn}
-                        className="grid grid-cols-[18px_1fr_auto] gap-3 px-3 py-3 hover:bg-bg-row/40 transition-colors cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          name="allowedHosts"
-                          value={host}
-                          defaultChecked={agent.policy.allowedHosts.includes(host)}
-                          className="mt-0.5 size-3 accent-[var(--signal)]"
-                        />
-                        <span className="min-w-0">
-                          <span className="block text-t1 text-[13px] truncate">
-                            {service.title}
-                          </span>
-                          <span className="block mono text-t4 text-[11px] truncate">
-                            {host}
-                          </span>
-                        </span>
-                        <span className="label-num text-t4 text-[11px] whitespace-nowrap">
-                          {fmtUsd(service.minPriceUsd)}
-                          {service.maxPriceUsd !== service.minPriceUsd
-                            ? `-${fmtUsd(service.maxPriceUsd)}`
-                            : ""}
-                        </span>
-                      </label>
-                    );
-                  })}
+            <div className="border border-hairline-strong bg-bg-deep/35 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <span className="label">MCP CONNECTION</span>
+                  <code className="mono mt-2 block text-t1 text-[12px] break-all">
+                    {mcpUrl}
+                  </code>
                 </div>
-              )}
-            </Field>
-            <Field label="Custom hosts">
-              <input
-                name="customAllowedHosts"
-                defaultValue={customAllowedHosts.join(", ")}
-                placeholder="api.example.com, x402.example.com"
-                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 mono text-[12px] text-t1 outline-none"
-              />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Per request cap">
-                <input
-                  name="maxUsdPerRequest"
-                  type="number"
-                  step="0.000001"
-                  min="0"
-                  defaultValue={agent.policy.maxUsdPerRequest}
-                  className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
-                />
-              </Field>
-              <Field label="Daily cap">
-                <input
-                  name="maxUsdPerDay"
-                  type="number"
-                  step="0.000001"
-                  min="0"
-                  defaultValue={agent.policy.maxUsdPerDay}
-                  className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
-                />
-              </Field>
+                <CopyButton text={mcpUrl} />
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <CopyButton text={codexConfig} label="COPY CODEX" />
+                <CopyButton text={claudeConfig} label="COPY CLAUDE" />
+              </div>
+              <p className="mt-3 text-t4 text-[11.5px] leading-relaxed">
+                Uses bearer auth. Rotate the MCP token above if you need a fresh
+                token before pasting the config.
+              </p>
             </div>
-            <Field label="Approval threshold">
-              <input
-                name="approvalThresholdUsd"
-                type="number"
-                step="0.000001"
-                min="0"
-                defaultValue={agent.policy.approvalThresholdUsd ?? ""}
-                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
-              />
-            </Field>
-            <input
-              type="hidden"
-              name="riskPosture"
-              value={agent.policy.riskPosture ?? "balanced"}
-            />
-            <input
-              type="hidden"
-              name="purpose"
-              value={agent.policy.purpose ?? "Advanced x402 policy"}
-            />
-            {agent.policy.allowedNetworks.map((n) => (
-              <input key={n} type="hidden" name="allowedNetworks" value={n} />
-            ))}
-            {agent.policy.allowedTokens.map((t) => (
-              <input key={t} type="hidden" name="allowedTokens" value={t} />
-            ))}
-            {agent.policy.allowedMethods.map((m) => (
-              <input key={m} type="hidden" name="allowedMethods" value={m} />
-            ))}
-            <button className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors">
-              SAVE POLICY
-            </button>
-          </form>
+
+            {pending.length > 0 && (
+              <div>
+                <span className="label">PENDING REQUESTS · {pending.length}</span>
+                <div className="mt-3 flex flex-col gap-2">
+                  {pending.map((p) => (
+                    <a
+                      href="/approvals"
+                      key={p.id}
+                      className="flex items-baseline gap-3 py-2 hover:bg-bg-row/40 px-1 transition-colors"
+                    >
+                      <span className="label-num text-pending text-[14px]">
+                        {fmtUsd(p.amountUsd)}
+                      </span>
+                      <span className="text-t2 text-[12.5px] truncate">
+                        {p.provider}
+                      </span>
+                      <span className="ml-auto mono text-t4 text-[11px]">
+                        {fmtRelative(p.createdAt)}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <details className="group border-t border-hairline pt-5">
+              <summary className="label flex cursor-pointer list-none items-center justify-between text-signal hover:text-t1">
+                EDIT MANAGED POLICY
+                <span className="mono text-[13px] text-t4 group-open:rotate-45 transition-transform">
+                  +
+                </span>
+              </summary>
+              <form
+                action={updatePolicy.bind(null, agent.id)}
+                className="mt-4 flex flex-col gap-3"
+              >
+                <p className="text-t3 text-[12.5px] leading-relaxed">
+                  Set the spend envelope. Warden handles provider decisions and
+                  only escalates high-risk requests.
+                </p>
+                <input type="hidden" name="policyMode" value="managed" />
+                <input type="hidden" name="network" value={agent.network} />
+                <Field label="Daily budget">
+                  <input
+                    name="dailyBudgetUsd"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={agent.policy.maxUsdPerDay}
+                    className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
+                  />
+                </Field>
+                <Field label="Risk posture">
+                  <select
+                    name="riskPosture"
+                    defaultValue={agent.policy.riskPosture ?? "balanced"}
+                    className="w-full bg-bg-base border border-hairline-strong px-3 py-2 text-[12px] text-t1 outline-none"
+                  >
+                    <option value="conservative">Conservative</option>
+                    <option value="balanced">Balanced</option>
+                    <option value="aggressive">Aggressive</option>
+                  </select>
+                </Field>
+                <Field label="Agent purpose">
+                  <input
+                    name="purpose"
+                    defaultValue={agent.policy.purpose ?? "General x402 spend"}
+                    className="w-full bg-bg-base border border-hairline-strong px-3 py-2 text-[12px] text-t1 outline-none"
+                  />
+                </Field>
+                <button className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors">
+                  SAVE MANAGED POLICY
+                </button>
+              </form>
+            </details>
+
+            <details className="group border-t border-hairline pt-5">
+              <summary className="label flex cursor-pointer list-none items-center justify-between text-t3 hover:text-t1">
+                ADVANCED HOST RULES
+                <span className="mono text-[13px] text-t4 group-open:rotate-45 transition-transform">
+                  +
+                </span>
+              </summary>
+              <form
+                action={updatePolicy.bind(null, agent.id)}
+                className="mt-4 flex flex-col gap-3"
+              >
+                <p className="text-t3 text-[12.5px] leading-relaxed">
+                  Use manual host rules only when this agent needs a strict
+                  provider allowlist.
+                </p>
+                <input type="hidden" name="policyMode" value="advanced" />
+                <Field label="Allowed x402 providers">
+                  {payServices.length === 0 ? (
+                    <p className="text-t3 text-[12.5px] leading-relaxed">
+                      Provider catalog unavailable. Use custom hosts below.
+                    </p>
+                  ) : (
+                    <div className="max-h-[220px] overflow-auto border border-hairline-strong divide-y divide-hairline">
+                      {payServices.map((service) => {
+                        const host = new URL(service.serviceUrl).host;
+                        return (
+                          <label
+                            key={service.fqn}
+                            className="grid grid-cols-[18px_1fr_auto] gap-3 px-3 py-3 hover:bg-bg-row/40 transition-colors cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              name="allowedHosts"
+                              value={host}
+                              defaultChecked={agent.policy.allowedHosts.includes(host)}
+                              className="mt-0.5 size-3 accent-[var(--signal)]"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-t1 text-[13px] truncate">
+                                {service.title}
+                              </span>
+                              <span className="block mono text-t4 text-[11px] truncate">
+                                {host}
+                              </span>
+                            </span>
+                            <span className="label-num text-t4 text-[11px] whitespace-nowrap">
+                              {fmtUsd(service.minPriceUsd)}
+                              {service.maxPriceUsd !== service.minPriceUsd
+                                ? `-${fmtUsd(service.maxPriceUsd)}`
+                                : ""}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Field>
+                <Field label="Custom hosts">
+                  <input
+                    name="customAllowedHosts"
+                    defaultValue={customAllowedHosts.join(", ")}
+                    placeholder="api.example.com, x402.example.com"
+                    className="w-full bg-bg-base border border-hairline-strong px-3 py-2 mono text-[12px] text-t1 outline-none"
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Per request cap">
+                    <input
+                      name="maxUsdPerRequest"
+                      type="number"
+                      step="0.000001"
+                      min="0"
+                      defaultValue={agent.policy.maxUsdPerRequest}
+                      className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
+                    />
+                  </Field>
+                  <Field label="Daily cap">
+                    <input
+                      name="maxUsdPerDay"
+                      type="number"
+                      step="0.000001"
+                      min="0"
+                      defaultValue={agent.policy.maxUsdPerDay}
+                      className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
+                    />
+                  </Field>
+                </div>
+                <Field label="Approval threshold">
+                  <input
+                    name="approvalThresholdUsd"
+                    type="number"
+                    step="0.000001"
+                    min="0"
+                    defaultValue={agent.policy.approvalThresholdUsd ?? ""}
+                    className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
+                  />
+                </Field>
+                <input
+                  type="hidden"
+                  name="riskPosture"
+                  value={agent.policy.riskPosture ?? "balanced"}
+                />
+                <input
+                  type="hidden"
+                  name="purpose"
+                  value={agent.policy.purpose ?? "Advanced x402 policy"}
+                />
+                {agent.policy.allowedNetworks.map((n) => (
+                  <input key={n} type="hidden" name="allowedNetworks" value={n} />
+                ))}
+                {agent.policy.allowedTokens.map((t) => (
+                  <input key={t} type="hidden" name="allowedTokens" value={t} />
+                ))}
+                {agent.policy.allowedMethods.map((m) => (
+                  <input key={m} type="hidden" name="allowedMethods" value={m} />
+                ))}
+                <button className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors">
+                  SAVE ADVANCED POLICY
+                </button>
+              </form>
+            </details>
+          </div>
         </Section>
       </div>
 
       <Section
         code="01.C"
-        title="MCP connection"
-        meta="streamable HTTP · Bearer auth"
+        title="Full MCP setup"
+        meta="reference"
       >
-        <MCPSnippets
-          agentId={agent.id}
-          agentName={agent.name}
-          url={mcpUrl}
-        />
+        <details className="group border border-hairline-strong bg-bg-deep/25 p-5">
+          <summary className="label flex cursor-pointer list-none items-center justify-between text-t2 hover:text-t1">
+            SHOW ALL CLIENT SNIPPETS
+            <span className="mono text-[13px] text-t4 group-open:rotate-45 transition-transform">
+              +
+            </span>
+          </summary>
+          <div className="mt-5">
+            <MCPSnippets
+              agentId={agent.id}
+              agentName={agent.name}
+              url={mcpUrl}
+            />
+          </div>
+        </details>
       </Section>
     </Shell>
+  );
+}
+
+function PolicyTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "signal";
+}) {
+  return (
+    <div className="border-b border-r border-hairline p-3 even:border-r-0 last:border-b-0 [&:nth-last-child(2)]:border-b-0">
+      <span className="label">{label}</span>
+      <span
+        className={`mono mt-1 block truncate text-[12.5px] ${
+          tone === "signal" ? "text-signal" : "text-t1"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function CompactPolicyLine({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[92px_1fr] gap-3 text-[12.5px]">
+      <span className="label pt-px">{label}</span>
+      <span className="min-w-0 truncate text-t2">{children}</span>
+    </div>
   );
 }
 
@@ -524,25 +617,5 @@ function Field({
       <span className="label">{label}</span>
       {children}
     </label>
-  );
-}
-
-function PolicyRow({
-  label,
-  rule,
-  children,
-}: {
-  label: string;
-  rule: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5 py-3 border-b border-hairline/60 last:border-b-0">
-      <div className="flex items-baseline justify-between">
-        <span className="text-t2 text-[12.5px]">{label}</span>
-        <span className="mono text-t4 text-[10.5px]">{rule}</span>
-      </div>
-      <div>{children}</div>
-    </div>
   );
 }
