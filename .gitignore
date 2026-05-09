@@ -11,3 +11,7 @@ coverage
 *.tsbuildinfo
 warden.db
 warden.db-journal
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
