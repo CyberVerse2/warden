@@ -115,7 +115,7 @@ export default async function AgentsPage() {
                         : a.policy.mode === "managed"
                         ? "text-signal"
                         : a.policy.allowedHosts.length === 0
-                        ? "text-deny"
+                        ? "text-pending"
                         : "text-allow"
                     }`}
                   >
@@ -133,7 +133,7 @@ export default async function AgentsPage() {
                       : a.policy.mode === "managed"
                       ? `${a.policy.riskPosture} · managed`
                       : a.policy.allowedHosts.length === 0
-                      ? "Deny-all"
+                      ? "open hosts"
                       : `${a.policy.allowedHosts.length} hosts · ${fmtUsd(
                           a.policy.maxUsdPerRequest,
                         )}/req`}

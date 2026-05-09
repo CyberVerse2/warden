@@ -74,6 +74,23 @@ describe("policy.evaluate", () => {
     expect(d).toMatchObject({ kind: "allow" });
   });
 
+  it("does not block every host when advanced mode has no host allowlist", () => {
+    const d = evaluate(
+      baseInput({
+        policy: {
+          ...basePolicy,
+          allowedHosts: [],
+        },
+        request: {
+          url: "https://new-provider.example/pay",
+          method: "GET",
+          host: "new-provider.example",
+        },
+      }),
+    );
+    expect(d).toMatchObject({ kind: "allow" });
+  });
+
   it("denies disallowed networks", () => {
     const d = evaluate(
       baseInput({

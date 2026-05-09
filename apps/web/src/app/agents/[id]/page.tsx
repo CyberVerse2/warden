@@ -185,7 +185,9 @@ export default async function AgentDetailPage({ params }: Props) {
                   ● Warden-managed provider decisions
                 </span>
               ) : agent.policy.allowedHosts.length === 0 ? (
-                <span className="text-deny mono text-[12.5px]">○ deny-all</span>
+                <span className="text-pending mono text-[12.5px]">
+                  ○ unrestricted by host
+                </span>
               ) : (
                 <ul className="flex flex-col gap-1">
                   {agent.policy.allowedHosts.map((h) => (
