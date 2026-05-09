@@ -1,8 +1,8 @@
 import { loadServerEnv, requireEnv } from "@warden/core";
-import { agents, createDb, eq, receipts } from "@warden/db";
+import { agents, and, createDb, desc, eq, receipts, wallets } from "@warden/db";
 import { createRuntime, resolveAgentByToken } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder } from "@warden/x402";
+import { createX402SvmProofBuilder, discoverPayServices } from "@warden/x402";
 
 loadServerEnv();
 
@@ -28,6 +28,102 @@ function required(name: string, hint?: string) {
   return value;
 }
 
+async function resolveSmokeAgent(
+  db: ReturnType<typeof createDb>,
+  agentToken: string | undefined,
+) {
+  if (agentToken) {
+    const resolved = await resolveAgentByToken(db, agentToken);
+    const [agent] = await db
+      .select({ id: agents.id, name: agents.name, status: agents.status })
+      .from(agents)
+      .where(eq(agents.id, resolved.agentId));
+    assert(agent, "smoke agent token did not resolve to an agent row");
+    return [{
+      agent,
+      agentId: resolved.agentId,
+      walletId: resolved.walletId,
+      execution: { agentToken },
+      source: "token",
+    }];
+  }
+
+  const requestedAgentId = process.env.WARDEN_SMOKE_AGENT_ID;
+  const rows = await db
+    .select({
+      agentId: agents.id,
+      name: agents.name,
+      status: agents.status,
+      walletId: wallets.id,
+    })
+    .from(agents)
+    .innerJoin(wallets, eq(wallets.agentId, agents.id))
+    .where(
+      requestedAgentId
+        ? and(
+            eq(agents.id, requestedAgentId),
+            eq(agents.status, "active"),
+            eq(wallets.status, "active"),
+          )
+        : and(eq(agents.status, "active"), eq(wallets.status, "active")),
+    )
+    .orderBy(desc(agents.createdAt))
+    .limit(10);
+
+  if (rows.length === 0) {
+    throw new Error(
+      requestedAgentId
+        ? `WARDEN_SMOKE_AGENT_ID ${requestedAgentId} did not match an active funded agent`
+        : "No active agent with an active wallet was found in the database",
+    );
+  }
+
+  return rows.map((row) => ({
+    agent: {
+      id: row.agentId,
+      name: row.name,
+      status: row.status,
+    },
+    agentId: row.agentId,
+    walletId: row.walletId,
+    execution: { agentId: row.agentId },
+    source: requestedAgentId ? "agent-id" : "database-latest",
+  }));
+}
+
+async function findFundedAgent(
+  candidates: Awaited<ReturnType<typeof resolveSmokeAgent>>,
+  walletService: ReturnType<typeof createWalletService>,
+) {
+  for (const candidate of candidates) {
+    const publicKey = await walletService.getPublicKey(candidate.walletId);
+    const [sol, usdc] = await Promise.all([
+      walletService.getBalance(candidate.walletId),
+      walletService.getUsdcBalance(candidate.walletId),
+    ]);
+    if (sol.lamports > 0 && usdc.raw > 0n) {
+      return { ...candidate, publicKey };
+    }
+  }
+  return undefined;
+}
+
+async function resolveSmokeUrl() {
+  const explicit = arg("--url") ?? process.env.WARDEN_SMOKE_X402_URL;
+  if (explicit) return { url: explicit, source: "env" };
+
+  const query = process.env.WARDEN_SMOKE_DISCOVERY_QUERY ?? "x402 devnet";
+  const services = await discoverPayServices({ query, limit: 10 });
+  const service =
+    services.find((candidate) => candidate.minPriceUsd > 0) ?? services[0];
+  if (!service) {
+    throw new Error(
+      "WARDEN_SMOKE_X402_URL is required because pay.sh discovery returned no x402 services",
+    );
+  }
+  return { url: service.serviceUrl, source: `pay.sh:${service.fqn}` };
+}
+
 async function main() {
   const databaseUrl = requireEnv("DATABASE_URL");
   const rpcUrl = requireEnv("SOLANA_RPC_URL");
@@ -36,18 +132,8 @@ async function main() {
 
   const agentToken =
     process.env.WARDEN_SMOKE_AGENT_TOKEN ?? process.env.WARDEN_AGENT_TOKEN;
-  if (!agentToken) {
-    throw new Error(
-      "WARDEN_SMOKE_AGENT_TOKEN is required. Use a real funded smoke agent token; WARDEN_AGENT_TOKEN is accepted as a fallback.",
-    );
-  }
 
-  const url = arg("--url") ?? process.env.WARDEN_SMOKE_X402_URL;
-  if (!url) {
-    throw new Error(
-      "WARDEN_SMOKE_X402_URL is required, or pass --url=https://real-x402-provider/path",
-    );
-  }
+  const smokeUrl = await resolveSmokeUrl();
 
   const method = process.env.WARDEN_SMOKE_METHOD ?? "GET";
   const db = createDb(databaseUrl);
@@ -55,27 +141,22 @@ async function main() {
   const proofBuilder = createX402SvmProofBuilder(walletService, { rpcUrl });
   const runtime = createRuntime({ db, walletService, proofBuilder });
 
-  const resolved = await resolveAgentByToken(db, agentToken);
-  const [agent] = await db
-    .select({ id: agents.id, name: agents.name, status: agents.status })
-    .from(agents)
-    .where(eq(agents.id, resolved.agentId));
-  assert(agent, "smoke agent token did not resolve to an agent row");
-  assert(agent.status === "active", "smoke agent is not active");
-
-  const publicKey = await walletService.getPublicKey(resolved.walletId);
-  const [sol, usdc] = await Promise.all([
-    walletService.getBalance(resolved.walletId),
-    walletService.getUsdcBalance(resolved.walletId),
-  ]);
-  assert(sol.lamports > 0, `smoke wallet has no devnet SOL for fees: ${publicKey}`);
-  assert(usdc.raw > 0n, `smoke wallet has no devnet USDC: ${publicKey}`);
-  log(`resolved funded smoke agent ${agent.name} (${resolved.agentId})`);
+  const candidates = await resolveSmokeAgent(db, agentToken);
+  const resolved = await findFundedAgent(candidates, walletService);
+  if (!resolved) {
+    throw new Error(
+      "No active DB agent wallet has both devnet SOL and devnet USDC. Fund one or set WARDEN_SMOKE_AGENT_ID to a funded agent.",
+    );
+  }
+  assert(resolved.agent.status === "active", "smoke agent is not active");
+  log(
+    `resolved funded smoke agent ${resolved.agent.name} (${resolved.agentId}) via ${resolved.source}`,
+  );
 
   const result = await runtime.executePaidRequest({
-    agentToken,
+    ...resolved.execution,
     request: {
-      url,
+      url: smokeUrl.url,
       method,
       ...(process.env.WARDEN_SMOKE_BODY
         ? { body: JSON.parse(process.env.WARDEN_SMOKE_BODY) as unknown }
@@ -110,7 +191,7 @@ async function main() {
     "live workflow receipt is missing payment audit data",
   );
 
-  log(`paid ${url}`);
+  log(`paid ${smokeUrl.url} (${smokeUrl.source})`);
   log(`receipt ${result.receiptId} recorded ${receipt.decisionReason}`);
   console.log("Warden live workflow smoke test passed.");
 }
