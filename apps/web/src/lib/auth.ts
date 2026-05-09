@@ -1,7 +1,6 @@
 import "server-only";
 import { PrivyClient, type User as PrivyUser } from "@privy-io/server-auth";
 import { users } from "@warden/db";
-import { eq } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb } from "./db";
@@ -34,29 +33,21 @@ async function readPrivyToken() {
 
 async function upsertUser(input: CurrentUser): Promise<CurrentUser> {
   const db = getDb();
-  const [existing] = await db.select().from(users).where(eq(users.id, input.id));
-  if (!existing) {
-    await db.insert(users).values({
+  await db
+    .insert(users)
+    .values({
       id: input.id,
       email: input.email,
       ...(input.name ? { name: input.name } : {}),
-    });
-    return input;
-  }
-  await db
-    .update(users)
-    .set({
-      email: input.email,
-      name: input.name,
     })
-    .where(eq(users.id, input.id));
-  return {
-    id: existing.id,
-    email: input.email,
-    ...(input.name ? { name: input.name } : {}),
-    ...(input.username ? { username: input.username } : {}),
-    ...(input.avatarUrl ? { avatarUrl: input.avatarUrl } : {}),
-  };
+    .onConflictDoUpdate({
+      target: users.id,
+      set: {
+        email: input.email,
+        name: input.name ?? null,
+      },
+    });
+  return input;
 }
 
 function firstPresent(...values: Array<string | null | undefined>) {
