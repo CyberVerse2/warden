@@ -174,6 +174,61 @@ export async function updatePolicy(agentId: string, formData: FormData) {
   revalidatePath("/agents");
 }
 
+export async function switchAgentNetwork(agentId: string, formData: FormData) {
+  const db = getDb();
+  const currentUser = await getCurrentUser();
+  const targetNetwork = formNetwork(formData);
+  const [agent] = await db
+    .select({ id: agents.id })
+    .from(agents)
+    .where(and(eq(agents.id, agentId), eq(agents.userId, currentUser.id)));
+  if (!agent) return;
+
+  const [currentWallet] = await db
+    .select({ id: wallets.id, network: wallets.network })
+    .from(wallets)
+    .where(and(eq(wallets.agentId, agentId), eq(wallets.status, "active")))
+    .limit(1);
+  if (currentWallet?.network === targetNetwork) return;
+
+  const walletService = createWalletService({
+    db,
+    rpcUrl: requireEnv("SOLANA_RPC_URL"),
+  });
+  if (currentWallet) {
+    await db
+      .update(wallets)
+      .set({ network: targetNetwork })
+      .where(eq(wallets.id, currentWallet.id));
+  } else {
+    await walletService.createWallet({
+      agentId,
+      network: targetNetwork,
+    });
+  }
+
+  const [latest] = await db
+    .select({ version: policies.version, config: policies.config })
+    .from(policies)
+    .where(eq(policies.agentId, agentId))
+    .orderBy(desc(policies.version))
+    .limit(1);
+  const currentPolicy = PolicyConfigSchema.parse(latest?.config ?? {});
+  await db.insert(policies).values({
+    id: newId.policy(),
+    agentId,
+    version: (latest?.version ?? 0) + 1,
+    config: {
+      ...currentPolicy,
+      allowedNetworks: [targetNetwork],
+    },
+    activatedAt: new Date(),
+  });
+
+  revalidatePath(`/agents/${agentId}`);
+  revalidatePath("/agents");
+}
+
 export async function revokeAgent(agentId: string) {
   const db = getDb();
   const currentUser = await getCurrentUser();

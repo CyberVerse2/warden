@@ -15,6 +15,7 @@ import {
   airdropDevnetSol,
   revokeAgent,
   rotateAgentToken,
+  switchAgentNetwork,
   updatePolicy,
 } from "../actions";
 
@@ -84,7 +85,35 @@ export default async function AgentDetailPage({ params }: Props) {
 
         <div className="mt-6 grid grid-cols-4 gap-px bg-hairline">
           <Identity label="WALLET" value={shortKey(agent.publicKey, 8, 8)} mono />
-          <Identity label="NETWORK" value={agent.network.toUpperCase()} mono />
+          <div className="bg-bg-base p-4">
+            <span className="label">NETWORK</span>
+            <form
+              action={switchAgentNetwork.bind(null, agent.id)}
+              className="mt-2 grid grid-cols-2 border border-hairline-strong"
+            >
+              {[
+                ["solana-mainnet", "MAINNET"],
+                ["solana-devnet", "DEVNET"],
+              ].map(([network, label]) => {
+                const active = agent.network === network;
+                return (
+                  <button
+                    key={network}
+                    name="network"
+                    value={network}
+                    disabled={active}
+                    className={`mono px-3 py-2 text-[11px] transition-colors ${
+                      active
+                        ? "bg-signal text-bg-base"
+                        : "text-t3 hover:text-t1 hover:bg-bg-row/50"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </form>
+          </div>
           <Identity label="BALANCE" value={fmtUsd(agent.balanceUsd)} />
           <Identity
             label="MCP TOKEN"
