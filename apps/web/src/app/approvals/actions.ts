@@ -3,17 +3,12 @@
 import { agents, approvals } from "@warden/db";
 import { createRuntime } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createCoinbaseSolanaProofBuilder } from "@warden/x402";
+import { createX402SvmProofBuilder } from "@warden/x402";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "~/lib/auth";
 import { getDb } from "~/lib/db";
-
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`${name} is not set`);
-  return v;
-}
+import { requireEnv } from "~/lib/env";
 
 export async function decideApproval(
   approvalId: string,
@@ -45,13 +40,9 @@ export async function decideApproval(
 
   if (decision === "approved") {
     const rpcUrl = requireEnv("SOLANA_RPC_URL");
-    const facilitatorUrl = requireEnv("COINBASE_X402_FACILITATOR_URL");
     const walletService = createWalletService({ db, rpcUrl });
-    const proofBuilder = createCoinbaseSolanaProofBuilder(walletService, {
+    const proofBuilder = createX402SvmProofBuilder(walletService, {
       rpcUrl,
-      facilitatorUrl,
-      cdpApiKeyId: process.env.CDP_API_KEY_ID,
-      cdpApiKeySecret: process.env.CDP_API_KEY_SECRET,
     });
     const runtime = createRuntime({ db, walletService, proofBuilder });
     const snapshot = approval.requestSnapshot as {

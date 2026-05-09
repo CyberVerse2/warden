@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { discoverPayServices } from "@warden/x402";
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
 import { Meter } from "~/components/meter";
@@ -6,6 +7,7 @@ import { Metric } from "~/components/metric";
 import { StatusGlyph } from "~/components/status-glyph";
 import { FeedRow } from "~/components/feed-row";
 import { MCPSnippets } from "~/components/mcp-snippets";
+import { ConfirmSubmitButton } from "~/components/confirm-submit-button";
 import { fmtRelative, fmtUsd, shortKey } from "~/lib/format";
 import { getOrigin } from "~/lib/origin";
 import { getAgent, getApprovals, getReceipts } from "~/lib/queries";
@@ -24,15 +26,22 @@ export const dynamic = "force-dynamic";
 
 export default async function AgentDetailPage({ params }: Props) {
   const { id } = await params;
-  const [agent, allReceipts, pending, origin] = await Promise.all([
+  const [agent, allReceipts, pending, origin, payServices] = await Promise.all([
     getAgent(id),
     getReceipts({ agentId: id, limit: 100 }),
     getApprovals({ agentId: id }),
     getOrigin(),
+    discoverPayServices({ query: "x402", limit: 24 }).catch(() => []),
   ]);
   if (!agent) return notFound();
   const pct = agent.dailyCapUsd === 0 ? 0 : agent.spentTodayUsd / agent.dailyCapUsd;
   const mcpUrl = `${origin}/api/mcp/${agent.id}`;
+  const providerHosts = new Set(
+    payServices.map((service) => new URL(service.serviceUrl).host),
+  );
+  const customAllowedHosts = agent.policy.allowedHosts.filter(
+    (host) => !providerHosts.has(host),
+  );
 
   return (
     <Shell active="/agents">
@@ -54,15 +63,21 @@ export default async function AgentDetailPage({ params }: Props) {
           <div className="ml-auto flex gap-2">
             {agent.network === "solana-devnet" && (
               <form action={airdropDevnetSol.bind(null, agent.id)}>
-                <button className="label px-4 py-2 border border-hairline-strong text-t2 hover:text-t1 hover:border-t2 transition-colors">
+                <ConfirmSubmitButton
+                  confirm={`Request 2 devnet SOL for ${agent.name}?`}
+                  className="label px-4 py-2 border border-hairline-strong text-t2 hover:text-t1 hover:border-t2 transition-colors"
+                >
                   AIRDROP 2 SOL
-                </button>
+                </ConfirmSubmitButton>
               </form>
             )}
             <form action={revokeAgent.bind(null, agent.id)}>
-              <button className="label px-4 py-2 border border-deny-dim text-deny hover:bg-deny hover:text-bg-base transition-colors">
+              <ConfirmSubmitButton
+                confirm={`Revoke ${agent.name}? This revokes the agent wallet and all agent tokens.`}
+                className="label px-4 py-2 border border-deny-dim text-deny hover:bg-deny hover:text-bg-base transition-colors"
+              >
                 REVOKE
-              </button>
+              </ConfirmSubmitButton>
             </form>
           </div>
         </div>
@@ -133,24 +148,28 @@ export default async function AgentDetailPage({ params }: Props) {
           title="Recent activity"
           meta={`${allReceipts.length} receipts`}
         >
-          <div className="grid grid-cols-[78px_22px_140px_1fr_88px_72px] gap-4 px-1 pb-2 border-b border-hairline-strong">
-            <span className="label">UTC</span>
-            <span className="label" />
-            <span className="label">Agent</span>
-            <span className="label">Target</span>
-            <span className="label text-right">Amount</span>
-            <span className="label text-right">Receipt</span>
-          </div>
-          {allReceipts.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-t3 text-[13px]">
-                No activity yet. Connect this agent through MCP and call{" "}
-                <code className="mono text-signal">warden_fetch</code>.
-              </p>
+          <div className="overflow-x-auto">
+            <div className="min-w-[680px]">
+              <div className="grid grid-cols-[78px_22px_140px_1fr_88px_72px] gap-4 px-1 pb-2 border-b border-hairline-strong">
+                <span className="label">UTC</span>
+                <span className="label" />
+                <span className="label">Agent</span>
+                <span className="label">Target</span>
+                <span className="label text-right">Amount</span>
+                <span className="label text-right">Receipt</span>
+              </div>
+              {allReceipts.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-t3 text-[13px]">
+                    No activity yet. Connect this agent through MCP and call{" "}
+                    <code className="mono text-signal">warden_fetch</code>.
+                  </p>
+                </div>
+              ) : (
+                allReceipts.map((r) => <FeedRow key={r.id} r={r} />)
+              )}
             </div>
-          ) : (
-            allReceipts.map((r) => <FeedRow key={r.id} r={r} />)
-          )}
+          </div>
         </Section>
 
         <Section
@@ -237,10 +256,52 @@ export default async function AgentDetailPage({ params }: Props) {
             className="mt-8 pt-6 border-t border-hairline flex flex-col gap-3"
           >
             <span className="label">EDIT POLICY</span>
-            <Field label="Allowed hosts">
+            <Field label="Allowed x402 providers">
+              {payServices.length === 0 ? (
+                <p className="text-t3 text-[12.5px] leading-relaxed">
+                  Provider catalog unavailable. Use custom hosts below.
+                </p>
+              ) : (
+                <div className="max-h-[280px] overflow-auto border border-hairline-strong divide-y divide-hairline">
+                  {payServices.map((service) => {
+                    const host = new URL(service.serviceUrl).host;
+                    return (
+                      <label
+                        key={service.fqn}
+                        className="grid grid-cols-[18px_1fr_auto] gap-3 px-3 py-3 hover:bg-bg-row/40 transition-colors cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          name="allowedHosts"
+                          value={host}
+                          defaultChecked={agent.policy.allowedHosts.includes(host)}
+                          className="mt-0.5 size-3 accent-[var(--signal)]"
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-t1 text-[13px] truncate">
+                            {service.title}
+                          </span>
+                          <span className="block mono text-t4 text-[11px] truncate">
+                            {host}
+                          </span>
+                        </span>
+                        <span className="label-num text-t4 text-[11px] whitespace-nowrap">
+                          {fmtUsd(service.minPriceUsd)}
+                          {service.maxPriceUsd !== service.minPriceUsd
+                            ? `-${fmtUsd(service.maxPriceUsd)}`
+                            : ""}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </Field>
+            <Field label="Custom hosts">
               <input
-                name="allowedHosts"
-                defaultValue={agent.policy.allowedHosts.join(", ")}
+                name="customAllowedHosts"
+                defaultValue={customAllowedHosts.join(", ")}
+                placeholder="api.example.com, x402.example.com"
                 className="w-full bg-bg-base border border-hairline-strong px-3 py-2 mono text-[12px] text-t1 outline-none"
               />
             </Field>
@@ -324,9 +385,12 @@ function Identity({
         <span className="label">{label}</span>
         {typeof action === "function" ? (
           <form action={action}>
-            <button className="label text-signal hover:text-t1 transition-colors">
+            <ConfirmSubmitButton
+              confirm="Rotate this MCP token? The current token will stop working immediately."
+              className="label text-signal hover:text-t1 transition-colors"
+            >
               ROTATE
-            </button>
+            </ConfirmSubmitButton>
           </form>
         ) : action ? (
           <button className="label text-signal hover:text-t1 transition-colors">

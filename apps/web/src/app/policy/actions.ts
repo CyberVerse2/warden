@@ -4,6 +4,7 @@ import { agents, policies } from "@warden/db";
 import { PolicyConfigSchema } from "@warden/core";
 import { evaluate, type PolicyDecision } from "@warden/policy";
 import { getDailySpend } from "@warden/runtime";
+import { parseChallenge, sendRequest } from "@warden/x402";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { getCurrentUser } from "~/lib/auth";
 import { getDb } from "~/lib/db";
@@ -11,21 +12,11 @@ import { getDb } from "~/lib/db";
 export interface DryRunResult {
   agentName: string;
   agentId: string;
-  decision: PolicyDecision;
+  decision: PolicyDecision | { kind: "no_payment_required"; status: number };
   amountUsd: number;
   todayUsd: number;
-}
-
-function n(formData: FormData, key: string) {
-  const v = formData.get(key);
-  if (typeof v !== "string" || !v) {
-    throw new Error(`${key} is required`);
-  }
-  const num = Number(v);
-  if (!Number.isFinite(num)) {
-    throw new Error(`${key} must be a number`);
-  }
-  return num;
+  network?: string;
+  token?: string;
 }
 
 function s(formData: FormData, key: string) {
@@ -46,7 +37,6 @@ export async function dryRunPolicy(
     const agentId = s(formData, "agentId");
     const url = s(formData, "url");
     const method = s(formData, "method").toUpperCase();
-    const amountUsd = n(formData, "amountUsd");
     if (!agentId || !url) return { error: "Agent and URL are required" };
 
     const [agentRow] = await db
@@ -66,20 +56,34 @@ export async function dryRunPolicy(
     const policy = PolicyConfigSchema.parse(policyRow.config);
     const todayUsd = await getDailySpend(db, agentId);
 
-    const host = new URL(url).host;
-    const network = policy.allowedNetworks[0];
-    const token = policy.allowedTokens[0];
-    if (!network || !token) {
-      throw new Error("Policy must include at least one network and token");
+    const request = { url, method };
+    const initial = await sendRequest(request);
+    if (initial.status !== 402) {
+      return {
+        agentName: agentRow.name,
+        agentId: agentRow.id,
+        decision: { kind: "no_payment_required", status: initial.status },
+        amountUsd: 0,
+        todayUsd,
+      };
     }
+    const challenge = parseChallenge(
+      initial.body,
+      {
+        allowedNetworks: policy.allowedNetworks,
+        allowedTokens: policy.allowedTokens,
+      },
+      initial.headers,
+    );
+    const host = new URL(url).host;
 
     const decision = evaluate({
       agent: { id: agentRow.id, status: agentRow.status },
       challenge: {
-        amountUsd,
-        recipient: "dry-run",
-        network,
-        token,
+        amountUsd: challenge.requirement.amountUsd,
+        recipient: challenge.requirement.recipient,
+        network: challenge.requirement.network,
+        token: challenge.requirement.token,
       },
       request: { url, method, host },
       spendToDate: { dayUsd: todayUsd },
@@ -90,8 +94,10 @@ export async function dryRunPolicy(
       agentName: agentRow.name,
       agentId: agentRow.id,
       decision,
-      amountUsd,
+      amountUsd: challenge.requirement.amountUsd,
       todayUsd,
+      network: challenge.requirement.network,
+      token: challenge.requirement.token,
     };
   } catch (err) {
     return { error: (err as Error).message };

@@ -37,7 +37,7 @@ export function DryRunForm({ agents }: { agents: AgentOption[] }) {
             className="w-full bg-bg-base border border-hairline-strong px-3 py-2 mono text-[12.5px] text-t1 outline-none"
           />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div>
           <Field label="Method">
             <select
               name="method"
@@ -48,16 +48,6 @@ export function DryRunForm({ agents }: { agents: AgentOption[] }) {
                 <option key={m}>{m}</option>
               ))}
             </select>
-          </Field>
-          <Field label="Amount (USD)">
-            <input
-              name="amountUsd"
-              type="number"
-              step="0.0001"
-              min="0"
-              defaultValue="0.05"
-              className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12.5px] text-t1 outline-none"
-            />
           </Field>
         </div>
         <button
@@ -72,9 +62,9 @@ export function DryRunForm({ agents }: { agents: AgentOption[] }) {
       <div className="p-8">
         {!state ? (
           <p className="text-t3 text-[13px] max-w-[60ch]">
-            Pick an agent, paste a URL and amount, and Warden will report
-            exactly what its policy would do — no payment is signed and no
-            receipt is recorded.
+            Pick an agent and paste an endpoint. Warden will fetch the x402
+            challenge, choose the first policy-compatible requirement, and
+            report the decision without signing a payment or writing a receipt.
           </p>
         ) : "error" in state ? (
           <div className="flex items-center gap-2">
@@ -96,15 +86,25 @@ function Result(props: DryRunResult) {
       ? "text-allow"
       : decision.kind === "deny"
       ? "text-deny"
-      : "text-pending";
+      : decision.kind === "requires_approval"
+      ? "text-pending"
+      : "text-t3";
   const glyph =
-    decision.kind === "allow" ? "●" : decision.kind === "deny" ? "✕" : "◐";
+    decision.kind === "allow"
+      ? "●"
+      : decision.kind === "deny"
+      ? "✕"
+      : decision.kind === "requires_approval"
+      ? "◐"
+      : "○";
   const label =
     decision.kind === "allow"
       ? "ALLOW"
       : decision.kind === "deny"
       ? "DENY"
-      : "REQUIRES APPROVAL";
+      : decision.kind === "requires_approval"
+      ? "REQUIRES APPROVAL"
+      : "NO PAYMENT REQUIRED";
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,9 +114,15 @@ function Result(props: DryRunResult) {
       </div>
       <Row label="AGENT" value={agentName} />
       <Row
-        label="REQUEST AMOUNT"
-        value={`$${amountUsd.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`}
+        label={decision.kind === "no_payment_required" ? "HTTP STATUS" : "REQUEST AMOUNT"}
+        value={
+          decision.kind === "no_payment_required"
+            ? String(decision.status)
+            : `$${amountUsd.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`
+        }
       />
+      {props.network && <Row label="NETWORK" value={props.network} mono />}
+      {props.token && <Row label="TOKEN" value={props.token} mono />}
       <Row
         label="ALREADY SPENT TODAY"
         value={`$${todayUsd.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`}

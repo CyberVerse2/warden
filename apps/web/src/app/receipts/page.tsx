@@ -86,17 +86,18 @@ export default async function ReceiptsPage({ searchParams }: Props) {
       </div>
 
       <Section code="03.00" title="Ledger" meta="newest first">
-        <div className="text-[12.5px]">
-          <div className="grid grid-cols-[88px_22px_64px_140px_1fr_120px_100px_80px] gap-4 px-1 pb-2 border-b border-hairline-strong">
-            <span className="label">UTC</span>
-            <span className="label" />
-            <span className="label">Decision</span>
-            <span className="label">Agent</span>
-            <span className="label">Target</span>
-            <span className="label text-right">Amount</span>
-            <span className="label">Network</span>
-            <span className="label text-right">Receipt</span>
-          </div>
+        <div className="overflow-x-auto text-[12.5px]">
+          <div className="min-w-[840px]">
+            <div className="grid grid-cols-[88px_22px_64px_140px_1fr_120px_100px_80px] gap-4 px-1 pb-2 border-b border-hairline-strong">
+              <span className="label">UTC</span>
+              <span className="label" />
+              <span className="label">Decision</span>
+              <span className="label">Agent</span>
+              <span className="label">Target</span>
+              <span className="label text-right">Amount</span>
+              <span className="label">Network</span>
+              <span className="label text-right">Receipt</span>
+            </div>
           {sorted.map((r) => (
             <div
               key={r.id}
@@ -152,6 +153,7 @@ export default async function ReceiptsPage({ searchParams }: Props) {
               </span>
             </div>
           ))}
+          </div>
         </div>
       </Section>
     </Shell>

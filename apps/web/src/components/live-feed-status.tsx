@@ -4,13 +4,28 @@ import { useEffect, useState } from "react";
 
 export function LiveFeedStatus() {
   const [state, setState] = useState<"connecting" | "live" | "error">("connecting");
+  const [eventCount, setEventCount] = useState(0);
 
   useEffect(() => {
     const events = new EventSource("/api/events");
     events.addEventListener("open", () => setState("live"));
-    events.addEventListener("receipts", () => setState("live"));
+    const onRows = (event: MessageEvent) => {
+      setState("live");
+      try {
+        const rows = JSON.parse(event.data) as unknown[];
+        setEventCount((count) => count + rows.length);
+      } catch {
+        setEventCount((count) => count + 1);
+      }
+    };
+    events.addEventListener("replay", onRows);
+    events.addEventListener("receipts", onRows);
     events.addEventListener("error", () => setState("error"));
-    return () => events.close();
+    return () => {
+      events.removeEventListener("replay", onRows);
+      events.removeEventListener("receipts", onRows);
+      events.close();
+    };
   }, []);
 
   return (
@@ -27,7 +42,7 @@ export function LiveFeedStatus() {
           ? "Connecting"
           : state === "error"
           ? "Stream interrupted"
-          : "Live · Solana devnet + mainnet"}
+          : `Live · replayed ${eventCount} ledger rows`}
       </span>
     </div>
   );

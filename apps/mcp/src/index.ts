@@ -1,10 +1,13 @@
+import { loadServerEnv } from "@warden/core";
 import { createDb } from "@warden/db";
 import { createWardenToolset } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createCoinbaseSolanaProofBuilder } from "@warden/x402";
+import { createX402SvmProofBuilder } from "@warden/x402";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { z } from "zod";
+
+loadServerEnv();
 
 const AGENT_TOKEN = process.env.WARDEN_AGENT_TOKEN;
 if (!AGENT_TOKEN) {
@@ -17,19 +20,11 @@ if (!RPC_URL) {
   console.error("SOLANA_RPC_URL env var is required");
   process.exit(1);
 }
-const FACILITATOR_URL = process.env.COINBASE_X402_FACILITATOR_URL;
-if (!FACILITATOR_URL) {
-  console.error("COINBASE_X402_FACILITATOR_URL env var is required");
-  process.exit(1);
-}
 
 const db = createDb(process.env.DATABASE_URL);
 const walletService = createWalletService({ db, rpcUrl: RPC_URL });
-const proofBuilder = createCoinbaseSolanaProofBuilder(walletService, {
+const proofBuilder = createX402SvmProofBuilder(walletService, {
   rpcUrl: RPC_URL,
-  facilitatorUrl: FACILITATOR_URL,
-  cdpApiKeyId: process.env.CDP_API_KEY_ID,
-  cdpApiKeySecret: process.env.CDP_API_KEY_SECRET,
 });
 
 const tools = createWardenToolset({

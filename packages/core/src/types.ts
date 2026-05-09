@@ -26,8 +26,12 @@ export interface ChallengeRequirement {
 }
 
 export interface PaymentProof {
-  /** Header value to attach to the retried HTTP request as `X-PAYMENT`. */
+  /** Payment header value to attach to the retried HTTP request. */
   header: string;
+  /** Header name; x402 v1 uses X-PAYMENT, x402 v2 uses PAYMENT-SIGNATURE. */
+  headerName?: string;
+  /** Extra payment-adjacent headers, such as SIGN-IN-WITH-X. */
+  extraHeaders?: Record<string, string>;
   /** Hash of the proof payload (sha256 hex) for receipt audit. */
   proofHash: string;
   /** Optional Solana transaction signature once submitted. */

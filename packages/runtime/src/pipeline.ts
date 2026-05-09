@@ -2,6 +2,7 @@ import { newId, WardenError } from "@warden/core";
 import { approvals, receipts, type Db } from "@warden/db";
 import { evaluate, type PolicyDecision } from "@warden/policy";
 import type { WalletService } from "@warden/wallet";
+import { and, eq } from "drizzle-orm";
 import {
   hashRequest,
   parseChallenge,
@@ -103,12 +104,15 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       };
     }
 
-    // 4. Parse 402 challenge
-    const challenge = parseChallenge(initial.body);
-
-    // 5. Load policy + today's spend
+    // 4. Load policy + today's spend
     const { policyId, config: policy } = await loadActivePolicy(db, agent.agentId);
     const dayUsd = await getDailySpend(db, agent.agentId);
+
+    // 5. Parse the first policy-compatible 402 challenge.
+    const challenge = parseChallenge(initial.body, {
+      allowedNetworks: policy.allowedNetworks,
+      allowedTokens: policy.allowedTokens,
+    }, initial.headers);
 
     // 6. Evaluate (the critical control point)
     const decision = input.skipPolicy
@@ -161,6 +165,36 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     }
 
     if (decision.kind === "requires_approval") {
+      const pending = await db
+        .select({
+          id: approvals.id,
+          requestSnapshot: approvals.requestSnapshot,
+        })
+        .from(approvals)
+        .where(
+          and(
+            eq(approvals.agentId, agent.agentId),
+            eq(approvals.status, "pending"),
+          ),
+        );
+      const existing = pending.find((row) => {
+        const snapshot = row.requestSnapshot as
+          | { requestHash?: string; challengeHash?: string }
+          | null;
+        return (
+          snapshot?.requestHash === reqHash &&
+          snapshot.challengeHash === challenge.hash
+        );
+      });
+      if (existing) {
+        return {
+          kind: "approval_required",
+          approvalId: existing.id,
+          reason: decision.reason,
+          rule: decision.rule,
+        };
+      }
+
       const approvalId = newId.approval();
       await db.insert(approvals).values({
         id: approvalId,
@@ -170,6 +204,8 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
         requestSnapshot: {
           request: input.request,
           challenge: challenge.requirement,
+          requestHash: reqHash,
+          challengeHash: challenge.hash,
           taskId: input.taskId,
         },
         status: "pending",
@@ -193,7 +229,11 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     const paid = await sendRequest(
       {
         ...input.request,
-        headers: { ...(input.request.headers ?? {}), "X-PAYMENT": proof.header },
+        headers: {
+          ...(input.request.headers ?? {}),
+          [proof.headerName ?? "X-PAYMENT"]: proof.header,
+          ...(proof.extraHeaders ?? {}),
+        },
       },
       fetchImpl,
     );
@@ -231,11 +271,16 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
     });
 
+    const failureDetail =
+      !succeeded && paid.rawBody
+        ? `: ${paid.rawBody.slice(0, 2_000)}`
+        : "";
+
     if (!succeeded) {
       return {
         kind: "failed",
         receiptId,
-        reason: `Paid retry returned ${paid.status}`,
+        reason: `Paid retry returned ${paid.status}${failureDetail}`,
       };
     }
 
@@ -258,8 +303,15 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     const initial = await sendRequest(input.request, fetchImpl);
     if (initial.status !== 402) return { kind: "no_payment_required" as const };
 
-    const challenge = parseChallenge(initial.body);
     const { config: policy } = await loadActivePolicy(db, agent.agentId);
+    const challenge = parseChallenge(
+      initial.body,
+      {
+        allowedNetworks: policy.allowedNetworks,
+        allowedTokens: policy.allowedTokens,
+      },
+      initial.headers,
+    );
     const dayUsd = await getDailySpend(db, agent.agentId);
 
     return evaluate({

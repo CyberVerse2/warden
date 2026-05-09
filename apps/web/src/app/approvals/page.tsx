@@ -1,5 +1,6 @@
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
+import { ConfirmSubmitButton } from "~/components/confirm-submit-button";
 import { fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
 import { getAgents, getApprovals } from "~/lib/queries";
 import { decideApproval } from "./actions";
@@ -128,12 +129,12 @@ export default async function ApprovalsPage() {
                             await decideApproval(a.id, "denied");
                           }}
                         >
-                          <button
-                            type="submit"
+                          <ConfirmSubmitButton
+                            confirm={`Deny ${fmtUsd(a.amountUsd)} request from ${a.agentName}?`}
                             className="label px-5 py-2.5 border border-hairline-strong text-t2 hover:text-deny hover:border-deny transition-colors cursor-pointer"
                           >
                             DENY
-                          </button>
+                          </ConfirmSubmitButton>
                         </form>
                         <form
                           action={async () => {
@@ -141,12 +142,12 @@ export default async function ApprovalsPage() {
                             await decideApproval(a.id, "approved");
                           }}
                         >
-                          <button
-                            type="submit"
+                          <ConfirmSubmitButton
+                            confirm={`Approve and sign this ${fmtUsd(a.amountUsd)} payment for ${a.agentName}?`}
                             className="label px-5 py-2.5 bg-allow-dim text-t1 hover:bg-allow hover:text-bg-base transition-colors cursor-pointer"
                           >
                             APPROVE & SIGN
-                          </button>
+                          </ConfirmSubmitButton>
                         </form>
                       </div>
                     </div>

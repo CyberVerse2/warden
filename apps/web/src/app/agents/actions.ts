@@ -32,6 +32,10 @@ function formNetwork(formData: FormData) {
   return value;
 }
 
+function uniqueHosts(values: string[]) {
+  return [...new Set(values.map((h) => h.trim()).filter(Boolean))];
+}
+
 export async function createAgent(formData: FormData) {
   const db = getDb();
   const currentUser = await getCurrentUser();
@@ -80,10 +84,12 @@ export async function updatePolicy(agentId: string, formData: FormData) {
   if (!agent) return;
 
   const config = PolicyConfigSchema.parse({
-    allowedHosts: formString(formData, "allowedHosts")
-      .split(/\s*,\s*/)
-      .map((h) => h.trim())
-      .filter(Boolean),
+    allowedHosts: uniqueHosts([
+      ...formData.getAll("allowedHosts").filter((h): h is string => typeof h === "string"),
+      ...formString(formData, "customAllowedHosts")
+        .split(/\s*,\s*/)
+        .map((h) => h.trim()),
+    ]),
     allowedNetworks: formData.getAll("allowedNetworks"),
     allowedTokens: formData.getAll("allowedTokens"),
     allowedMethods: formData.getAll("allowedMethods"),

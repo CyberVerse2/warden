@@ -82,18 +82,22 @@ export default async function DashboardPage() {
           title="Live activity"
           meta={`${receipts.length} most recent · streaming`}
         >
-          <div className="grid grid-cols-[78px_22px_140px_1fr_88px_72px] gap-4 px-1 pb-2 border-b border-hairline-strong">
-            <span className="label">UTC</span>
-            <span className="label" />
-            <span className="label">Agent</span>
-            <span className="label">Target</span>
-            <span className="label text-right">Amount</span>
-            <span className="label text-right">Receipt</span>
-          </div>
-          <div>
-            {receipts.map((r) => (
-              <FeedRow key={r.id} r={r} />
-            ))}
+          <div className="overflow-x-auto">
+            <div className="min-w-[680px]">
+              <div className="grid grid-cols-[78px_22px_140px_1fr_88px_72px] gap-4 px-1 pb-2 border-b border-hairline-strong">
+                <span className="label">UTC</span>
+                <span className="label" />
+                <span className="label">Agent</span>
+                <span className="label">Target</span>
+                <span className="label text-right">Amount</span>
+                <span className="label text-right">Receipt</span>
+              </div>
+              <div>
+                {receipts.map((r) => (
+                  <FeedRow key={r.id} r={r} />
+                ))}
+              </div>
+            </div>
           </div>
           <LiveFeedStatus />
         </Section>

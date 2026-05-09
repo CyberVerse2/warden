@@ -7,7 +7,7 @@ import { hashToken, resolveAgentByToken } from "./auth.js";
 import { loadActivePolicy } from "./policy-loader.js";
 import { createRuntime, type Runtime } from "./pipeline.js";
 import { getDailySpend } from "./spend.js";
-import type { ProofBuilder } from "@warden/x402";
+import { discoverPayServices, type ProofBuilder } from "@warden/x402";
 
 /**
  * Schemas for the MCP tools. These are transport-agnostic — both the stdio MCP
@@ -28,6 +28,11 @@ export const HttpRequestSchema = z.object({
 export const ReceiptsQuerySchema = z.object({
   limit: z.number().int().min(1).max(100).default(20).optional(),
   decision: z.enum(["allow", "deny", "failed"]).optional(),
+});
+
+export const DiscoverPayServicesSchema = z.object({
+  query: z.string().optional(),
+  limit: z.number().int().min(1).max(50).default(10).optional(),
 });
 
 export const EmptySchema = z.object({}).strict();
@@ -56,7 +61,7 @@ export interface ToolResult {
 export type WardenToolDefinition = ToolDefinition<unknown, ToolResult>;
 
 /**
- * Build the five MCP tool handlers bound to a specific agent token. Returned
+ * Build the MCP tool handlers bound to a specific agent token. Returned
  * tools are JSON-RPC ready — `inputSchema` describes the input, `handler`
  * accepts the parsed input and returns a serializable result.
  */
@@ -86,6 +91,24 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
   }
 
   return [
+    {
+      name: "warden_discover",
+      description:
+        "Search the pay.sh catalog for x402-ready services and return gateway URLs that can be passed to warden_fetch.",
+      inputSchema: DiscoverPayServicesSchema,
+      handler: async (raw) => {
+        try {
+          const input = DiscoverPayServicesSchema.parse(raw);
+          const services = await discoverPayServices({
+            limit: input.limit ?? 10,
+            ...(input.query !== undefined ? { query: input.query } : {}),
+          });
+          return ok({ services });
+        } catch (e) {
+          return err(e);
+        }
+      },
+    },
     {
       name: "warden_fetch",
       description:

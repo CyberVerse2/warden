@@ -5,7 +5,7 @@ import {
   type WardenToolDefinition,
 } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createCoinbaseSolanaProofBuilder } from "@warden/x402";
+import { createX402SvmProofBuilder } from "@warden/x402";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "~/lib/db";
 import { z } from "zod";
@@ -167,22 +167,18 @@ export async function POST(
   }
 
   const rpcUrl = process.env.SOLANA_RPC_URL;
-  const facilitatorUrl = process.env.COINBASE_X402_FACILITATOR_URL;
-  if (!rpcUrl || !facilitatorUrl) {
+  if (!rpcUrl) {
     return jsonrpcError(
       body.id,
       -32603,
-      "Server misconfigured: SOLANA_RPC_URL and COINBASE_X402_FACILITATOR_URL are required",
+      "Server misconfigured: SOLANA_RPC_URL is required",
     );
   }
 
   const db = getDb();
   const walletService = createWalletService({ db, rpcUrl });
-  const proofBuilder = createCoinbaseSolanaProofBuilder(walletService, {
+  const proofBuilder = createX402SvmProofBuilder(walletService, {
     rpcUrl,
-    facilitatorUrl,
-    cdpApiKeyId: process.env.CDP_API_KEY_ID,
-    cdpApiKeySecret: process.env.CDP_API_KEY_SECRET,
   });
   const tools = createWardenToolset({
     db,

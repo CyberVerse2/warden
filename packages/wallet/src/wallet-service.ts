@@ -42,9 +42,18 @@ export interface WalletService {
     payload: Buffer,
   ): Promise<{ signatureBase64: string; publicKey: string }>;
 
+  /**
+   * Sign raw message bytes with the wallet's Ed25519 secret key.
+   */
+  signMessage(
+    walletId: string,
+    message: Uint8Array,
+  ): Promise<{ signature: Uint8Array; publicKey: string }>;
+
   signTransaction(
     walletId: string,
     transaction: Transaction,
+    opts?: { requireAllSignatures?: boolean; verifySignatures?: boolean },
   ): Promise<{ transactionBase64: string; signature: string; publicKey: string }>;
 
   revoke(walletId: string): Promise<void>;
@@ -143,7 +152,31 @@ export function createWalletService({
       }
     },
 
-    async signTransaction(walletId, transaction) {
+    async signMessage(walletId, message) {
+      const row = await loadWallet(walletId);
+      if (row.status !== "active") {
+        throw new WardenError("agent_revoked", "Wallet is revoked");
+      }
+      const secret = decryptSecret(
+        {
+          ciphertext: row.encryptedSecret,
+          iv: row.iv,
+          authTag: row.authTag,
+        },
+        row.id,
+      );
+      try {
+        const sig = nacl.sign.detached(message, secret);
+        return {
+          signature: sig,
+          publicKey: row.publicKey,
+        };
+      } finally {
+        secret.fill(0);
+      }
+    },
+
+    async signTransaction(walletId, transaction, opts) {
       const row = await loadWallet(walletId);
       if (row.status !== "active") {
         throw new WardenError("agent_revoked", "Wallet is revoked");
@@ -159,12 +192,19 @@ export function createWalletService({
       try {
         const keypair = Keypair.fromSecretKey(secret);
         transaction.sign(keypair);
-        const signature = transaction.signature?.toString("base64");
+        const signature = transaction.signatures
+          .find(({ publicKey }) => publicKey.equals(keypair.publicKey))
+          ?.signature?.toString("base64");
         if (!signature) {
           throw new WardenError("payment_failed", "Transaction was not signed");
         }
         return {
-          transactionBase64: transaction.serialize().toString("base64"),
+          transactionBase64: transaction
+            .serialize({
+              requireAllSignatures: opts?.requireAllSignatures ?? true,
+              verifySignatures: opts?.verifySignatures ?? true,
+            })
+            .toString("base64"),
           signature,
           publicKey: row.publicKey,
         };

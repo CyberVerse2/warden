@@ -23,28 +23,32 @@ export async function GET(req: Request) {
         }
       };
 
+      const readRows = async () => {
+        const db = getDb();
+        const where = and(
+          eq(agents.userId, user.id),
+          ...(latest > 0 ? [gt(receipts.createdAt, new Date(latest))] : []),
+        );
+        return db
+          .select({
+            id: receipts.id,
+            agentId: receipts.agentId,
+            decision: receipts.decision,
+            amountUsd: receipts.amountUsd,
+            host: receipts.host,
+            url: receipts.url,
+            createdAt: receipts.createdAt,
+          })
+          .from(receipts)
+          .innerJoin(agents, eq(agents.id, receipts.agentId))
+          .where(where)
+          .orderBy(desc(receipts.createdAt))
+          .limit(25);
+      };
+
       const tick = async () => {
         try {
-          const db = getDb();
-          const where = and(
-            eq(agents.userId, user.id),
-            ...(latest > 0 ? [gt(receipts.createdAt, new Date(latest))] : []),
-          );
-          const rows = await db
-            .select({
-              id: receipts.id,
-              agentId: receipts.agentId,
-              decision: receipts.decision,
-              amountUsd: receipts.amountUsd,
-              host: receipts.host,
-              url: receipts.url,
-              createdAt: receipts.createdAt,
-            })
-            .from(receipts)
-            .innerJoin(agents, eq(agents.id, receipts.agentId))
-            .where(where)
-            .orderBy(desc(receipts.createdAt))
-            .limit(25);
+          const rows = await readRows();
           if (rows.length > 0) {
             latest = Math.max(...rows.map((r) => r.createdAt.getTime()));
             send("receipts", rows);
@@ -56,6 +60,18 @@ export async function GET(req: Request) {
         }
       };
 
+      void readRows()
+        .then((rows) => {
+          if (rows.length > 0) {
+            latest = Math.max(...rows.map((r) => r.createdAt.getTime()));
+            send("replay", rows.reverse());
+          } else {
+            send("replay", []);
+          }
+        })
+        .catch((error) => {
+          send("error", { message: (error as Error).message });
+        });
       interval = setInterval(tick, 1000);
 
       req.signal.addEventListener("abort", () => {
