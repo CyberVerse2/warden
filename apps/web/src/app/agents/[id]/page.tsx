@@ -173,6 +173,7 @@ export default async function AgentDetailPage({ params }: Props) {
         </Section>
 
         <Section
+          id="policy"
           code="01.B"
           title="Active policy"
           meta="v1 · activated"
