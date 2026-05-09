@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@warden/web", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "studio",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@warden/db",
+        "exec",
+        "drizzle-kit",
+        "studio",
+        "--port",
+        "4983"
+      ],
+      "port": 4983
+    }
+  ],
+  "autoVerify": false
+}

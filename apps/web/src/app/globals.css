@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Recursive";
+  font-style: oblique 0deg 15deg;
+  font-weight: 300 1000;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/recursive/v38/8vI-7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUlTGZnI14ZeY.woff2")
+    format("woff2-variations");
+  font-variation-settings: "MONO" 0, "CASL" 0, "wght" 400, "slnt" 0, "CRSV" 0.5;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* base hue: deep blue-charcoal */
+  --bg-base: oklch(0.16 0.012 250);
+  --bg-deep: oklch(0.13 0.012 250);
+  --bg-raised: oklch(0.20 0.014 250);
+  --bg-row: oklch(0.22 0.014 250);
+  --bg-row-hover: oklch(0.26 0.016 250);
+
+  --hairline: oklch(0.30 0.018 250);
+  --hairline-strong: oklch(0.38 0.020 250);
+
+  --text-1: oklch(0.97 0.005 250);
+  --text-2: oklch(0.78 0.012 250);
+  --text-3: oklch(0.58 0.014 250);
+  --text-4: oklch(0.42 0.016 250);
+
+  /* signal: instrument lamp amber */
+  --signal: oklch(0.80 0.16 75);
+  --signal-dim: oklch(0.55 0.12 75);
+
+  /* status (used sparingly) */
+  --allow: oklch(0.74 0.12 145);
+  --allow-dim: oklch(0.40 0.07 145);
+  --deny: oklch(0.65 0.18 25);
+  --deny-dim: oklch(0.36 0.10 25);
+  --pending: oklch(0.80 0.13 85);
+  --pending-dim: oklch(0.46 0.08 85);
+
+  --font-ui: "Recursive", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Recursive", ui-monospace, "SFMono-Regular", monospace;
+
+  --grid-line: color-mix(in oklch, var(--hairline) 60%, transparent);
+
+  /* spacing (4pt) */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-8: 3rem;
+  --s-10: 4rem;
+  --s-12: 6rem;
+}
+
+@theme inline {
+  --color-bg: var(--bg-base);
+  --color-bg-deep: var(--bg-deep);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-row: var(--bg-row);
+  --color-bg-row-hover: var(--bg-row-hover);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-t1: var(--text-1);
+  --color-t2: var(--text-2);
+  --color-t3: var(--text-3);
+  --color-t4: var(--text-4);
+  --color-signal: var(--signal);
+  --color-signal-dim: var(--signal-dim);
+  --color-allow: var(--allow);
+  --color-allow-dim: var(--allow-dim);
+  --color-deny: var(--deny);
+  --color-deny-dim: var(--deny-dim);
+  --color-pending: var(--pending);
+  --color-pending-dim: var(--pending-dim);
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  background: var(--bg-base);
+  color: var(--text-1);
+  font-family: var(--font-ui);
+  font-feature-settings: "ss01", "ss02", "calt", "cv11";
+  font-variation-settings: "MONO" 0, "CASL" 0, "slnt" 0, "CRSV" 0.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 96px 96px;
+  background-position: -1px -1px;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--signal) 35%, transparent);
+  color: var(--text-1);
+}
+
+/* Recursive variants */
+.mono {
+  font-variation-settings: "MONO" 1, "CASL" 0, "slnt" 0, "CRSV" 0;
+  font-feature-settings: "ss01", "ss02", "ss12", "tnum", "zero";
+  letter-spacing: -0.01em;
+}
+
+.tabular {
+  font-feature-settings: "tnum", "zero", "ss01";
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-variation-settings: "MONO" 1, "CASL" 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.label-num {
+  font-variation-settings: "MONO" 1, "CASL" 0;
+  font-feature-settings: "tnum", "zero", "ss01";
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+}
+
+/* Hairline focus ring instead of glow */
+*:focus-visible {
+  outline: 1px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* Reset link defaults */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Scrollbar tuned to surface */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border: 2px solid var(--bg-base);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hairline-strong);
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@warden/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@privy-io/react-auth": "^3.23.1",
+    "@privy-io/server-auth": "^1.32.5",
+    "@solana/web3.js": "^1.98.4",
+    "@warden/core": "workspace:*",
+    "@warden/db": "workspace:*",
+    "@warden/policy": "workspace:*",
+    "@warden/runtime": "workspace:*",
+    "@warden/wallet": "workspace:*",
+    "@warden/x402": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^25.6.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
+  }
+}
