@@ -15,7 +15,7 @@ function LoginPanel() {
   });
 
   return (
-    <main className="min-h-screen bg-bg-base text-t1 flex items-center justify-center px-6">
+    <main className="brand-grid min-h-screen bg-bg-base text-t1 flex items-center justify-center px-6">
       <section className="w-full max-w-[420px] border border-hairline-strong p-8">
         <span className="mono text-t4 text-[11px]">WARDEN · OPERATOR AUTH</span>
         <h1 className="mt-3 text-[28px] tracking-[-0.025em] font-medium">

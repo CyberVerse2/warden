@@ -93,11 +93,25 @@ body {
 }
 
 body {
+  min-height: 100dvh;
+}
+
+.brand-grid {
   background-image:
     linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 96px 96px;
   background-position: -1px -1px;
+}
+
+.app-surface {
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--bg-raised) 10%, transparent),
+      transparent 18rem
+    ),
+    var(--bg-base);
 }
 
 ::selection {

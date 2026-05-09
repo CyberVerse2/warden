@@ -63,7 +63,7 @@ export default async function LandingPage() {
   const consoleHref = isAuthed ? "/dashboard" : "/login";
 
   return (
-    <main className="min-h-dvh">
+    <main className="brand-grid min-h-dvh">
       {/* RIBBON */}
       <header className="sticky top-0 z-30 border-b border-hairline bg-bg-base/85 backdrop-blur">
         <div className="max-w-[1240px] mx-auto px-8 h-14 flex items-center gap-6">
