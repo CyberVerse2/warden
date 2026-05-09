@@ -1,45 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { newId, type PaymentProof } from "@warden/core";
-import {
-  agentTokens,
-  agents,
-  approvals,
-  createDb,
-  eq,
-  policies,
-  receipts,
-  spendWindows,
-  users,
-  wallets,
-} from "@warden/db";
-import {
-  createRuntime,
-  hashToken,
-  type AiRiskAnalyzer,
-} from "@warden/runtime";
-import type { FetchLike, ProofBuilder } from "@warden/x402";
+import { loadServerEnv, requireEnv } from "@warden/core";
+import { agents, createDb, eq, receipts } from "@warden/db";
+import { createRuntime, resolveAgentByToken } from "@warden/runtime";
+import { createWalletService } from "@warden/wallet";
+import { createX402SvmProofBuilder } from "@warden/x402";
 
-const USDC_DEVNET_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-const ROOT_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
-
-loadRootEnv();
-
-function loadRootEnv() {
-  const envPath = join(ROOT_DIR, ".env");
-  if (!existsSync(envPath)) return;
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eqIndex = trimmed.indexOf("=");
-    if (eqIndex === -1) continue;
-    const key = trimmed.slice(0, eqIndex).trim();
-    const rawValue = trimmed.slice(eqIndex + 1).trim();
-    if (process.env[key] !== undefined) continue;
-    process.env[key] = rawValue.replace(/^(['"])(.*)\1$/, "$2");
-  }
-}
+loadServerEnv();
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -49,230 +14,105 @@ function log(message: string) {
   console.log(`✓ ${message}`);
 }
 
-function x402Challenge(payTo = "SmokePay11111111111111111111111111111111111") {
-  return {
-    accepts: [
-      {
-        scheme: "exact",
-        network: "solana-devnet",
-        asset: USDC_DEVNET_MINT,
-        payTo,
-        maxAmountRequired: "50000",
-        resource: "https://smoke.x402.local/data",
-        description: "Warden workflow smoke test",
-        extra: {
-          facilitator: "https://facilitator.x402.local/verify",
-        },
-      },
-    ],
-  };
+function arg(name: string) {
+  const prefix = `${name}=`;
+  const found = process.argv.find((value) => value.startsWith(prefix));
+  return found?.slice(prefix.length);
 }
 
-function createMockFetch(): FetchLike {
-  let calls = 0;
-  return async (_input, init) => {
-    calls += 1;
-    if (calls === 1) {
-      return Response.json(x402Challenge(), { status: 402 });
-    }
-
-    assert(
-      init.headers instanceof Headers ||
-        (typeof init.headers === "object" &&
-          init.headers !== null &&
-          "PAYMENT-SIGNATURE" in init.headers),
-      "paid retry did not include a payment proof header",
-    );
-    return Response.json({ ok: true, paid: true }, { status: 200 });
-  };
-}
-
-function proofBuilder(): ProofBuilder {
-  return {
-    async build({ requestHash }): Promise<PaymentProof> {
-      return {
-        headerName: "PAYMENT-SIGNATURE",
-        header: `smoke-proof.${requestHash}`,
-        proofHash: `proof.${requestHash}`,
-        txSignature: "smoke-tx-signature",
-      };
-    },
-  };
-}
-
-function riskAnalyzer(level: "trusted" | "suspicious" | "high_risk"): AiRiskAnalyzer {
-  return {
-    async analyze() {
-      return {
-        level,
-        summary:
-          level === "high_risk"
-            ? "Smoke analyzer forced a human approval hold"
-            : "Smoke analyzer allowed runtime to continue",
-        flags: level === "trusted" ? [] : [`smoke.${level}`],
-      };
-    },
-  };
-}
-
-async function seedAgent(db: ReturnType<typeof createDb>, token: string) {
-  const userId = newId.user();
-  const agentId = newId.agent();
-  const walletId = newId.wallet();
-  const policyId = newId.policy();
-
-  await db.insert(users).values({
-    id: userId,
-    email: `${userId}@smoke.local`,
-    name: "Workflow Smoke Test",
-  });
-  await db.insert(agents).values({
-    id: agentId,
-    userId,
-    name: "workflow-smoke-agent",
-  });
-  await db.insert(wallets).values({
-    id: walletId,
-    agentId,
-    network: "solana-devnet",
-    publicKey: `${agentId}SmokePublicKey`,
-    encryptedSecret: "smoke",
-    iv: "smoke",
-    authTag: "smoke",
-  });
-  await db.insert(policies).values({
-    id: policyId,
-    agentId,
-    version: 1,
-    activatedAt: new Date(),
-    config: {
-      mode: "managed",
-      riskPosture: "balanced",
-      purpose: "Workflow smoke test",
-      allowedHosts: [],
-      allowedNetworks: ["solana-devnet"],
-      allowedTokens: ["USDC"],
-      allowedMethods: ["GET", "POST"],
-      maxUsdPerRequest: 1,
-      maxUsdPerDay: 5,
-    },
-  });
-  await db.insert(agentTokens).values({
-    id: newId.token(),
-    agentId,
-    tokenHash: hashToken(token),
-    label: "workflow-smoke",
-  });
-
-  return { userId, agentId, walletId, policyId };
-}
-
-async function cleanup(db: ReturnType<typeof createDb>, userId: string | undefined) {
-  if (!userId) return;
-  await db.delete(users).where(eq(users.id, userId));
+function required(name: string, hint?: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required${hint ? `: ${hint}` : ""}`);
+  }
+  return value;
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is required for smoke:workflow");
+  const databaseUrl = requireEnv("DATABASE_URL");
+  const rpcUrl = requireEnv("SOLANA_RPC_URL");
+  required("WARDEN_MASTER_KEY", "needed to decrypt and sign with the custodial agent wallet");
+  required("OPENAI_API_KEY", "needed so the real GPT-5.4 Mini risk layer runs");
+
+  const agentToken =
+    process.env.WARDEN_SMOKE_AGENT_TOKEN ?? process.env.WARDEN_AGENT_TOKEN;
+  if (!agentToken) {
+    throw new Error(
+      "WARDEN_SMOKE_AGENT_TOKEN is required. Use a real funded smoke agent token; WARDEN_AGENT_TOKEN is accepted as a fallback.",
+    );
   }
 
-  const db = createDb();
-  const token = newId.token();
-  let userId: string | undefined;
-
-  try {
-    const seeded = await seedAgent(db, token);
-    userId = seeded.userId;
-    log("seeded temporary operator, agent, wallet, policy, and token");
-
-    const allowRuntime = createRuntime({
-      db,
-      walletService: {} as never,
-      proofBuilder: proofBuilder(),
-      fetchImpl: createMockFetch(),
-      riskAnalyzer: riskAnalyzer("suspicious"),
-    });
-    const allow = await allowRuntime.executePaidRequest({
-      agentToken: token,
-      request: {
-        url: "https://new-provider.example/data",
-        method: "GET",
-      },
-    });
-
-    assert(allow.kind === "ok", `expected paid request to succeed, got ${allow.kind}`);
-    assert(allow.payment?.amountUsd === 0.05, "expected parsed USDC amount to be $0.05");
-    log("paid x402 request passed policy, AI risk, proof build, retry, and receipt write");
-
-    const [allowReceipt] = await db
-      .select()
-      .from(receipts)
-      .where(eq(receipts.id, allow.receiptId));
-    assert(allowReceipt?.decision === "allow", "allow receipt was not written");
-    assert(
-      allowReceipt.decisionReason?.includes("aiRisk.suspicious"),
-      "allow receipt did not include AI risk annotation",
+  const url = arg("--url") ?? process.env.WARDEN_SMOKE_X402_URL;
+  if (!url) {
+    throw new Error(
+      "WARDEN_SMOKE_X402_URL is required, or pass --url=https://real-x402-provider/path",
     );
-
-    const [spend] = await db
-      .select()
-      .from(spendWindows)
-      .where(eq(spendWindows.agentId, seeded.agentId));
-    assert(spend?.amountUsd === 0.05, "daily spend window did not increment");
-    log("receipt and daily spend accounting are correct");
-
-    const approvalRuntime = createRuntime({
-      db,
-      walletService: {} as never,
-      proofBuilder: proofBuilder(),
-      fetchImpl: createMockFetch(),
-      riskAnalyzer: riskAnalyzer("high_risk"),
-    });
-    const approval = await approvalRuntime.executePaidRequest({
-      agentToken: token,
-      request: {
-        url: "https://ambiguous-provider.example/data",
-        method: "GET",
-      },
-    });
-    assert(
-      approval.kind === "approval_required",
-      `expected AI high risk to hold for approval, got ${approval.kind}`,
-    );
-
-    const [approvalRow] = await db
-      .select()
-      .from(approvals)
-      .where(eq(approvals.id, approval.approvalId));
-    assert(approvalRow?.triggeringRule === "aiRisk.high_risk", "approval row was not AI-triggered");
-    log("AI high-risk request creates a human approval hold");
-
-    const blockedRuntime = createRuntime({
-      db,
-      walletService: {} as never,
-      proofBuilder: proofBuilder(),
-      fetchImpl: createMockFetch(),
-      riskAnalyzer: riskAnalyzer("trusted"),
-    });
-    const blocked = await blockedRuntime.executePaidRequest({
-      agentToken: token,
-      request: {
-        url: "https://quicknode-payments.example/drain",
-        method: "GET",
-      },
-    });
-    assert(blocked.kind === "denied", `expected threat intel denial, got ${blocked.kind}`);
-    assert(blocked.rule === "threatIntel.host", "threat intel denial used the wrong rule");
-    log("malicious x402 JSON blocklist denies before signing");
-
-    await cleanup(db, userId);
-    userId = undefined;
-    log("cleaned up temporary workflow rows");
-    console.log("Warden workflow smoke test passed.");
-  } finally {
-    await cleanup(db, userId);
   }
+
+  const method = process.env.WARDEN_SMOKE_METHOD ?? "GET";
+  const db = createDb(databaseUrl);
+  const walletService = createWalletService({ db, rpcUrl });
+  const proofBuilder = createX402SvmProofBuilder(walletService, { rpcUrl });
+  const runtime = createRuntime({ db, walletService, proofBuilder });
+
+  const resolved = await resolveAgentByToken(db, agentToken);
+  const [agent] = await db
+    .select({ id: agents.id, name: agents.name, status: agents.status })
+    .from(agents)
+    .where(eq(agents.id, resolved.agentId));
+  assert(agent, "smoke agent token did not resolve to an agent row");
+  assert(agent.status === "active", "smoke agent is not active");
+
+  const publicKey = await walletService.getPublicKey(resolved.walletId);
+  const [sol, usdc] = await Promise.all([
+    walletService.getBalance(resolved.walletId),
+    walletService.getUsdcBalance(resolved.walletId),
+  ]);
+  assert(sol.lamports > 0, `smoke wallet has no devnet SOL for fees: ${publicKey}`);
+  assert(usdc.raw > 0n, `smoke wallet has no devnet USDC: ${publicKey}`);
+  log(`resolved funded smoke agent ${agent.name} (${resolved.agentId})`);
+
+  const result = await runtime.executePaidRequest({
+    agentToken,
+    request: {
+      url,
+      method,
+      ...(process.env.WARDEN_SMOKE_BODY
+        ? { body: JSON.parse(process.env.WARDEN_SMOKE_BODY) as unknown }
+        : {}),
+    },
+  });
+
+  if (result.kind === "approval_required") {
+    throw new Error(
+      `live workflow held for approval (${result.rule}): ${result.reason}. Approval id: ${result.approvalId}`,
+    );
+  }
+  if (result.kind === "denied") {
+    throw new Error(`live workflow denied (${result.rule}): ${result.reason}`);
+  }
+  if (result.kind === "failed") {
+    throw new Error(`live workflow payment failed: ${result.reason}`);
+  }
+
+  assert(result.payment, "live workflow did not execute a paid x402 retry");
+  const [receipt] = await db
+    .select()
+    .from(receipts)
+    .where(eq(receipts.id, result.receiptId));
+  assert(receipt?.decision === "allow", "live workflow did not write an allow receipt");
+  assert(
+    receipt.decisionReason?.includes("aiRisk."),
+    "live workflow receipt is missing the real AI risk annotation",
+  );
+  assert(
+    receipt.txSignature || receipt.requestHash,
+    "live workflow receipt is missing payment audit data",
+  );
+
+  log(`paid ${url}`);
+  log(`receipt ${result.receiptId} recorded ${receipt.decisionReason}`);
+  console.log("Warden live workflow smoke test passed.");
 }
 
 main()
