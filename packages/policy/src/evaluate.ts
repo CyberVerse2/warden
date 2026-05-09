@@ -46,8 +46,9 @@ export function evaluate(input: PolicyInput): PolicyDecision {
   }
 
   if (
-    policy.allowedHosts.length === 0 ||
-    !policy.allowedHosts.includes(request.host)
+    policy.mode !== "managed" &&
+    (policy.allowedHosts.length === 0 ||
+      !policy.allowedHosts.includes(request.host))
   ) {
     return {
       kind: "deny",

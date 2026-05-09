@@ -180,7 +180,11 @@ export default async function AgentDetailPage({ params }: Props) {
         >
           <div className="flex flex-col gap-0">
             <PolicyRow label="Allowed hosts" rule="policy.allowedHosts">
-              {agent.policy.allowedHosts.length === 0 ? (
+              {agent.policy.mode === "managed" ? (
+                <span className="text-signal mono text-[12.5px]">
+                  ● Warden-managed provider decisions
+                </span>
+              ) : agent.policy.allowedHosts.length === 0 ? (
                 <span className="text-deny mono text-[12.5px]">○ deny-all</span>
               ) : (
                 <ul className="flex flex-col gap-1">
@@ -215,6 +219,18 @@ export default async function AgentDetailPage({ params }: Props) {
                 {fmtUsd(agent.policy.maxUsdPerDay)}
               </span>
             </PolicyRow>
+            <PolicyRow label="Risk posture" rule="policy.riskPosture">
+              <span className="mono text-t1 text-[12.5px]">
+                {(agent.policy.riskPosture ?? "balanced").toUpperCase()}
+              </span>
+            </PolicyRow>
+            {agent.policy.purpose && (
+              <PolicyRow label="Purpose" rule="policy.purpose">
+                <span className="text-t2 text-[12.5px] leading-relaxed">
+                  {agent.policy.purpose}
+                </span>
+              </PolicyRow>
+            )}
             {agent.policy.approvalThresholdUsd !== undefined && (
               <PolicyRow
                 label="Approval threshold"
@@ -256,7 +272,56 @@ export default async function AgentDetailPage({ params }: Props) {
             action={updatePolicy.bind(null, agent.id)}
             className="mt-8 pt-6 border-t border-hairline flex flex-col gap-3"
           >
-            <span className="label">EDIT POLICY</span>
+            <span className="label">MANAGED POLICY</span>
+            <p className="text-t3 text-[12.5px] leading-relaxed">
+              Set the spend envelope. Warden handles provider decisions and
+              only escalates high-risk requests.
+            </p>
+            <input type="hidden" name="policyMode" value="managed" />
+            <input type="hidden" name="network" value={agent.network} />
+            <Field label="Daily budget">
+              <input
+                name="dailyBudgetUsd"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={agent.policy.maxUsdPerDay}
+                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
+              />
+            </Field>
+            <Field label="Risk posture">
+              <select
+                name="riskPosture"
+                defaultValue={agent.policy.riskPosture ?? "balanced"}
+                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 text-[12px] text-t1 outline-none"
+              >
+                <option value="conservative">Conservative</option>
+                <option value="balanced">Balanced</option>
+                <option value="aggressive">Aggressive</option>
+              </select>
+            </Field>
+            <Field label="Agent purpose">
+              <input
+                name="purpose"
+                defaultValue={agent.policy.purpose ?? "General x402 spend"}
+                className="w-full bg-bg-base border border-hairline-strong px-3 py-2 text-[12px] text-t1 outline-none"
+              />
+            </Field>
+            <button className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors">
+              SAVE MANAGED POLICY
+            </button>
+          </form>
+
+          <form
+            action={updatePolicy.bind(null, agent.id)}
+            className="mt-8 pt-6 border-t border-hairline flex flex-col gap-3"
+          >
+            <span className="label">ADVANCED POLICY</span>
+            <p className="text-t3 text-[12.5px] leading-relaxed">
+              Use manual host rules only when this agent needs a strict
+              provider allowlist.
+            </p>
+            <input type="hidden" name="policyMode" value="advanced" />
             <Field label="Allowed x402 providers">
               {payServices.length === 0 ? (
                 <p className="text-t3 text-[12.5px] leading-relaxed">
@@ -338,6 +403,16 @@ export default async function AgentDetailPage({ params }: Props) {
                 className="w-full bg-bg-base border border-hairline-strong px-3 py-2 label-num text-[12px] text-t1 outline-none"
               />
             </Field>
+            <input
+              type="hidden"
+              name="riskPosture"
+              value={agent.policy.riskPosture ?? "balanced"}
+            />
+            <input
+              type="hidden"
+              name="purpose"
+              value={agent.policy.purpose ?? "Advanced x402 policy"}
+            />
             {agent.policy.allowedNetworks.map((n) => (
               <input key={n} type="hidden" name="allowedNetworks" value={n} />
             ))}

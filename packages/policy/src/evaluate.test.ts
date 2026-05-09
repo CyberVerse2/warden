@@ -3,6 +3,8 @@ import type { PolicyConfig } from "@warden/core";
 import { evaluate, type PolicyInput } from "./evaluate";
 
 const basePolicy: PolicyConfig = {
+  mode: "advanced",
+  riskPosture: "balanced",
   allowedHosts: ["x402.example.com"],
   allowedNetworks: ["solana-devnet"],
   allowedTokens: ["USDC"],
@@ -52,6 +54,24 @@ describe("policy.evaluate", () => {
       }),
     );
     expect(d).toMatchObject({ kind: "deny", rule: "policy.allowedHosts" });
+  });
+
+  it("does not require manual host allowlists in managed mode", () => {
+    const d = evaluate(
+      baseInput({
+        policy: {
+          ...basePolicy,
+          mode: "managed",
+          allowedHosts: [],
+        },
+        request: {
+          url: "https://new-provider.example/pay",
+          method: "GET",
+          host: "new-provider.example",
+        },
+      }),
+    );
+    expect(d).toMatchObject({ kind: "allow" });
   });
 
   it("denies disallowed networks", () => {

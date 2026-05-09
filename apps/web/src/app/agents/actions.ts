@@ -1,6 +1,6 @@
 "use server";
 
-import { DEFAULT_POLICY, newId, PolicyConfigSchema } from "@warden/core";
+import { newId, PolicyConfigSchema } from "@warden/core";
 import { agentTokens, agents, policies, wallets } from "@warden/db";
 import { hashToken } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
@@ -32,8 +32,53 @@ function formNetwork(formData: FormData) {
   return value;
 }
 
+function formNumber(formData: FormData, key: string, fallback: number) {
+  const value = formString(formData, key);
+  if (!value) return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`${key} must be a non-negative number`);
+  }
+  return parsed;
+}
+
+function formRiskPosture(formData: FormData) {
+  const value = formString(formData, "riskPosture", "balanced");
+  if (
+    value !== "conservative" &&
+    value !== "balanced" &&
+    value !== "aggressive"
+  ) {
+    throw new Error("riskPosture must be conservative, balanced, or aggressive");
+  }
+  return value;
+}
+
 function uniqueHosts(values: string[]) {
   return [...new Set(values.map((h) => h.trim()).filter(Boolean))];
+}
+
+function requestCapForBudget(dailyBudgetUsd: number, posture: string) {
+  if (dailyBudgetUsd <= 0) return 0;
+  const ratio =
+    posture === "conservative" ? 0.1 : posture === "aggressive" ? 0.5 : 0.25;
+  return Number(Math.max(0.01, dailyBudgetUsd * ratio).toFixed(6));
+}
+
+function managedPolicyFromForm(formData: FormData) {
+  const dailyBudgetUsd = formNumber(formData, "dailyBudgetUsd", 5);
+  const riskPosture = formRiskPosture(formData);
+  return PolicyConfigSchema.parse({
+    mode: "managed",
+    riskPosture,
+    purpose: formString(formData, "purpose", "General x402 agent spend"),
+    allowedHosts: [],
+    allowedNetworks: [formNetwork(formData)],
+    allowedTokens: ["USDC"],
+    allowedMethods: ["GET", "POST"],
+    maxUsdPerRequest: requestCapForBudget(dailyBudgetUsd, riskPosture),
+    maxUsdPerDay: dailyBudgetUsd,
+  });
 }
 
 export async function createAgent(formData: FormData) {
@@ -60,7 +105,7 @@ export async function createAgent(formData: FormData) {
     id: newId.policy(),
     agentId,
     version: 1,
-    config: DEFAULT_POLICY,
+    config: managedPolicyFromForm(formData),
     activatedAt: new Date(),
   });
   await db.insert(agentTokens).values({
@@ -83,23 +128,32 @@ export async function updatePolicy(agentId: string, formData: FormData) {
     .where(and(eq(agents.id, agentId), eq(agents.userId, currentUser.id)));
   if (!agent) return;
 
-  const config = PolicyConfigSchema.parse({
-    allowedHosts: uniqueHosts([
-      ...formData.getAll("allowedHosts").filter((h): h is string => typeof h === "string"),
-      ...formString(formData, "customAllowedHosts")
-        .split(/\s*,\s*/)
-        .map((h) => h.trim()),
-    ]),
-    allowedNetworks: formData.getAll("allowedNetworks"),
-    allowedTokens: formData.getAll("allowedTokens"),
-    allowedMethods: formData.getAll("allowedMethods"),
-    maxUsdPerRequest: Number(formData.get("maxUsdPerRequest") ?? 0),
-    maxUsdPerDay: Number(formData.get("maxUsdPerDay") ?? 0),
-    approvalThresholdUsd:
-      formString(formData, "approvalThresholdUsd") === ""
-        ? undefined
-        : Number(formData.get("approvalThresholdUsd")),
-  });
+  const mode = formString(formData, "policyMode", "managed");
+  const config =
+    mode === "managed"
+      ? managedPolicyFromForm(formData)
+      : PolicyConfigSchema.parse({
+          mode: "advanced",
+          riskPosture: formRiskPosture(formData),
+          purpose: formString(formData, "purpose", "Advanced x402 policy"),
+          allowedHosts: uniqueHosts([
+            ...formData
+              .getAll("allowedHosts")
+              .filter((h): h is string => typeof h === "string"),
+            ...formString(formData, "customAllowedHosts")
+              .split(/\s*,\s*/)
+              .map((h) => h.trim()),
+          ]),
+          allowedNetworks: formData.getAll("allowedNetworks"),
+          allowedTokens: formData.getAll("allowedTokens"),
+          allowedMethods: formData.getAll("allowedMethods"),
+          maxUsdPerRequest: formNumber(formData, "maxUsdPerRequest", 0),
+          maxUsdPerDay: formNumber(formData, "maxUsdPerDay", 0),
+          approvalThresholdUsd:
+            formString(formData, "approvalThresholdUsd") === ""
+              ? undefined
+              : formNumber(formData, "approvalThresholdUsd", 0),
+        });
 
   const [latest] = await db
     .select({ version: policies.version })

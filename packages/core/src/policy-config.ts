@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 export const PolicyConfigSchema = z.object({
+  mode: z.enum(["managed", "advanced"]).default("advanced"),
+  riskPosture: z
+    .enum(["conservative", "balanced", "aggressive"])
+    .default("balanced"),
+  purpose: z.string().optional(),
   allowedHosts: z.array(z.string().min(1)).default([]),
   allowedNetworks: z
     .array(z.enum(["solana-mainnet", "solana-devnet"]))
@@ -18,10 +23,13 @@ export const PolicyConfigSchema = z.object({
 export type PolicyConfig = z.infer<typeof PolicyConfigSchema>;
 
 export const DEFAULT_POLICY: PolicyConfig = {
+  mode: "managed",
+  riskPosture: "balanced",
+  purpose: "General x402 agent spend",
   allowedHosts: [],
   allowedNetworks: ["solana-devnet"],
   allowedTokens: ["USDC"],
   allowedMethods: ["GET", "POST"],
-  maxUsdPerRequest: 0,
-  maxUsdPerDay: 0,
+  maxUsdPerRequest: 1,
+  maxUsdPerDay: 5,
 };
