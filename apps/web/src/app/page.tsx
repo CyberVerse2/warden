@@ -7,29 +7,30 @@ export const dynamic = "force-dynamic";
 const PRIVY_COOKIES = ["privy-token", "privy-id-token", "privy:token"];
 
 const BAD_OPTIONS = [
-  "Give the agent a private key.",
-  "Let it share a hot wallet.",
-  "Route everything through human approval.",
-  "Trust prompts to respect a budget.",
+  "Give the agent your API keys.",
+  "Give the agent a raw private key.",
+  "Manually approve every paid action.",
+  "Let it call unknown paid services blindly.",
 ] as const;
 
 const FLOW_STEPS = [
-  ["Agent requests a paid resource.", "outbound"],
-  ["Warden reads the x402 challenge.", "inspect"],
-  ["Policy checks amount, provider, budget, agent, and limits.", "decide"],
-  ["Warden signs the payment proof — only if allowed.", "sign"],
-  ["The request is retried with proof attached.", "retry"],
-  ["A receipt is stored.", "ledger"],
+  ["Fund the agent wallet with stablecoins.", "deposit"],
+  ["Agent requests a real-world action.", "action"],
+  ["Warden checks spend, provider, policy, and risk.", "inspect"],
+  ["Approved services get paid from the wallet.", "pay"],
+  ["Risky or malicious requests stop before funds move.", "block"],
+  ["Every action writes a receipt.", "ledger"],
 ] as const;
 
 const ENFORCE = [
+  "Stablecoin balance",
+  "Deposit address",
   "Per-request limits",
   "Daily budgets",
-  "Provider allowlists",
-  "Blocked domains",
+  "Trusted providers",
+  "Malicious endpoint blocking",
   "Manual approval thresholds",
-  "Agent revocation",
-  "Receipt logging",
+  "Receipt trail",
 ] as const;
 
 const X402_STEPS = [
@@ -41,25 +42,34 @@ const X402_STEPS = [
   "Record the result.",
 ] as const;
 
+const ACTION_ROWS = [
+  ["Search data provider", "0.08 USDC", "approved"],
+  ["Generate image", "0.14 USDC", "approved"],
+  ["Query RPC endpoint", "0.02 USDC", "approved"],
+  ["Unknown scraping API", "3.00 USDC", "blocked"],
+  ["BigQuery export", "2.50 USDC", "approval"],
+] as const;
+
 const TOOLS = [
   ["warden_fetch", "HTTP with the 402 dance built in. Pays only what policy allows."],
   ["warden_pay", "Force payment against a known x402 endpoint."],
-  ["warden_policy_check", "Dry-run a request without spending."],
+  ["warden_quote", "Read the real x402 challenge before payment."],
+  ["warden_analyze", "Analyze policy and AI risk before spending."],
   ["warden_receipts", "Audit trail for the agent."],
   ["warden_wallet_status", "Pubkey, balance, remaining daily budget."],
 ] as const;
 
 const NOT_THIS = [
-  "Warden is not a wallet app.",
-  "Warden is not a payment protocol.",
+  "Warden is not a consumer wallet.",
   "Warden is not another agent framework.",
+  "Warden is not just an API key manager.",
 ] as const;
 
 export default async function LandingPage() {
   const c = await cookies();
   const isAuthed = PRIVY_COOKIES.some((n) => c.has(n));
   const ctaHref = isAuthed ? "/agents" : "/login";
-  const ctaLabel = isAuthed ? "CREATE AGENT" : "CREATE AGENT";
+  const ctaLabel = isAuthed ? "CREATE WALLET" : "CREATE WALLET";
   const consoleHref = isAuthed ? "/dashboard" : "/login";
 
   return (
@@ -75,7 +85,7 @@ export default async function LandingPage() {
               FLOW
             </a>
             <a href="#wallets" className="label text-t4 hover:text-t1 transition-colors">
-              WALLETS
+              WALLETING
             </a>
             <a href="#mcp" className="label text-t4 hover:text-t1 transition-colors">
               MCP
@@ -112,32 +122,34 @@ export default async function LandingPage() {
               LIVE · SOLANA DEVNET
             </span>
             <span className="mono text-t4 text-[11px]">·</span>
-            <span className="mono text-t4 text-[11px]">x402 / MCP</span>
+            <span className="mono text-t4 text-[11px]">
+              agent walleting / stablecoin spend
+            </span>
           </div>
 
           <h1 className="mt-8 text-[clamp(2.6rem,7vw,5.6rem)] leading-[0.98] tracking-[-0.045em] font-medium">
-            <span className="block text-t1">Let agents pay.</span>
-            <span className="block text-signal">Never hand them the keys.</span>
+            <span className="block text-t1">Give your agent a wallet</span>
+            <span className="block text-signal">for real-world work.</span>
           </h1>
 
           <p className="mt-10 text-t1 text-[20px] leading-[1.45] max-w-[58ch]">
-            Warden is the policy signer for x402 agent payments.
+            Warden is walleting infrastructure for autonomous agents.
           </p>
           <p className="mt-5 text-t2 text-[16px] leading-[1.6] max-w-[60ch]">
-            Give every agent its own wallet, budget, and rules. When it hits a
-            paid API, Warden checks the policy, signs only approved payments,
-            and records the receipt.
+            Give an agent a stablecoin deposit address, fund it, and let it pay
+            for APIs, data, compute, tools, and services. Warden monitors every
+            action, every dollar, and every risky interaction before money moves.
           </p>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-[auto_1px_auto] gap-x-7 gap-y-3 max-w-fit">
             <div>
               <span className="label text-t4">AGENT</span>
-              <div className="mt-1 text-t1 text-[15.5px]">Gets spending power.</div>
+              <div className="mt-1 text-t1 text-[15.5px]">Gets a funded wallet.</div>
             </div>
             <div className="hidden sm:block bg-hairline" />
             <div>
               <span className="label text-t4">OPERATOR</span>
-              <div className="mt-1 text-t1 text-[15.5px]">Keeps authority.</div>
+              <div className="mt-1 text-t1 text-[15.5px]">Keeps visibility and control.</div>
             </div>
           </div>
 
@@ -146,7 +158,7 @@ export default async function LandingPage() {
               href={ctaHref}
               className="label px-6 py-3.5 border border-signal text-signal hover:bg-signal hover:text-bg-base transition-colors"
             >
-              {ctaLabel} →
+              CREATE AGENT WALLET →
             </a>
             <a
               href="#flow"
@@ -168,15 +180,15 @@ export default async function LandingPage() {
           <div>
             <span className="label text-t4">THE PROBLEM</span>
             <h2 className="mt-4 text-[clamp(1.7rem,3vw,2.6rem)] tracking-[-0.03em] text-t1 font-medium leading-[1.08]">
-              AI agents are about to touch real money.
+              Agents cannot do real-world work without money.
             </h2>
             <p className="mt-6 text-t2 text-[15.5px] leading-[1.65] max-w-[44ch]">
-              x402 lets agents pay for APIs, data, compute, and services over
-              HTTP.
+              The moment an agent needs to book, query, compute, message,
+              generate, scrape, verify, or call a paid API, it needs a way to pay.
             </p>
             <p className="mt-3 text-t3 text-[14.5px] leading-[1.65] max-w-[44ch]">
-              That solves the payment problem.{" "}
-              <span className="text-t1">It does not solve the authority problem.</span>
+              Raw keys are unsafe. Manual approval kills autonomy.{" "}
+              <span className="text-t1">Warden gives agents money with supervision.</span>
             </p>
           </div>
 
@@ -219,7 +231,7 @@ export default async function LandingPage() {
               <p className="text-t2 text-[18px] leading-[1.45]">The agent asks.</p>
               <p className="mt-1 text-t2 text-[18px] leading-[1.45]">Warden decides.</p>
               <p className="mt-1 text-t1 text-[18px] leading-[1.45]">
-                Only approved payments get signed.
+                Only monitored actions get paid.
               </p>
 
               <div className="mt-10 border border-hairline-strong bg-bg-deep/60 p-7">
@@ -228,7 +240,7 @@ export default async function LandingPage() {
                   {[
                     ["No policy", "no spend."],
                     ["No approval", "no signature."],
-                    ["No hidden wallet access", "ever."],
+                    ["No unchecked provider", "gets paid."],
                   ].map(([a, b]) => (
                     <li
                       key={a}
@@ -273,19 +285,20 @@ export default async function LandingPage() {
       <section id="wallets" className="border-b border-hairline">
         <div className="max-w-[1240px] mx-auto px-8 py-24 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-16 items-start">
           <div>
-            <span className="label text-t4">WALLETS</span>
+            <span className="label text-t4">WALLETING</span>
             <h2 className="mt-4 text-[clamp(1.7rem,3vw,2.6rem)] tracking-[-0.03em] text-t1 font-medium leading-[1.08]">
-              Built for agents.
+              A wallet address for every agent.
               <br />
-              <span className="text-signal">Controlled by operators.</span>
+              <span className="text-signal">Rules around every spend.</span>
             </h2>
             <p className="mt-6 text-t2 text-[15.5px] leading-[1.65] max-w-[48ch]">
-              Each agent gets a scoped wallet with its own balance, token,
-              policy, and audit trail.
+              Each agent gets a stablecoin deposit address. Fund it like a
+              normal wallet, then let the agent spend only through Warden's
+              monitored runtime.
             </p>
             <p className="mt-4 text-t3 text-[14.5px] leading-[1.65] max-w-[48ch]">
-              Agents can pay for what they are allowed to use. They cannot drain
-              shared funds, bypass limits, or invent new authority at runtime.
+              Agents can pay for approved services. They cannot drain shared
+              funds, bypass limits, or quietly interact with malicious endpoints.
             </p>
 
             <div className="mt-10">
@@ -316,18 +329,77 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ACTIONS */}
+      <section className="border-b border-hairline">
+        <div className="max-w-[1240px] mx-auto px-8 py-24 grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-x-16 gap-y-10 items-start">
+          <div>
+            <span className="label text-t4">REAL-WORLD ACTIONS</span>
+            <h2 className="mt-4 text-[clamp(1.7rem,3vw,2.6rem)] tracking-[-0.03em] text-t1 font-medium leading-[1.08]">
+              One wallet.
+              <br />
+              Many paid actions.
+            </h2>
+            <p className="mt-6 text-t2 text-[15.5px] leading-[1.65] max-w-[46ch]">
+              Agents can discover paid services, call them, and pay per request
+              without holding raw keys.
+            </p>
+            <p className="mt-4 text-t3 text-[14.5px] leading-[1.65] max-w-[46ch]">
+              Warden watches the action, the amount, the provider, and the risk
+              profile before letting the wallet sign.
+            </p>
+          </div>
+
+          <div className="border border-hairline-strong bg-bg-deep">
+            <div className="grid grid-cols-[1fr_120px_120px] gap-4 px-5 py-3 border-b border-hairline">
+              {["ACTION", "AMOUNT", "DECISION"].map((h) => (
+                <span key={h} className="mono text-t4 text-[10px] tracking-[0.12em]">
+                  {h}
+                </span>
+              ))}
+            </div>
+            <ul>
+              {ACTION_ROWS.map(([action, amount, decision]) => (
+                <li
+                  key={action}
+                  className="grid grid-cols-[1fr_120px_120px] gap-4 px-5 py-4 border-b border-hairline/60 last:border-b-0 items-center"
+                >
+                  <span className="text-t1 text-[14px]">{action}</span>
+                  <span className="tabular text-t2 text-[13px]">{amount}</span>
+                  <span
+                    className={`mono text-[11px] tracking-[0.12em] uppercase ${
+                      decision === "approved"
+                        ? "text-allow"
+                        : decision === "approval"
+                          ? "text-pending"
+                          : "text-deny"
+                    }`}
+                  >
+                    ● {decision}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* X402 */}
       <section className="border-b border-hairline">
         <div className="max-w-[1240px] mx-auto px-8 py-24">
           <header className="flex flex-wrap items-baseline gap-x-4 gap-y-2 pb-8 border-b border-hairline">
-            <span className="label text-t4">x402</span>
+            <span className="label text-t4">UNDER THE HOOD</span>
             <h2 className="text-[clamp(1.7rem,3vw,2.6rem)] tracking-[-0.03em] text-t1 font-medium leading-[1.08]">
-              Payments with a hard stop.
+              x402 payments with a hard stop.
             </h2>
             <span className="ml-auto mono text-t4 text-[10.5px]">
               full loop
             </span>
           </header>
+          <p className="mt-8 text-t2 text-[15.5px] leading-[1.65] max-w-[66ch]">
+            Warden uses x402-compatible payment flows so agents can discover
+            paid HTTP services, satisfy payment challenges, and receive results
+            without handling wallet keys directly.
+          </p>
 
           <div className="mt-10 grid grid-cols-1 lg:grid-cols-6 gap-px bg-hairline border border-hairline-strong">
             {X402_STEPS.map((step, i) => (
@@ -373,15 +445,15 @@ export default async function LandingPage() {
           <div>
             <span className="label text-t4">RECEIPTS</span>
             <h2 className="mt-4 text-[clamp(1.7rem,3vw,2.6rem)] tracking-[-0.03em] text-t1 font-medium leading-[1.08]">
-              Receipts for every decision.
+              A ledger of what your agent did.
             </h2>
             <p className="mt-6 text-t2 text-[15.5px] leading-[1.65] max-w-[44ch]">
-              Every payment attempt leaves a trail.
+              Every paid action leaves a trail.
             </p>
             <p className="mt-4 text-t3 text-[14.5px] leading-[1.65] max-w-[44ch]">
-              See what each agent tried to buy, what it cost, which policy
-              fired, whether it was approved or denied, and what happened after
-              settlement.
+              See what each agent tried to do, which service it touched, what
+              it cost, which policy fired, whether it was approved or denied,
+              and what happened after settlement.
             </p>
             <p className="mt-6 text-t1 text-[15px] leading-[1.55] max-w-[44ch]">
               When an agent spends money, you should not have to reconstruct the
@@ -410,7 +482,7 @@ export default async function LandingPage() {
                 without exposing wallet keys.
               </p>
 
-              <span className="mt-8 inline-block label text-t4">AVAILABLE TOOLS</span>
+              <span className="mt-8 inline-block label text-t4">WALLET TOOLS</span>
               <ul className="mt-3">
                 {TOOLS.map(([name, desc]) => (
                   <li
@@ -475,7 +547,7 @@ agent ←  200 OK · receipt rcpt_01J9…`}
         <div className="max-w-[1240px] mx-auto px-8 py-24">
           <span className="label text-t4">POSITIONING</span>
           <h2 className="mt-4 text-[clamp(1.9rem,3.4vw,3rem)] tracking-[-0.035em] text-t1 font-medium leading-[1.05] max-w-[22ch]">
-            The control plane for money-moving agents.
+            Walleting infrastructure for autonomous agents.
           </h2>
 
           <div className="mt-12 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-x-16 gap-y-10">
@@ -496,13 +568,13 @@ agent ←  200 OK · receipt rcpt_01J9…`}
             <div className="border-l border-hairline pl-8">
               <span className="mono text-allow text-[11px]">● WHAT IT IS</span>
               <p className="mt-3 text-t1 text-[20px] leading-[1.4] max-w-[40ch]">
-                Warden is the authority layer between autonomous software and
-                real spend.
+                Warden is the monitored wallet layer between autonomous software
+                and paid real-world services.
               </p>
               <div className="mt-8 grid grid-cols-2 max-w-[24rem]">
                 <div className="border-r border-hairline pr-5">
                   <span className="label text-t4">AGENTS GET</span>
-                  <p className="mt-2 text-t1 text-[18px]">Capability.</p>
+                  <p className="mt-2 text-t1 text-[18px]">A wallet.</p>
                 </div>
                 <div className="pl-5">
                   <span className="label text-t4">YOU KEEP</span>
@@ -519,16 +591,16 @@ agent ←  200 OK · receipt rcpt_01J9…`}
         <div className="max-w-[1240px] mx-auto px-8 py-28 text-center">
           <span className="label text-t4">ENTER</span>
           <h2 className="mt-5 text-[clamp(2rem,4.5vw,3.6rem)] tracking-[-0.04em] font-medium leading-[1.02] max-w-[20ch] mx-auto">
-            <span className="text-t1">Give agents capability.</span>
+            <span className="text-t1">Fund an agent wallet.</span>
             <br />
-            <span className="text-signal">Keep control.</span>
+            <span className="text-signal">Watch every dollar.</span>
           </h2>
           <div className="mt-12 flex items-center justify-center gap-5 flex-wrap">
             <a
               href={ctaHref}
               className="label px-7 py-4 border border-signal text-signal hover:bg-signal hover:text-bg-base transition-colors"
             >
-              CREATE FIRST AGENT →
+              CREATE AGENT WALLET →
             </a>
             <a
               href="#flow"
@@ -543,7 +615,7 @@ agent ←  200 OK · receipt rcpt_01J9…`}
       {/* FOOTER */}
       <footer className="max-w-[1240px] mx-auto px-8 py-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]">
         <span className="mono text-signal">warden</span>
-        <span className="mono text-t4">v0.1 · solana · x402 · mcp</span>
+        <span className="mono text-t4">v0.1 · walleting · solana · x402 · mcp</span>
         <span className="mono text-t4 hidden sm:inline">
           ©{new Date().getFullYear()}
         </span>
@@ -583,7 +655,7 @@ function HeroBackdrop() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Hero diagram — single horizontal flow: agent → policy → wallet → x402 → log */
+/* Hero diagram — single horizontal flow: deposit → agent → Warden → wallet */
 /* -------------------------------------------------------------------------- */
 function HeroDiagram() {
   return (
@@ -597,7 +669,7 @@ function HeroDiagram() {
         viewBox="0 0 1100 220"
         className="w-full h-auto"
         role="img"
-        aria-label="An agent request enters the policy gate, gets signed by the warden wallet, settles via x402, and emits a receipt."
+        aria-label="A funded agent wallet supports a real-world action, Warden checks spend and risk, the wallet signs if allowed, the service returns a result, and a receipt is recorded."
       >
         <defs>
           <marker
@@ -642,11 +714,11 @@ function HeroDiagram() {
 
         {/* nodes */}
         {[
-          { x: 80, label: "AGENT", sub: "research-01" },
-          { x: 280, label: "POLICY", sub: "v.04 · live" },
-          { x: 480, label: "WALLET", sub: "warden-signer" },
-          { x: 680, label: "x402", sub: "challenge → proof" },
-          { x: 880, label: "PROVIDER", sub: "200 · settled" },
+          { x: 80, label: "DEPOSIT", sub: "42.00 USDC" },
+          { x: 280, label: "AGENT", sub: "requests action" },
+          { x: 480, label: "WARDEN", sub: "spend + risk" },
+          { x: 680, label: "WALLET", sub: "sign if allowed" },
+          { x: 880, label: "SERVICE", sub: "paid result" },
           { x: 1020, label: "RECEIPT", sub: "rcpt_01J9…" },
         ].map((n, i, arr) => {
           const next = arr[i + 1];
@@ -668,7 +740,11 @@ function HeroDiagram() {
                 textAnchor="middle"
                 fontFamily="var(--font-mono)"
                 fontSize="10"
-                fill={isLast ? "var(--allow)" : "var(--signal)"}
+                fill={
+                  isLast || n.label === "DEPOSIT"
+                    ? "var(--allow)"
+                    : "var(--signal)"
+                }
                 letterSpacing="0.1em"
               >
                 {n.label}
@@ -735,8 +811,8 @@ function WalletCard() {
   return (
     <div className="border border-hairline-strong bg-bg-deep p-6">
       <div className="flex items-baseline justify-between">
-        <span className="mono text-t4 text-[10.5px]">AGENT WALLET</span>
-        <span className="mono text-allow text-[10.5px]">● ACTIVE</span>
+        <span className="mono text-t4 text-[10.5px]">AGENT WALLET · DEPOSIT</span>
+        <span className="mono text-allow text-[10.5px]">● FUNDED</span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-y-4 gap-x-6">
         <div>
@@ -744,25 +820,25 @@ function WalletCard() {
           <div className="mono text-t1 text-[13px] mt-1">research-01</div>
         </div>
         <div>
-          <span className="label text-t4">PUBKEY</span>
-          <div className="mono text-t1 text-[13px] mt-1">7sN4…aBcD</div>
+          <span className="label text-t4">DEPOSIT ADDRESS</span>
+          <div className="mono text-t1 text-[13px] mt-1">7Kx9…aBcD</div>
         </div>
         <div>
           <span className="label text-t4">BALANCE</span>
-          <div className="tabular text-t1 text-[15px] mt-1">12.40 USDC</div>
+          <div className="tabular text-t1 text-[15px] mt-1">42.00 USDC</div>
         </div>
         <div>
-          <span className="label text-t4">BUDGET LEFT</span>
-          <div className="tabular text-signal text-[15px] mt-1">3.85 / 5.00</div>
+          <span className="label text-t4">SPENT TODAY</span>
+          <div className="tabular text-signal text-[15px] mt-1">3.18 / 10.00</div>
         </div>
       </div>
       <div className="mt-5">
         <div className="flex items-baseline justify-between">
-          <span className="label text-t4">DAILY USAGE</span>
-          <span className="mono text-t4 text-[10.5px]">23%</span>
+          <span className="label text-t4">RISK CHECKS</span>
+          <span className="mono text-allow text-[10.5px]">ACTIVE</span>
         </div>
         <div className="mt-2 h-1.5 bg-bg-row">
-          <div className="h-full bg-signal" style={{ width: "23%" }} />
+          <div className="h-full bg-signal" style={{ width: "32%" }} />
         </div>
       </div>
     </div>

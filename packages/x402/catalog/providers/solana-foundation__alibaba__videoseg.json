@@ -1,0 +1,226 @@
+{
+  "fqn": "solana-foundation/alibaba/videoseg",
+  "name": "videoseg",
+  "title": "Alibaba Cloud Video Segmentation",
+  "description": "Run image and video analysis or generation with Alibaba Cloud Video Segmentation, including video Portrait Segmentation.",
+  "useCase": "Use for video Portrait Segmentation, and related image or video generation, enhancement, detection, segmentation, and visual analysis.",
+  "category": "ai_ml",
+  "serviceUrl": "https://videoseg.alibaba.gateway-402.com",
+  "version": "2020-03-20",
+  "pageUrl": "https://pay.sh/services/solana-foundation/alibaba/videoseg",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/solana-foundation/alibaba/videoseg/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://videoseg.alibaba.gateway-402.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "## Spend-aware usage\n\n- Choose the most specific image or video endpoint for the requested transformation, recognition, detection, or generation task before paying.\n- Do not run multiple similar vision endpoints on the same asset unless the user explicitly needs several distinct outputs.\n- This provider exposes only the allowlisted stateless synchronous subset from the paired gateway manifest. Do not assume async jobs or stateful resource-management APIs are available unless the spec shows them explicitly.",
+    "frontmatter": {
+      "category": "ai_ml",
+      "description": "Run image and video analysis or generation with Alibaba Cloud Video Segmentation, including video Portrait Segmentation.",
+      "use_case": "Use for video Portrait Segmentation, and related image or video generation, enhancement, detection, segmentation, and visual analysis.",
+      "openapi": {
+        "url": "https://videoseg.alibaba.gateway-402.com/openapi.json"
+      },
+      "name": "videoseg",
+      "service_url": "https://videoseg.alibaba.gateway-402.com",
+      "title": "Alibaba Cloud Video Segmentation",
+      "version": "2020-03-20"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "segment-video-body",
+      "url": "https://videoseg.alibaba.gateway-402.com/segment-video-body",
+      "operationId": "alibaba.videoseg.SegmentVideoBody",
+      "summary": "Video Portrait Segmentation",
+      "description": "This topic describes the syntax and examples of the SegmentVideoBody operation for video portrait segmentation. The gateway injects Alibaba RPC Action=SegmentVideoBody and Version automatically before forwarding the paid request upstream.",
+      "responseSchema": {
+        "properties": {
+          "Data": {
+            "description": "The returned data content. This data can be obtained only after the asynchronous task execution has succeeded, by invoking the [GetAsyncJobResult](~~607824~~) API and performing JSON deserialization on its Result field.",
+            "properties": {
+              "VideoUrl": {
+                "description": "The URL address of the output video.  \n> This URL is temporary and has a validity period of 30 minutes. It will expire and become inaccessible afterward. If you need to retain the file for a longer duration or permanently, access the URL and download the file within 30 minutes, then store it in your own OSS bucket or other storage space.",
+                "example": "http://algo-app-aic-vd-cn-shanghai-prod.oss-cn-shanghai.aliyuncs.com/video-human-segmentation/D86DDFBC-B8ED-4780-9E6A-E5BA98D7CC9F.mp4?Expires=1584709406&OSSAccessKeyId=LTAI****************&Signature=Fx5HVxvRjAMIjWL2OvhTlOO4cC****",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "Message": {
+            "description": "The prompt message after committing an asynchronous task.",
+            "example": "该调用为异步调用，任务已提交成功，请以requestId的值作为jobId参数调用同类目下GetAsyncJobResult接口查询任务执行状态和结果。",
+            "type": "string"
+          },
+          "RequestId": {
+            "description": "Request ID.",
+            "example": "49E2CC28-ED1D-4CC5-854D-7D0AE2B20976",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "Data": {
+                    "description": "The returned data content. This data can be obtained only after the asynchronous task execution has succeeded, by invoking the [GetAsyncJobResult](~~607824~~) API and performing JSON deserialization on its Result field.",
+                    "properties": {
+                      "VideoUrl": {
+                        "description": "The URL address of the output video.  \n> This URL is temporary and has a validity period of 30 minutes. It will expire and become inaccessible afterward. If you need to retain the file for a longer duration or permanently, access the URL and download the file within 30 minutes, then store it in your own OSS bucket or other storage space.",
+                        "example": "http://algo-app-aic-vd-cn-shanghai-prod.oss-cn-shanghai.aliyuncs.com/video-human-segmentation/D86DDFBC-B8ED-4780-9E6A-E5BA98D7CC9F.mp4?Expires=1584709406&OSSAccessKeyId=LTAI****************&Signature=Fx5HVxvRjAMIjWL2OvhTlOO4cC****",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "Message": {
+                    "description": "The prompt message after committing an asynchronous task.",
+                    "example": "该调用为异步调用，任务已提交成功，请以requestId的值作为jobId参数调用同类目下GetAsyncJobResult接口查询任务执行状态和结果。",
+                    "type": "string"
+                  },
+                  "RequestId": {
+                    "description": "Request ID.",
+                    "example": "49E2CC28-ED1D-4CC5-854D-7D0AE2B20976",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Successful response."
+        },
+        "400": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "Code": {
+                    "type": "string"
+                  },
+                  "Message": {
+                    "type": "string"
+                  },
+                  "RequestId": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Invalid request."
+        }
+      },
+      "x402": {}
+    }
+  ],
+  "openapi": {
+    "info": {
+      "description": "Filtered OpenAPI description for the stateless synchronous Alibaba Cloud Video Segmentation proxy. The gateway serves only the allowlisted operations defined in the paired YAML manifest.",
+      "title": "Alibaba Cloud Video Segmentation API",
+      "version": "2020-03-20"
+    },
+    "openapi": "3.0.3",
+    "paths": {
+      "/segment-video-body": {
+        "post": {
+          "description": "This topic describes the syntax and examples of the SegmentVideoBody operation for video portrait segmentation. The gateway injects Alibaba RPC Action=SegmentVideoBody and Version automatically before forwarding the paid request upstream.",
+          "operationId": "alibaba.videoseg.SegmentVideoBody",
+          "requestBody": {
+            "content": {
+              "application/x-www-form-urlencoded": {
+                "schema": {
+                  "properties": {
+                    "VideoUrl": {
+                      "description": "The video URL. We recommend using an OSS link from the China (Shanghai) region. For files stored locally or via OSS links from regions other than Shanghai, see [File URL Processing](~~155645~~).",
+                      "example": "http://viapi-test.oss-cn-shanghai.aliyuncs.com/viapi-3.0domepic/videoseg/SegmentVideoBody/SegmentVideoBody1.mp4",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "VideoUrl"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "Data": {
+                        "description": "The returned data content. This data can be obtained only after the asynchronous task execution has succeeded, by invoking the [GetAsyncJobResult](~~607824~~) API and performing JSON deserialization on its Result field.",
+                        "properties": {
+                          "VideoUrl": {
+                            "description": "The URL address of the output video.  \n> This URL is temporary and has a validity period of 30 minutes. It will expire and become inaccessible afterward. If you need to retain the file for a longer duration or permanently, access the URL and download the file within 30 minutes, then store it in your own OSS bucket or other storage space.",
+                            "example": "http://algo-app-aic-vd-cn-shanghai-prod.oss-cn-shanghai.aliyuncs.com/video-human-segmentation/D86DDFBC-B8ED-4780-9E6A-E5BA98D7CC9F.mp4?Expires=1584709406&OSSAccessKeyId=LTAI****************&Signature=Fx5HVxvRjAMIjWL2OvhTlOO4cC****",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "Message": {
+                        "description": "The prompt message after committing an asynchronous task.",
+                        "example": "该调用为异步调用，任务已提交成功，请以requestId的值作为jobId参数调用同类目下GetAsyncJobResult接口查询任务执行状态和结果。",
+                        "type": "string"
+                      },
+                      "RequestId": {
+                        "description": "Request ID.",
+                        "example": "49E2CC28-ED1D-4CC5-854D-7D0AE2B20976",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Successful response."
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "Code": {
+                        "type": "string"
+                      },
+                      "Message": {
+                        "type": "string"
+                      },
+                      "RequestId": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request."
+            }
+          },
+          "summary": "Video Portrait Segmentation"
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://videoseg.alibaba.gateway-402.com"
+      }
+    ]
+  }
+}

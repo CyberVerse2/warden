@@ -44,6 +44,11 @@
   --font-mono: "Recursive", ui-monospace, "SFMono-Regular", monospace;
 
   --grid-line: color-mix(in oklch, var(--hairline) 60%, transparent);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-fast: 140ms;
+  --motion-base: 190ms;
+  --motion-slow: 260ms;
 
   /* spacing (4pt) */
   --s-1: 0.25rem;
@@ -174,4 +179,107 @@ a {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--hairline-strong);
+}
+
+@keyframes warden-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes warden-flash {
+  0% {
+    background-color: color-mix(in oklch, var(--signal) 16%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes warden-status-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.24);
+    opacity: 1;
+  }
+}
+
+.motion-enter {
+  animation: warden-enter var(--motion-slow) var(--ease-out-quint) both;
+}
+
+.motion-flash {
+  animation: warden-flash 520ms var(--ease-out-quart) both;
+}
+
+.motion-press {
+  transition:
+    transform var(--motion-fast) var(--ease-out-quart),
+    border-color var(--motion-base) var(--ease-out-quart),
+    background-color var(--motion-base) var(--ease-out-quart),
+    color var(--motion-base) var(--ease-out-quart),
+    opacity var(--motion-base) var(--ease-out-quart);
+}
+
+.motion-press:hover {
+  transform: translateY(-1px);
+}
+
+.motion-press:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.motion-row {
+  transition:
+    transform var(--motion-base) var(--ease-out-quart),
+    background-color var(--motion-base) var(--ease-out-quart),
+    border-color var(--motion-base) var(--ease-out-quart),
+    opacity var(--motion-base) var(--ease-out-quart);
+}
+
+.motion-row:hover {
+  transform: translateX(2px);
+}
+
+.motion-panel {
+  transition:
+    transform var(--motion-slow) var(--ease-out-quart),
+    border-color var(--motion-base) var(--ease-out-quart),
+    background-color var(--motion-base) var(--ease-out-quart),
+    opacity var(--motion-base) var(--ease-out-quart);
+}
+
+.motion-panel:hover {
+  transform: translateY(-1px);
+}
+
+.motion-status-running {
+  animation: warden-status-pulse 1.2s var(--ease-out-quart) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .motion-press:hover,
+  .motion-press:active,
+  .motion-row:hover,
+  .motion-panel:hover {
+    transform: none !important;
+  }
 }

@@ -1,0 +1,187 @@
+{
+  "fqn": "solana-foundation/alibaba/texttospeech",
+  "name": "texttospeech",
+  "title": "Alibaba Cloud Model Studio Text-to-Speech",
+  "description": "Synthesize speech with Qwen TTS through Alibaba Cloud Model Studio's multimodal generation API.",
+  "useCase": "Use for voiceovers, accessibility audio, narration, dubbing, spoken product copy, and synthetic voice generation.",
+  "category": "ai_ml",
+  "serviceUrl": "https://texttospeech.alibaba.gateway-402.com",
+  "version": "v1",
+  "pageUrl": "https://pay.sh/services/solana-foundation/alibaba/texttospeech",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/solana-foundation/alibaba/texttospeech/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://texttospeech.alibaba.gateway-402.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "## Spend-aware usage\n\n- Use the speech endpoint that matches the exact direction of work, such as recognition for transcription or synthesis for spoken output.\n- Trim long audio or text when only a specific segment is needed so the first paid request stays focused.\n- Prefer one well-formed request with the right model options over several trial-and-error calls, especially when the body selects the model behavior.",
+    "frontmatter": {
+      "category": "ai_ml",
+      "description": "Synthesize speech with Qwen TTS through Alibaba Cloud Model Studio's multimodal generation API.",
+      "use_case": "Use for voiceovers, accessibility audio, narration, dubbing, spoken product copy, and synthetic voice generation.",
+      "openapi": {
+        "url": "https://texttospeech.alibaba.gateway-402.com/openapi.json"
+      },
+      "name": "texttospeech",
+      "service_url": "https://texttospeech.alibaba.gateway-402.com",
+      "title": "Alibaba Cloud Model Studio Text-to-Speech",
+      "version": "v1"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "api/v1/services/aigc/multimodal-generation/generation",
+      "url": "https://texttospeech.alibaba.gateway-402.com/api/v1/services/aigc/multimodal-generation/generation",
+      "operationId": "alibaba.textToSpeech.generate",
+      "summary": "Synthesize speech",
+      "description": "Synthesize speech from text using Qwen TTS voices through the multimodal generation endpoint.",
+      "tags": [
+        "multimodal.generation"
+      ],
+      "requestSchema": {
+        "$ref": "#/components/schemas/TtsRequest"
+      },
+      "responseSchema": {
+        "$ref": "#/components/schemas/TtsResponse"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TtsResponse"
+              }
+            }
+          },
+          "description": "Successful synthesis response."
+        }
+      },
+      "x402": {}
+    }
+  ],
+  "openapi": {
+    "components": {
+      "schemas": {
+        "TtsRequest": {
+          "properties": {
+            "input": {
+              "properties": {
+                "instructions": {
+                  "type": "string"
+                },
+                "language_type": {
+                  "type": "string"
+                },
+                "optimize_instructions": {
+                  "type": "boolean"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "voice": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "text",
+                "voice"
+              ],
+              "type": "object"
+            },
+            "model": {
+              "enum": [
+                "qwen3-tts-flash",
+                "qwen3-tts-instruct-flash"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "model",
+            "input"
+          ],
+          "type": "object"
+        },
+        "TtsResponse": {
+          "properties": {
+            "output": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "request_id": {
+              "type": "string"
+            },
+            "usage": {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      }
+    },
+    "info": {
+      "description": "Filtered OpenAPI description for the Qwen TTS proxy backed by Alibaba Cloud Model Studio's multimodal generation endpoint.",
+      "title": "Alibaba Cloud Model Studio Text-to-Speech API",
+      "version": "v1"
+    },
+    "openapi": "3.0.3",
+    "paths": {
+      "/api/v1/services/aigc/multimodal-generation/generation": {
+        "post": {
+          "description": "Synthesize speech from text using Qwen TTS voices through the multimodal generation endpoint.",
+          "operationId": "alibaba.textToSpeech.generate",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "input": {
+                    "language_type": "English",
+                    "text": "Let me recommend a T-shirt to everyone.",
+                    "voice": "Cherry"
+                  },
+                  "model": "qwen3-tts-flash"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/TtsRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TtsResponse"
+                  }
+                }
+              },
+              "description": "Successful synthesis response."
+            }
+          },
+          "summary": "Synthesize speech",
+          "tags": [
+            "multimodal.generation"
+          ]
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://texttospeech.alibaba.gateway-402.com"
+      }
+    ],
+    "tags": [
+      {
+        "name": "multimodal.generation"
+      }
+    ]
+  }
+}

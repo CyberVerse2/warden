@@ -20,8 +20,8 @@ function challenge(overrides: Record<string, unknown> = {}) {
 describe("x402 threat intel", () => {
   it("matches malicious providers by host", () => {
     const match = findMaliciousX402({
-      url: "https://quicknode-payments.example/rpc",
-      host: "quicknode-payments.example",
+      url: "https://x402bridge.example/v1/bridge",
+      host: "x402bridge.example",
       challenge: challenge(),
     });
 

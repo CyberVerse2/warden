@@ -89,6 +89,11 @@ export async function createAgent(formData: FormData) {
   const walletService = createWalletService({
     db,
     rpcUrl: requireEnv("SOLANA_RPC_URL"),
+    rpcUrls: {
+      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+      devnet: process.env.SOLANA_DEVNET_RPC_URL,
+      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    },
   });
 
   await db.insert(agents).values({
@@ -162,6 +167,11 @@ export async function updatePolicy(agentId: string, formData: FormData) {
     .orderBy(desc(policies.version))
     .limit(1);
 
+  await db
+    .update(policies)
+    .set({ activatedAt: null })
+    .where(eq(policies.agentId, agentId));
+
   await db.insert(policies).values({
     id: newId.policy(),
     agentId,
@@ -194,6 +204,11 @@ export async function switchAgentNetwork(agentId: string, formData: FormData) {
   const walletService = createWalletService({
     db,
     rpcUrl: requireEnv("SOLANA_RPC_URL"),
+    rpcUrls: {
+      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+      devnet: process.env.SOLANA_DEVNET_RPC_URL,
+      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    },
   });
   if (currentWallet) {
     await db
@@ -214,6 +229,11 @@ export async function switchAgentNetwork(agentId: string, formData: FormData) {
     .orderBy(desc(policies.version))
     .limit(1);
   const currentPolicy = PolicyConfigSchema.parse(latest?.config ?? {});
+  await db
+    .update(policies)
+    .set({ activatedAt: null })
+    .where(eq(policies.agentId, agentId));
+
   await db.insert(policies).values({
     id: newId.policy(),
     agentId,

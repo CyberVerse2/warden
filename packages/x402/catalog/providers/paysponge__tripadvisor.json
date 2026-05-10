@@ -1,0 +1,724 @@
+{
+  "fqn": "paysponge/tripadvisor",
+  "name": "tripadvisor",
+  "title": "Tripadvisor",
+  "description": "Search Tripadvisor locations and retrieve details, reviews, and photos for hotels, restaurants, and attractions worldwide, including nearby discovery and content lookups for travel, local search, and place-enrichment workflows.",
+  "useCase": "Use for hotel and restaurant discovery, attraction lookup, nearby travel search, place-detail enrichment, traveler review retrieval, photo retrieval, and itinerary or recommendation workflows that need Tripadvisor content.",
+  "category": "maps",
+  "serviceUrl": "https://tripadvisor.x402.paysponge.com",
+  "pageUrl": "https://pay.sh/services/paysponge/tripadvisor",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/paysponge/tripadvisor/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://tripadvisor.x402.paysponge.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "Tripadvisor Content API endpoints exposed through PaySponge with x402\npayments.\n\nThis provider covers location search, nearby search, and per-location content\nretrieval for details, reviews, and photos. It is suited to worldwide travel\nand local-discovery workflows involving hotels, restaurants, and attractions.\n\nThe published spec currently exposes 5 paid `GET` routes at $0.01 per request\nand accepts x402 USDC on Solana mainnet, Base, and Avalanche.\n\nNote: the current OpenAPI document is minimal and does not spell out rich query\nparameter schemas inline. Agents that need exact request fields or path\nconstruction should inspect the linked spec directly before building calls.\n\n## Spend-aware usage\n\n- Use location search or nearby search first to identify the correct\n  `locationId` before paying for details, reviews, or photos on a specific\n  place.\n- Fetch only the content type needed for the answer. Do not pay for photos or\n  reviews when basic location details are sufficient.\n- Keep user intent tight by specifying the venue type or area before search so\n  the first paid result set is usable.\n- Use review and photo lookups only after the user has narrowed the target to a\n  specific hotel, restaurant, or attraction.",
+    "frontmatter": {
+      "name": "tripadvisor",
+      "title": "Tripadvisor",
+      "description": "Search Tripadvisor locations and retrieve details, reviews, and photos for hotels, restaurants, and attractions worldwide, including nearby discovery and content lookups for travel, local search, and place-enrichment workflows.",
+      "use_case": "Use for hotel and restaurant discovery, attraction lookup, nearby travel search, place-detail enrichment, traveler review retrieval, photo retrieval, and itinerary or recommendation workflows that need Tripadvisor content.",
+      "category": "maps",
+      "service_url": "https://tripadvisor.x402.paysponge.com",
+      "openapi": {
+        "url": "https://tripadvisor.x402.paysponge.com/openapi.json"
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "api/v1/location/:locationId/details",
+      "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/:locationId/details",
+      "summary": "GET /api/v1/location/:locationId/details",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.01"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "api/v1/location/:locationId/photos",
+      "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/:locationId/photos",
+      "summary": "GET /api/v1/location/:locationId/photos",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.01"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "api/v1/location/:locationId/reviews",
+      "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/:locationId/reviews",
+      "summary": "GET /api/v1/location/:locationId/reviews",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.01"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "api/v1/location/nearby_search",
+      "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/nearby_search",
+      "summary": "GET /api/v1/location/nearby_search",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.01"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "api/v1/location/search",
+      "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/search",
+      "summary": "GET /api/v1/location/search",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.01"
+        }
+      }
+    }
+  ],
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "Tripadvisor",
+      "description": "Tripadvisor Content API — search, location details, reviews, and photos for hotels, restaurants, and attractions worldwide.",
+      "version": "1.0.0",
+      "x-agentcash-auth": {
+        "mode": "paid"
+      }
+    },
+    "servers": [
+      {
+        "url": "https://tripadvisor.x402.paysponge.com"
+      }
+    ],
+    "paths": {
+      "/api/v1/location/:locationId/details": {
+        "get": {
+          "summary": "GET /api/v1/location/:locationId/details",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.01"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/:locationId/details",
+            "description": "GET /api/v1/location/:locationId/details",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false,
+                  "routeTemplate": "/api/v1/location/:locationId/details",
+                  "pathParams": {
+                    "locationId": "<locationId>"
+                  }
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "properties": {
+                      "routeTemplate": {
+                        "type": "string",
+                        "const": "/api/v1/location/:locationId/details"
+                      },
+                      "pathParams": {
+                        "type": "object",
+                        "properties": {
+                          "locationId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "locationId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "routeTemplate",
+                      "pathParams"
+                    ]
+                  }
+                },
+                "required": [
+                  "input"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      },
+      "/api/v1/location/:locationId/photos": {
+        "get": {
+          "summary": "GET /api/v1/location/:locationId/photos",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.01"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/:locationId/photos",
+            "description": "GET /api/v1/location/:locationId/photos",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false,
+                  "routeTemplate": "/api/v1/location/:locationId/photos",
+                  "pathParams": {
+                    "locationId": "<locationId>"
+                  }
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "properties": {
+                      "routeTemplate": {
+                        "type": "string",
+                        "const": "/api/v1/location/:locationId/photos"
+                      },
+                      "pathParams": {
+                        "type": "object",
+                        "properties": {
+                          "locationId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "locationId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "routeTemplate",
+                      "pathParams"
+                    ]
+                  }
+                },
+                "required": [
+                  "input"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      },
+      "/api/v1/location/:locationId/reviews": {
+        "get": {
+          "summary": "GET /api/v1/location/:locationId/reviews",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.01"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/:locationId/reviews",
+            "description": "GET /api/v1/location/:locationId/reviews",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false,
+                  "routeTemplate": "/api/v1/location/:locationId/reviews",
+                  "pathParams": {
+                    "locationId": "<locationId>"
+                  }
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "input": {
+                    "properties": {
+                      "routeTemplate": {
+                        "type": "string",
+                        "const": "/api/v1/location/:locationId/reviews"
+                      },
+                      "pathParams": {
+                        "type": "object",
+                        "properties": {
+                          "locationId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "locationId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "routeTemplate",
+                      "pathParams"
+                    ]
+                  }
+                },
+                "required": [
+                  "input"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      },
+      "/api/v1/location/nearby_search": {
+        "get": {
+          "summary": "GET /api/v1/location/nearby_search",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.01"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/nearby_search",
+            "description": "GET /api/v1/location/nearby_search",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      },
+      "/api/v1/location/search": {
+        "get": {
+          "summary": "GET /api/v1/location/search",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.01"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://tripadvisor.x402.paysponge.com/api/v1/location/search",
+            "description": "GET /api/v1/location/search",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "10000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      }
+    },
+    "x402Version": 2,
+    "resource": {
+      "url": "https://tripadvisor.x402.paysponge.com/",
+      "description": "Tripadvisor Content API — search, location details, reviews, and photos for hotels, restaurants, and attractions worldwide.",
+      "mimeType": "application/json"
+    },
+    "accepts": [
+      {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+        "asset": "usdc",
+        "amount": "10000",
+        "maxTimeoutSeconds": 300,
+        "extra": {}
+      },
+      {
+        "scheme": "exact",
+        "network": "eip155:43114",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+        "asset": "usdc",
+        "amount": "10000",
+        "maxTimeoutSeconds": 300,
+        "extra": {}
+      },
+      {
+        "scheme": "exact",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+        "asset": "usdc",
+        "amount": "10000",
+        "maxTimeoutSeconds": 300,
+        "extra": {}
+      }
+    ],
+    "x-payment-accepts": [
+      {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f"
+      },
+      {
+        "scheme": "exact",
+        "network": "eip155:43114",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f"
+      },
+      {
+        "scheme": "exact",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ"
+      }
+    ]
+  }
+}

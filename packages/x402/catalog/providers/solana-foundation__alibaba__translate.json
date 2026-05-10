@@ -1,0 +1,328 @@
+{
+  "fqn": "solana-foundation/alibaba/translate",
+  "name": "translate",
+  "title": "Alibaba Cloud Model Studio Translation",
+  "description": "Translate text with Qwen-MT through Alibaba Cloud Model Studio's OpenAI-compatible chat completions API.",
+  "useCase": "Use for single-turn machine translation, localization, multilingual content generation, and cross-language messaging.",
+  "category": "translation",
+  "serviceUrl": "https://translate.alibaba.gateway-402.com",
+  "version": "v1",
+  "pageUrl": "https://pay.sh/services/solana-foundation/alibaba/translate",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/solana-foundation/alibaba/translate/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://translate.alibaba.gateway-402.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "## Spend-aware usage\n\n- Set source and target languages explicitly when known instead of spending extra requests on avoidable detection or retries.\n- Batch related text into one request when the upstream format allows it instead of paying for many tiny translation calls.\n- Prefer one well-formed request with the right model options over several trial-and-error calls, especially when the body selects the model behavior.",
+    "frontmatter": {
+      "category": "translation",
+      "description": "Translate text with Qwen-MT through Alibaba Cloud Model Studio's OpenAI-compatible chat completions API.",
+      "use_case": "Use for single-turn machine translation, localization, multilingual content generation, and cross-language messaging.",
+      "openapi": {
+        "url": "https://translate.alibaba.gateway-402.com/openapi.json"
+      },
+      "name": "translate",
+      "service_url": "https://translate.alibaba.gateway-402.com",
+      "title": "Alibaba Cloud Model Studio Translation",
+      "version": "v1"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "compatible-mode/v1/chat/completions",
+      "url": "https://translate.alibaba.gateway-402.com/compatible-mode/v1/chat/completions",
+      "operationId": "alibaba.translate.chatCompletions",
+      "summary": "Translate text with Qwen-MT",
+      "description": "Submit a single-turn translation request. The request body mirrors Alibaba Cloud Model Studio's OpenAI-compatible chat completions format and accepts translation_options in the JSON body.",
+      "tags": [
+        "chat.completions"
+      ],
+      "requestSchema": {
+        "$ref": "#/components/schemas/QwenMtChatCompletionRequest"
+      },
+      "responseSchema": {
+        "$ref": "#/components/schemas/ChatCompletionResponse"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionResponse"
+              }
+            }
+          },
+          "description": "Successful translation response."
+        },
+        "400": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          },
+          "description": "Invalid request."
+        }
+      },
+      "x402": {}
+    }
+  ],
+  "openapi": {
+    "components": {
+      "schemas": {
+        "ChatCompletionResponse": {
+          "properties": {
+            "choices": {
+              "items": {
+                "properties": {
+                  "finish_reason": {
+                    "type": "string"
+                  },
+                  "index": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "$ref": "#/components/schemas/ChatMessage"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "created": {
+              "type": "integer"
+            },
+            "id": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "object": {
+              "type": "string"
+            },
+            "usage": {
+              "properties": {
+                "completion_tokens": {
+                  "type": "integer"
+                },
+                "prompt_tokens": {
+                  "type": "integer"
+                },
+                "total_tokens": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "ChatMessage": {
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "user",
+                "assistant",
+                "system"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "role",
+            "content"
+          ],
+          "type": "object"
+        },
+        "ErrorResponse": {
+          "properties": {
+            "error": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "properties": {
+                    "code": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "param": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            },
+            "request_id": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "QwenMtChatCompletionRequest": {
+          "properties": {
+            "messages": {
+              "items": {
+                "$ref": "#/components/schemas/ChatMessage"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            },
+            "model": {
+              "enum": [
+                "qwen-mt-flash",
+                "qwen-mt-plus",
+                "qwen-mt-lite"
+              ],
+              "type": "string"
+            },
+            "stream": {
+              "description": "Whether to request streaming output for supported models.",
+              "type": "boolean"
+            },
+            "translation_options": {
+              "$ref": "#/components/schemas/TranslationOptions"
+            }
+          },
+          "required": [
+            "model",
+            "messages",
+            "translation_options"
+          ],
+          "type": "object"
+        },
+        "TranslationOptions": {
+          "properties": {
+            "domain": {
+              "type": "string"
+            },
+            "source_lang": {
+              "description": "Use auto to enable source language detection.",
+              "type": "string"
+            },
+            "target_lang": {
+              "type": "string"
+            },
+            "tm_list": {
+              "items": {
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "target": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "source_lang",
+            "target_lang"
+          ],
+          "type": "object"
+        }
+      }
+    },
+    "info": {
+      "description": "Filtered OpenAPI description for the Qwen-MT translation proxy. The upstream endpoint is Alibaba Cloud Model Studio's OpenAI-compatible chat completions API in the Singapore region.",
+      "title": "Alibaba Cloud Model Studio Translation API",
+      "version": "v1"
+    },
+    "openapi": "3.0.3",
+    "paths": {
+      "/compatible-mode/v1/chat/completions": {
+        "post": {
+          "description": "Submit a single-turn translation request. The request body mirrors Alibaba Cloud Model Studio's OpenAI-compatible chat completions format and accepts translation_options in the JSON body.",
+          "operationId": "alibaba.translate.chatCompletions",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "messages": [
+                    {
+                      "content": "No me rei despues de ver este video",
+                      "role": "user"
+                    }
+                  ],
+                  "model": "qwen-mt-flash",
+                  "translation_options": {
+                    "source_lang": "auto",
+                    "target_lang": "English"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/QwenMtChatCompletionRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ChatCompletionResponse"
+                  }
+                }
+              },
+              "description": "Successful translation response."
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              },
+              "description": "Invalid request."
+            }
+          },
+          "summary": "Translate text with Qwen-MT",
+          "tags": [
+            "chat.completions"
+          ]
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://translate.alibaba.gateway-402.com"
+      }
+    ],
+    "tags": [
+      {
+        "name": "chat.completions"
+      }
+    ]
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "fqn": "solana-foundation/alibaba/captcha",
+  "name": "captcha",
+  "title": "Alibaba Cloud CAPTCHA",
+  "description": "Run moderation, verification, and risk checks with Alibaba Cloud CAPTCHA, including intelligent Verification Code Authentication.",
+  "useCase": "Use for intelligent Verification Code Authentication, and related moderation, compliance, identity verification, fraud screening, and risk analysis.",
+  "category": "ai_ml",
+  "serviceUrl": "https://captcha.alibaba.gateway-402.com",
+  "version": "2023-03-05",
+  "pageUrl": "https://pay.sh/services/solana-foundation/alibaba/captcha",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/solana-foundation/alibaba/captcha/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://captcha.alibaba.gateway-402.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "## Spend-aware usage\n\n- Choose the exact moderation, verification, or risk endpoint that matches the user’s task instead of trying several similar flows on the same payload.\n- Send only the minimum sensitive text, image, biometric, or identity data needed for the requested check.\n- This provider exposes only the allowlisted stateless synchronous subset from the paired gateway manifest. Do not assume async jobs or stateful resource-management APIs are available unless the spec shows them explicitly.",
+    "frontmatter": {
+      "category": "ai_ml",
+      "description": "Run moderation, verification, and risk checks with Alibaba Cloud CAPTCHA, including intelligent Verification Code Authentication.",
+      "use_case": "Use for intelligent Verification Code Authentication, and related moderation, compliance, identity verification, fraud screening, and risk analysis.",
+      "openapi": {
+        "url": "https://captcha.alibaba.gateway-402.com/openapi.json"
+      },
+      "name": "captcha",
+      "service_url": "https://captcha.alibaba.gateway-402.com",
+      "title": "Alibaba Cloud CAPTCHA",
+      "version": "2023-03-05"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "verify-intelligent-captcha",
+      "url": "https://captcha.alibaba.gateway-402.com/verify-intelligent-captcha",
+      "operationId": "alibaba.captcha.VerifyIntelligentCaptcha",
+      "summary": "Intelligent Verification Code Authentication",
+      "description": "Intelligent verification code authentication API. The gateway injects Alibaba RPC Action=VerifyIntelligentCaptcha and Version automatically before forwarding the paid request upstream.",
+      "responseSchema": {
+        "description": "Schema of Response",
+        "properties": {
+          "Code": {
+            "description": "Response code",
+            "example": "Success",
+            "type": "string"
+          },
+          "Message": {
+            "description": "Response message. If the request succeeded, the value is \"success\".",
+            "example": "success",
+            "type": "string"
+          },
+          "RequestId": {
+            "description": "Id of the request",
+            "example": "95784F***D39FDC5\n",
+            "type": "string"
+          },
+          "Result": {
+            "description": "Return Result",
+            "properties": {
+              "CertifyId": {
+                "description": "Authentication ID",
+                "type": "string"
+              },
+              "VerifyCode": {
+                "type": "string"
+              },
+              "VerifyResult": {
+                "description": "Verification result\n\n- true: Pass\n\n- false: Failed",
+                "example": "true",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "Success": {
+            "description": "Indicates whether the request succeeded.",
+            "example": "true",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "Schema of Response",
+                "properties": {
+                  "Code": {
+                    "description": "Response code",
+                    "example": "Success",
+                    "type": "string"
+                  },
+                  "Message": {
+                    "description": "Response message. If the request succeeded, the value is \"success\".",
+                    "example": "success",
+                    "type": "string"
+                  },
+                  "RequestId": {
+                    "description": "Id of the request",
+                    "example": "95784F***D39FDC5\n",
+                    "type": "string"
+                  },
+                  "Result": {
+                    "description": "Return Result",
+                    "properties": {
+                      "CertifyId": {
+                        "description": "Authentication ID",
+                        "type": "string"
+                      },
+                      "VerifyCode": {
+                        "type": "string"
+                      },
+                      "VerifyResult": {
+                        "description": "Verification result\n\n- true: Pass\n\n- false: Failed",
+                        "example": "true",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "Success": {
+                    "description": "Indicates whether the request succeeded.",
+                    "example": "true",
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Successful response."
+        },
+        "400": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "Code": {
+                    "type": "string"
+                  },
+                  "Message": {
+                    "type": "string"
+                  },
+                  "RequestId": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Invalid request."
+        }
+      },
+      "x402": {}
+    }
+  ],
+  "openapi": {
+    "info": {
+      "description": "Filtered OpenAPI description for the stateless synchronous Alibaba Cloud CAPTCHA proxy. The gateway serves only the allowlisted operations defined in the paired YAML manifest.",
+      "title": "Alibaba Cloud CAPTCHA API",
+      "version": "2023-03-05"
+    },
+    "openapi": "3.0.3",
+    "paths": {
+      "/verify-intelligent-captcha": {
+        "post": {
+          "description": "Intelligent verification code authentication API. The gateway injects Alibaba RPC Action=VerifyIntelligentCaptcha and Version automatically before forwarding the paid request upstream.",
+          "operationId": "alibaba.captcha.VerifyIntelligentCaptcha",
+          "requestBody": {
+            "content": {
+              "application/x-www-form-urlencoded": {
+                "schema": {
+                  "properties": {
+                    "CaptchaVerifyParam": {
+                      "description": "Verification parameter uploaded by the client.",
+                      "example": "dsjidsjidsjkds*djsjdiskds\n",
+                      "type": "string"
+                    },
+                    "SceneId": {
+                      "description": "Scenario ID.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "required": false
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "description": "Schema of Response",
+                    "properties": {
+                      "Code": {
+                        "description": "Response code",
+                        "example": "Success",
+                        "type": "string"
+                      },
+                      "Message": {
+                        "description": "Response message. If the request succeeded, the value is \"success\".",
+                        "example": "success",
+                        "type": "string"
+                      },
+                      "RequestId": {
+                        "description": "Id of the request",
+                        "example": "95784F***D39FDC5\n",
+                        "type": "string"
+                      },
+                      "Result": {
+                        "description": "Return Result",
+                        "properties": {
+                          "CertifyId": {
+                            "description": "Authentication ID",
+                            "type": "string"
+                          },
+                          "VerifyCode": {
+                            "type": "string"
+                          },
+                          "VerifyResult": {
+                            "description": "Verification result\n\n- true: Pass\n\n- false: Failed",
+                            "example": "true",
+                            "type": "boolean"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "Success": {
+                        "description": "Indicates whether the request succeeded.",
+                        "example": "true",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Successful response."
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "Code": {
+                        "type": "string"
+                      },
+                      "Message": {
+                        "type": "string"
+                      },
+                      "RequestId": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request."
+            }
+          },
+          "summary": "Intelligent Verification Code Authentication"
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://captcha.alibaba.gateway-402.com"
+      }
+    ]
+  }
+}

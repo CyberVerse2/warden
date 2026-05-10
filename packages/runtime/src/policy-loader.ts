@@ -19,7 +19,7 @@ export async function loadActivePolicy(
     .select()
     .from(policies)
     .where(and(eq(policies.agentId, agentId), isNotNull(policies.activatedAt)))
-    .orderBy(desc(policies.activatedAt))
+    .orderBy(desc(policies.version))
     .limit(1);
 
   if (!row) {

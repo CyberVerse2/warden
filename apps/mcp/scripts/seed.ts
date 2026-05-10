@@ -98,6 +98,11 @@ async function main() {
   const walletService = createWalletService({
     db,
     rpcUrl: process.env.SOLANA_RPC_URL,
+    rpcUrls: {
+      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+      devnet: process.env.SOLANA_DEVNET_RPC_URL,
+      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    },
   });
 
   console.log("→ wiping existing data");

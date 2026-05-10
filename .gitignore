@@ -15,3 +15,4 @@ warden.db-journal
 *.db-*
 *.sqlite
 *.sqlite-*
+HACKATHON_DEMO_SCRIPT.md

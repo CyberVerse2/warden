@@ -3,6 +3,7 @@ import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
 import { Meter } from "~/components/meter";
 import { StatusGlyph } from "~/components/status-glyph";
+import { CopyButton } from "~/components/copy-button";
 import { fmtRelative, fmtUsd, shortKey } from "~/lib/format";
 import { getAgents } from "~/lib/queries";
 import { createAgent } from "./actions";
@@ -76,20 +77,27 @@ export default async function AgentsPage() {
           {agents.map((a) => {
             const pct = a.dailyCapUsd === 0 ? 0 : a.spentTodayUsd / a.dailyCapUsd;
             return (
-              <Link
-                href={`/agents/${a.id}`}
+              <div
                 key={a.id}
-                className="group grid grid-cols-[24px_220px_180px_1fr_180px_120px] gap-4 items-center px-1 py-3.5 border-b border-hairline/60 hover:bg-bg-row/40 transition-colors"
+                className="group relative grid grid-cols-[24px_220px_180px_1fr_180px_120px] gap-4 items-center px-1 py-3.5 border-b border-hairline/60 hover:bg-bg-row/40 transition-colors"
               >
+                <Link
+                  href={`/agents/${a.id}`}
+                  aria-label={`Open ${a.name}`}
+                  className="absolute inset-0 z-10"
+                />
                 <StatusGlyph status={a.status} showLabel={false} />
                 <div className="flex flex-col">
                   <span className="text-t1">{a.name}</span>
                   <span className="mono text-t4 text-[11px]">{a.id}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="mono text-t2 text-[12px]">
-                    {shortKey(a.publicKey, 6, 6)}
-                  </span>
+                  <div className="relative z-20 flex items-center gap-2">
+                    <span className="mono text-t2 text-[12px]">
+                      {shortKey(a.publicKey, 6, 6)}
+                    </span>
+                    <CopyButton text={a.publicKey} />
+                  </div>
                   <span className="label-num text-t1 text-[12.5px]">
                     {fmtUsd(a.balanceUsd)}{" "}
                     <span className="text-t4">balance</span>
@@ -142,7 +150,7 @@ export default async function AgentsPage() {
                 <span className="mono text-t3 text-right text-[11px]">
                   {a.lastActivityAt > 0 ? fmtRelative(a.lastActivityAt) : "—"}
                 </span>
-              </Link>
+              </div>
             );
           })}
         </div>

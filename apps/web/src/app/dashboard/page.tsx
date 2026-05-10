@@ -3,6 +3,7 @@ import { Section } from "~/components/section";
 import { Metric } from "~/components/metric";
 import { Meter } from "~/components/meter";
 import { FeedRow } from "~/components/feed-row";
+import { OverviewDecisionChart, SpendOverTimeChart } from "~/components/receipt-charts";
 import { StatusGlyph } from "~/components/status-glyph";
 import { LiveFeedStatus } from "~/components/live-feed-status";
 import { fmtRelative, fmtUsd } from "~/lib/format";
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
   const [s, agentRows, receipts, approvals] = await Promise.all([
     getSummary(),
     getAgents(),
-    getReceipts({ limit: 12 }),
+    getReceipts({ limit: 500 }),
     getApprovals(),
   ]);
   const dailyCapTotal = agentRows.reduce((acc, a) => acc + a.dailyCapUsd, 0);
@@ -80,8 +81,12 @@ export default async function DashboardPage() {
         <Section
           code="00.01"
           title="Live activity"
-          meta={`${receipts.length} most recent · streaming`}
+          meta={`${Math.min(receipts.length, 12)} most recent · streaming`}
         >
+          <div className="mb-4 grid grid-cols-2 gap-4">
+            <SpendOverTimeChart receipts={receipts} title="Signed spend" />
+            <OverviewDecisionChart receipts={receipts} />
+          </div>
           <div className="overflow-x-auto">
             <div className="min-w-[680px]">
               <div className="grid grid-cols-[78px_22px_140px_1fr_88px_72px] gap-4 px-1 pb-2 border-b border-hairline-strong">
@@ -93,7 +98,7 @@ export default async function DashboardPage() {
                 <span className="label text-right">Receipt</span>
               </div>
               <div>
-                {receipts.map((r) => (
+                {receipts.slice(0, 12).map((r) => (
                   <FeedRow key={r.id} r={r} />
                 ))}
               </div>

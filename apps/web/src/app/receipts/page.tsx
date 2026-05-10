@@ -1,7 +1,8 @@
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
-import { StatusGlyph } from "~/components/status-glyph";
-import { fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
+import { ReceiptDecisionChart } from "~/components/receipt-charts";
+import { ReceiptsLedger } from "~/components/receipts-ledger";
+import { fmtUsd } from "~/lib/format";
 import { getReceipts } from "~/lib/queries";
 
 const FILTERS = ["ALL", "ALLOW", "DENY", "FAILED"] as const;
@@ -85,75 +86,13 @@ export default async function ReceiptsPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <Section code="03.00" title="Ledger" meta="newest first">
-        <div className="overflow-x-auto text-[12.5px]">
-          <div className="min-w-[840px]">
-            <div className="grid grid-cols-[88px_22px_64px_140px_1fr_120px_100px_80px] gap-4 px-1 pb-2 border-b border-hairline-strong">
-              <span className="label">UTC</span>
-              <span className="label" />
-              <span className="label">Decision</span>
-              <span className="label">Agent</span>
-              <span className="label">Target</span>
-              <span className="label text-right">Amount</span>
-              <span className="label">Network</span>
-              <span className="label text-right">Receipt</span>
-            </div>
-          {sorted.map((r) => (
-            <div
-              key={r.id}
-              className="grid grid-cols-[88px_22px_64px_140px_1fr_120px_100px_80px] gap-4 items-center py-2.5 border-b border-hairline/60 hover:bg-bg-row/40 transition-colors px-1"
-            >
-              <div className="flex flex-col">
-                <span className="mono text-t1 text-[11.5px]">
-                  {fmtTime(r.createdAt)}
-                </span>
-                <span className="mono text-t4 text-[10.5px]">
-                  {fmtRelative(r.createdAt)}
-                </span>
-              </div>
-              <StatusGlyph status={r.decision} showLabel={false} />
-              <span
-                className={`label ${
-                  r.decision === "allow"
-                    ? "text-allow"
-                    : r.decision === "deny"
-                    ? "text-deny"
-                    : "text-pending"
-                }`}
-              >
-                {r.decision === "allow"
-                  ? "ALLOW"
-                  : r.decision === "deny"
-                  ? "DENY"
-                  : "FAILED"}
-              </span>
-              <div className="flex flex-col">
-                <span className="text-t1">{r.agentName}</span>
-                <span className="mono text-t4 text-[10.5px]">
-                  {shortKey(r.agentId, 4, 4)}
-                </span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-t2">{r.provider}</span>
-                <span className="mono text-t4 text-[10.5px] truncate">
-                  {r.method} {new URL(r.url).pathname}
-                </span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="label-num text-t1 text-[13px]">
-                  {fmtUsd(r.amountUsd)}
-                </span>
-                <span className="mono text-t4 text-[10.5px]">{r.currency}</span>
-              </div>
-              <span className="mono text-t3 text-[10.5px]">
-                {r.network.replace("solana-", "")}
-              </span>
-              <span className="mono text-t4 text-[10.5px] text-right">
-                {shortKey(r.id, 3, 5)}
-              </span>
-            </div>
-          ))}
-          </div>
+      <Section code="03.00" title="Receipt graph" meta="allowed · denied · failed">
+        <ReceiptDecisionChart receipts={sorted} />
+      </Section>
+
+      <Section code="03.01" title="Ledger" meta="click a row to inspect">
+        <div className="-mx-6 -my-5">
+          <ReceiptsLedger receipts={sorted} />
         </div>
       </Section>
     </Shell>

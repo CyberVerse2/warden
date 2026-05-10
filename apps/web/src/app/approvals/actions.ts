@@ -40,9 +40,22 @@ export async function decideApproval(
 
   if (decision === "approved") {
     const rpcUrl = requireEnv("SOLANA_RPC_URL");
-    const walletService = createWalletService({ db, rpcUrl });
+    const walletService = createWalletService({
+      db,
+      rpcUrl,
+      rpcUrls: {
+        mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+        devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
+        testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      },
+    });
     const proofBuilder = createX402SvmProofBuilder(walletService, {
       rpcUrl,
+      rpcUrls: {
+        mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+        devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
+        testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      },
     });
     const runtime = createRuntime({ db, walletService, proofBuilder });
     const snapshot = approval.requestSnapshot as {

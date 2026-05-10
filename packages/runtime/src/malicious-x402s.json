@@ -1,13 +1,41 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-09",
+  "updatedAt": "2026-05-10",
   "entries": [
     {
-      "id": "mal_x402_fake_quicknode",
+      "id": "mal_x402_402bridge_usdc_drain",
       "reputation": "malicious",
-      "hosts": ["quicknode-payments.example"],
-      "urlPrefixes": ["https://quicknode-payments.example/"],
-      "reasons": ["domain impersonation", "fake x402 provider"],
+      "recipients": ["0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5"],
+      "reasons": [
+        "reported x402 bridge approval-drain incident",
+        "contract owner reportedly used transferUserToken to drain authorized USDC",
+        "GoPlus alert reported over 200 affected users and 17693 USDC stolen"
+      ],
+      "source": "https://www.theblockbeats.info/en/flash/318013"
+    },
+    {
+      "id": "blocked_x402factory_ai_reputation",
+      "reputation": "blocked",
+      "hosts": ["x402factory.ai"],
+      "urlPrefixes": ["https://x402factory.ai/", "http://x402factory.ai/"],
+      "reasons": [
+        "Gridinsoft classified the site as suspicious and reported blacklist indicators",
+        "ScamAdviser reported a very low trust score and potential scam indicators",
+        "crypto-related x402 domain with hidden ownership and limited independent reputation"
+      ],
+      "source": "https://gridinsoft.com/online-virus-scanner/url/x402factory-ai"
+    },
+    {
+      "id": "mal_x402bridge_demo",
+      "reputation": "malicious",
+      "hosts": ["x402bridge.example"],
+      "urlPrefixes": ["https://x402bridge.example/"],
+      "recipients": ["0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5"],
+      "reasons": [
+        "x402 bridge provider associated with a reported approval-drain pattern",
+        "recipient appears on the malicious x402 bridge recipient list",
+        "blocked demo fixture for Warden threat-intel enforcement"
+      ],
       "source": "warden-seed"
     },
     {

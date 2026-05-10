@@ -83,6 +83,14 @@ export default async function AgentTokenPage({ params, searchParams }: Props) {
             >
               CONFIGURE POLICY →
             </a>
+            {token && (
+              <a
+                href={`/agents/${agent.id}/chat?token=${encodeURIComponent(token)}`}
+                className="mt-3 inline-flex label px-4 py-2 border border-hairline-strong text-t2 hover:border-signal-dim hover:text-signal transition-colors"
+              >
+                OPEN CHAT →
+              </a>
+            )}
           </div>
         </aside>
       </section>

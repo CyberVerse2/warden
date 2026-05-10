@@ -19,7 +19,9 @@ export function CopyButton({ text, label = "COPY" }: { text: string; label?: str
           setTimeout(() => setFailed(false), 2000);
         }
       }}
-      className="label text-signal hover:text-t1 transition-colors cursor-pointer"
+      className={`motion-press label cursor-pointer text-signal transition-colors hover:text-t1 ${
+        copied ? "motion-flash text-allow" : failed ? "text-deny" : ""
+      }`}
     >
       {copied ? "COPIED" : failed ? "COPY BLOCKED" : label}
     </button>

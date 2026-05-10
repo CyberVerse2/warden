@@ -86,6 +86,31 @@ export const agentTokens = pgTable(
   ],
 );
 
+export const agentChatMessages = pgTable(
+  "agent_chat_messages",
+  {
+    id: text("id").primaryKey(),
+    agentId: text("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role", { enum: ["user", "assistant"] }).notNull(),
+    content: text("content").notNull(),
+    toolCalls: jsonb("tool_calls"),
+    createdAt: createdAt("created_at"),
+  },
+  (t) => [
+    index("agent_chat_messages_agent_user_created_idx").on(
+      t.agentId,
+      t.userId,
+      t.createdAt,
+    ),
+    index("agent_chat_messages_user_idx").on(t.userId),
+  ],
+);
+
 export const wallets = pgTable(
   "wallets",
   {
@@ -161,6 +186,40 @@ export const receipts = pgTable(
     index("receipts_agent_idx").on(t.agentId),
     index("receipts_created_idx").on(t.createdAt),
     index("receipts_decision_idx").on(t.decision),
+  ],
+);
+
+export const agentResponseArtifacts = pgTable(
+  "agent_response_artifacts",
+  {
+    id: text("id").primaryKey(),
+    agentId: text("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    messageId: text("message_id").references(() => agentChatMessages.id, {
+      onDelete: "cascade",
+    }),
+    receiptId: text("receipt_id").references(() => receipts.id),
+    toolName: text("tool_name").notNull(),
+    url: text("url").notNull(),
+    method: text("method").notNull(),
+    responseStatus: integer("response_status"),
+    title: text("title").notNull(),
+    operationId: text("operation_id"),
+    endpointMetadata: jsonb("endpoint_metadata"),
+    responseBody: jsonb("response_body").notNull(),
+    createdAt: createdAt("created_at"),
+  },
+  (t) => [
+    index("agent_response_artifacts_agent_created_idx").on(
+      t.agentId,
+      t.createdAt,
+    ),
+    index("agent_response_artifacts_message_idx").on(t.messageId),
+    index("agent_response_artifacts_receipt_idx").on(t.receiptId),
   ],
 );
 

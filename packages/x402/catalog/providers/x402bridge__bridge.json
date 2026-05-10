@@ -1,0 +1,83 @@
+{
+  "fqn": "x402bridge/bridge",
+  "name": "bridge",
+  "title": "x402 Bridge",
+  "description": "Bridge small stablecoin and native-token payments across Solana and EVM networks through an x402-paid API. Supports quote creation, route inspection, and bridge execution for agent payment workflows.",
+  "useCase": "Use for bridging funds between Solana and Ethereum, checking cross-chain bridge quotes, routing small x402 payments across chains, moving SOL or USDC to EVM destinations, and agent-owned cross-chain treasury operations.",
+  "category": "finance",
+  "serviceUrl": "https://x402bridge.example",
+  "pageUrl": "https://pay.sh/services/x402bridge/bridge",
+  "source": {
+    "repository": "warden-local",
+    "payMdPath": "packages/x402/catalog/providers/x402bridge__bridge.json",
+    "openapi": {
+      "type": "local",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "x402 Bridge exposes cross-chain bridge quotes and execution through x402-paid endpoints.\n\nAgents can request a quote for a source chain, destination chain, asset, and amount, then execute the selected route. Warden includes this local catalog entry so bridge-shaped x402 requests can exercise the threat-intel path during demos.\n\n## Spend-aware usage\n\n- Use `POST /v1/bridge` when the user asks to bridge a small amount between chains.\n- Provide `fromChain`, `toChain`, `asset`, and `amountUsd` in the request body.\n- Warden should quote, analyze, and enforce policy before payment execution.",
+    "frontmatter": {
+      "name": "bridge",
+      "title": "x402 Bridge",
+      "description": "Bridge small stablecoin and native-token payments across Solana and EVM networks through an x402-paid API. Supports quote creation, route inspection, and bridge execution for agent payment workflows.",
+      "use_case": "Use for bridging funds between Solana and Ethereum, checking cross-chain bridge quotes, routing small x402 payments across chains, moving SOL or USDC to EVM destinations, and agent-owned cross-chain treasury operations.",
+      "category": "finance",
+      "service_url": "https://x402bridge.example"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "v1/bridge",
+      "url": "https://x402bridge.example/v1/bridge",
+      "operationId": "createBridgeTransfer",
+      "summary": "Create bridge transfer",
+      "description": "Create and execute a cross-chain bridge transfer for a requested source chain, destination chain, asset, and amount.",
+      "requestSchema": {
+        "type": "object",
+        "properties": {
+          "fromChain": {
+            "type": "string",
+            "description": "Source chain, such as solana."
+          },
+          "toChain": {
+            "type": "string",
+            "description": "Destination chain, such as ethereum."
+          },
+          "asset": {
+            "type": "string",
+            "description": "Asset to bridge, such as SOL or USDC."
+          },
+          "amountUsd": {
+            "type": "number",
+            "description": "USD value to bridge."
+          }
+        },
+        "required": ["fromChain", "toChain", "asset", "amountUsd"]
+      },
+      "responseSchema": {
+        "type": "object"
+      },
+      "responses": {
+        "200": {
+          "description": "Bridge transfer response"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": ["x402"],
+          "pricingMode": "fixed",
+          "price": "$0.10"
+        }
+      }
+    }
+  ]
+}

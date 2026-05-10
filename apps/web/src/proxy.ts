@@ -4,6 +4,9 @@ const PUBLIC_PATHS = [
   "/login",
   "/api/health",
   "/auth/signout",
+  // Chat streams handle auth inside the route so failures can be returned as SSE
+  // instead of a login HTML page that leaves the client waiting for events.
+  "/api/agent-chat",
   // MCP endpoint authenticates via Bearer token, not Privy cookie.
   "/api/mcp",
 ];

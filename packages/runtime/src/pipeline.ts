@@ -3,11 +3,15 @@ import { and, approvals, eq, receipts, type Db } from "@warden/db";
 import { evaluate, type PolicyDecision } from "@warden/policy";
 import type { WalletService } from "@warden/wallet";
 import {
+  createMppProofBuilder,
   hashRequest,
+  mppResponseFromChallenge,
   parseChallenge,
+  parseMppChallenge,
   sendRequest,
   type FetchLike,
   type HttpRequest,
+  type MppProofBuilder,
   type ProofBuilder,
 } from "@warden/x402";
 import { resolveAgentById, resolveAgentByToken } from "./auth";
@@ -24,6 +28,7 @@ export interface RuntimeDeps {
   db: Db;
   walletService: WalletService;
   proofBuilder: ProofBuilder;
+  mppProofBuilder?: MppProofBuilder;
   fetchImpl?: FetchLike;
   riskAnalyzer?: AiRiskAnalyzer;
 }
@@ -54,6 +59,19 @@ function urlHost(url: string): string {
   return new URL(url).host;
 }
 
+function isZeroValueFollowupRequest(request: HttpRequest) {
+  if (request.method.toUpperCase() !== "GET") return false;
+  try {
+    const url = new URL(request.url);
+    return (
+      url.hostname === "fal.x402.paysponge.com" &&
+      /\/requests\/[^/]+(?:\/status)?\/?$/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export interface Runtime {
   executePaidRequest(input: ExecutePaidRequestInput): Promise<ExecuteResult>;
   dryRun(input: ExecutePaidRequestInput): Promise<PolicyDecision | { kind: "no_payment_required" }>;
@@ -64,6 +82,7 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     db,
     walletService,
     proofBuilder,
+    mppProofBuilder = createMppProofBuilder(walletService),
     fetchImpl,
     riskAnalyzer = createOpenAiRiskAnalyzer(),
   } = deps;
@@ -89,8 +108,9 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     const reqHash = hashRequest(input.request);
     const initial = await sendRequest(input.request, fetchImpl);
 
-    // 3. Not 402: pass-through, no policy check, record an allow receipt with no payment.
+    // 3. Not 402: pass-through, no policy check, record success/failure with no payment.
     if (initial.status !== 402) {
+      const succeeded = initial.status >= 200 && initial.status < 300;
       const receiptId = newId.receipt();
       await db.insert(receipts).values({
         id: receiptId,
@@ -99,12 +119,24 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
         url: input.request.url,
         method: input.request.method.toUpperCase(),
         host,
-        decision: "allow",
-        decisionReason: "no_payment_required",
+        decision: succeeded ? "allow" : "failed",
+        decisionReason: succeeded
+          ? "no_payment_required"
+          : `provider_http_error:${initial.status}`,
         responseStatus: initial.status,
         requestHash: reqHash,
         ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
       });
+      if (!succeeded) {
+        const failureDetail = initial.rawBody
+          ? `: ${initial.rawBody.slice(0, 2_000)}`
+          : "";
+        return {
+          kind: "failed",
+          receiptId,
+          reason: `Provider returned ${initial.status}${failureDetail}`,
+        };
+      }
       return {
         kind: "ok",
         receiptId,
@@ -120,11 +152,250 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     const { policyId, config: policy } = await loadActivePolicy(db, agent.agentId);
     const dayUsd = await getDailySpend(db, agent.agentId);
 
+    const mppChallenge = parseMppChallenge(initial.headers, {
+      allowedNetworks: policy.allowedNetworks,
+      allowedTokens: policy.allowedTokens,
+    });
+    if (mppChallenge) {
+      if (
+        mppChallenge.requirement.amountUsd === 0 &&
+        !isZeroValueFollowupRequest(input.request)
+      ) {
+        const receiptId = newId.receipt();
+        await db.insert(receipts).values({
+          id: receiptId,
+          agentId: agent.agentId,
+          walletId: agent.walletId,
+          policyId,
+          url: input.request.url,
+          method: input.request.method.toUpperCase(),
+          host,
+          amountRaw: mppChallenge.requirement.amountRaw,
+          amountUsd: 0,
+          currency: mppChallenge.requirement.token,
+          network: mppChallenge.requirement.network,
+          recipient: mppChallenge.requirement.recipient,
+          challengeHash: mppChallenge.hash,
+          requestHash: reqHash,
+          responseStatus: 402,
+          decision: "allow",
+          decisionReason: "zero_payment_required",
+          ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+        });
+        return {
+          kind: "failed",
+          receiptId,
+          reason:
+            "Provider returned a zero-value MPP payment challenge; Warden did not sign a zero-value transfer.",
+        };
+      }
+      const decision = input.skipPolicy
+        ? ({ kind: "allow" } as const)
+        : evaluate({
+            agent: { id: agent.agentId, status: agent.status },
+            challenge: {
+              amountUsd: mppChallenge.requirement.amountUsd,
+              recipient: mppChallenge.requirement.recipient,
+              network: mppChallenge.requirement.network,
+              token: mppChallenge.requirement.token,
+            },
+            request: {
+              url: input.request.url,
+              method: input.request.method,
+              host,
+            },
+            spendToDate: { dayUsd },
+            policy,
+          });
+
+      if (decision.kind === "deny") {
+        const receiptId = newId.receipt();
+        await db.insert(receipts).values({
+          id: receiptId,
+          agentId: agent.agentId,
+          walletId: agent.walletId,
+          policyId,
+          url: input.request.url,
+          method: input.request.method.toUpperCase(),
+          host,
+          amountRaw: mppChallenge.requirement.amountRaw,
+          amountUsd: mppChallenge.requirement.amountUsd,
+          currency: mppChallenge.requirement.token,
+          network: mppChallenge.requirement.network,
+          recipient: mppChallenge.requirement.recipient,
+          challengeHash: mppChallenge.hash,
+          requestHash: reqHash,
+          responseStatus: 402,
+          decision: "deny",
+          decisionReason: `${decision.rule}: ${decision.reason}`,
+          ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+        });
+        return {
+          kind: "denied",
+          receiptId,
+          reason: decision.reason,
+          rule: decision.rule,
+        };
+      }
+
+      if (decision.kind === "requires_approval") {
+        const approval = await findOrCreateApproval({
+          agentId: agent.agentId,
+          amountUsd: mppChallenge.requirement.amountUsd,
+          triggeringRule: decision.rule,
+          requestSnapshot: {
+            request: input.request,
+            challenge: mppChallenge.requirement,
+            protocol: "mpp",
+            requestHash: reqHash,
+            challengeHash: mppChallenge.hash,
+            taskId: input.taskId,
+          },
+          requestHash: reqHash,
+          challengeHash: mppChallenge.hash,
+        });
+        return {
+          kind: "approval_required",
+          approvalId: approval.id,
+          reason: decision.reason,
+          rule: decision.rule,
+        };
+      }
+
+      let proof;
+      try {
+        proof = await mppProofBuilder.build({
+          walletId: agent.walletId,
+          challenge: mppChallenge,
+          response: mppResponseFromChallenge(mppChallenge),
+        });
+      } catch (error) {
+        const receiptId = newId.receipt();
+        const reason = `mpp_payment_proof_failed:${errorMessage(error)}`;
+        await db.insert(receipts).values({
+          id: receiptId,
+          agentId: agent.agentId,
+          walletId: agent.walletId,
+          policyId,
+          url: input.request.url,
+          method: input.request.method.toUpperCase(),
+          host,
+          amountRaw: mppChallenge.requirement.amountRaw,
+          amountUsd: mppChallenge.requirement.amountUsd,
+          currency: mppChallenge.requirement.token,
+          network: mppChallenge.requirement.network,
+          recipient: mppChallenge.requirement.recipient,
+          challengeHash: mppChallenge.hash,
+          requestHash: reqHash,
+          responseStatus: 402,
+          decision: "failed",
+          decisionReason: reason,
+          ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+        });
+        return {
+          kind: "failed",
+          receiptId,
+          reason,
+        };
+      }
+
+      const paid = await sendRequest(
+        {
+          ...input.request,
+          headers: {
+            ...(input.request.headers ?? {}),
+            [proof.headerName ?? "Authorization"]: proof.header,
+            ...(proof.extraHeaders ?? {}),
+          },
+        },
+        fetchImpl,
+      );
+
+      const succeeded = paid.status >= 200 && paid.status < 300;
+      const receiptId = newId.receipt();
+      if (succeeded) {
+        await incrementDailySpend(db, agent.agentId, mppChallenge.requirement.amountUsd);
+      }
+      await db.insert(receipts).values({
+        id: receiptId,
+        agentId: agent.agentId,
+        walletId: agent.walletId,
+        policyId,
+        url: input.request.url,
+        method: input.request.method.toUpperCase(),
+        host,
+        amountRaw: mppChallenge.requirement.amountRaw,
+        amountUsd: mppChallenge.requirement.amountUsd,
+        currency: mppChallenge.requirement.token,
+        network: mppChallenge.requirement.network,
+        recipient: mppChallenge.requirement.recipient,
+        challengeHash: mppChallenge.hash,
+        requestHash: reqHash,
+        responseStatus: paid.status,
+        decision: succeeded ? "allow" : "failed",
+        decisionReason: succeeded
+          ? input.skipPolicy?.reason ?? "policy.allow:mpp"
+          : `mpp_payment_failed:${paid.status}`,
+        ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+      });
+
+      const failureDetail =
+        !succeeded && paid.rawBody ? `: ${paid.rawBody.slice(0, 2_000)}` : "";
+      if (!succeeded) {
+        return {
+          kind: "failed",
+          receiptId,
+          reason: `MPP paid retry returned ${paid.status}${failureDetail}`,
+        };
+      }
+      return {
+        kind: "ok",
+        receiptId,
+        response: { status: paid.status, body: paid.body, headers: paid.headers },
+        payment: {
+          amountUsd: mppChallenge.requirement.amountUsd,
+          proofHash: proof.proofHash,
+        },
+      };
+    }
+
     // 5. Parse the first policy-compatible 402 challenge.
     const challenge = parseChallenge(initial.body, {
       allowedNetworks: policy.allowedNetworks,
       allowedTokens: policy.allowedTokens,
     }, initial.headers);
+    if (
+      challenge.requirement.amountUsd === 0 &&
+      !isZeroValueFollowupRequest(input.request)
+    ) {
+      const receiptId = newId.receipt();
+      await db.insert(receipts).values({
+        id: receiptId,
+        agentId: agent.agentId,
+        walletId: agent.walletId,
+        policyId,
+        url: input.request.url,
+        method: input.request.method.toUpperCase(),
+        host,
+        amountRaw: challenge.requirement.amountRaw,
+        amountUsd: 0,
+        currency: challenge.requirement.token,
+        network: challenge.requirement.network,
+        recipient: challenge.requirement.recipient,
+        challengeHash: challenge.hash,
+        requestHash: reqHash,
+        responseStatus: 402,
+        decision: "allow",
+        decisionReason: "zero_payment_required",
+        ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+      });
+      return {
+        kind: "failed",
+        receiptId,
+        reason:
+          "Provider returned a zero-value x402 payment challenge; Warden did not sign a zero-value transfer.",
+      };
+    }
 
     const threat = findMaliciousX402({
       url: input.request.url,
@@ -270,11 +541,42 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     }
 
     // 7. Sign the proof
-    const proof = await proofBuilder.build({
-      walletId: agent.walletId,
-      challenge,
-      requestHash: reqHash,
-    });
+    let proof;
+    try {
+      proof = await proofBuilder.build({
+        walletId: agent.walletId,
+        challenge,
+        requestHash: reqHash,
+      });
+    } catch (error) {
+      const receiptId = newId.receipt();
+      const reason = `payment_proof_failed:${errorMessage(error)}`;
+      await db.insert(receipts).values({
+        id: receiptId,
+        agentId: agent.agentId,
+        walletId: agent.walletId,
+        policyId,
+        url: input.request.url,
+        method: input.request.method.toUpperCase(),
+        host,
+        amountRaw: challenge.requirement.amountRaw,
+        amountUsd: challenge.requirement.amountUsd,
+        currency: challenge.requirement.token,
+        network: challenge.requirement.network,
+        recipient: challenge.requirement.recipient,
+        challengeHash: challenge.hash,
+        requestHash: reqHash,
+        responseStatus: 402,
+        decision: "failed",
+        decisionReason: reason,
+        ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
+      });
+      return {
+        kind: "failed",
+        receiptId,
+        reason,
+      };
+    }
 
     // 8. Retry with payment header
     const paid = await sendRequest(
@@ -355,6 +657,32 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     if (initial.status !== 402) return { kind: "no_payment_required" as const };
 
     const { config: policy } = await loadActivePolicy(db, agent.agentId);
+    const mppChallenge = parseMppChallenge(initial.headers, {
+      allowedNetworks: policy.allowedNetworks,
+      allowedTokens: policy.allowedTokens,
+    });
+    if (mppChallenge) {
+      if (mppChallenge.requirement.amountUsd === 0) {
+        return { kind: "no_payment_required" as const };
+      }
+      const dayUsd = await getDailySpend(db, agent.agentId);
+      return evaluate({
+        agent: { id: agent.agentId, status: agent.status },
+        challenge: {
+          amountUsd: mppChallenge.requirement.amountUsd,
+          recipient: mppChallenge.requirement.recipient,
+          network: mppChallenge.requirement.network,
+          token: mppChallenge.requirement.token,
+        },
+        request: {
+          url: input.request.url,
+          method: input.request.method,
+          host: urlHost(input.request.url),
+        },
+        spendToDate: { dayUsd },
+        policy,
+      });
+    }
     const challenge = parseChallenge(
       initial.body,
       {
@@ -363,6 +691,9 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       },
       initial.headers,
     );
+    if (challenge.requirement.amountUsd === 0) {
+      return { kind: "no_payment_required" as const };
+    }
     const threat = findMaliciousX402({
       url: input.request.url,
       host: urlHost(input.request.url),
@@ -462,4 +793,11 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
 function allowReason(aiRisk: AiRiskResult | undefined) {
   if (!aiRisk) return "policy.allow";
   return `policy.allow; aiRisk.${aiRisk.level}: ${aiRisk.summary}`;
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
 }

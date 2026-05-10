@@ -1,0 +1,2965 @@
+{
+  "fqn": "dtelecom/voice",
+  "name": "voice",
+  "title": "dTelecom",
+  "description": "Use wallet-authenticated WebRTC voice, speech-to-text, and text-to-speech APIs for AI agents. Supports realtime bidirectional voice sessions, transcription, speech synthesis, low-latency communication, and pay-per-use voice workflows.",
+  "useCase": "Use for realtime AI voice conversations, WebRTC calling, speech-to-text transcription, text-to-speech playback, voice agents, audio interfaces, agent-to-user communication, low-latency conversations, and programmable voice workflows.",
+  "category": "ai_ml",
+  "serviceUrl": "https://x402.dtelecom.org",
+  "pageUrl": "https://pay.sh/services/dtelecom/voice",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/dtelecom/voice/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://x402.dtelecom.org/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "Pay-per-use communication APIs for AI agents. WebRTC for real-time voice,\nplus speech-to-text and text-to-speech. Decentralized infrastructure\nwith low-latency global coverage.\n\n## Spend-aware usage\n\n- Buy credits once via `v1/credits/purchase` (this is the paid 402 gateway), then\n  reuse the returned Bearer token across the session endpoints. Do not\n  re-purchase credits per call.\n- Use `v1/stt/session` for transcription and `v1/tts/session` for speech\n  synthesis. Use `v1/webrtc/token` or `v1/agent-session` only when the user\n  wants an interactive live voice session.\n- Before starting WebRTC, confirm the conversation goal, expected duration, and\n  whether the user is ready to join. Do not open realtime sessions speculatively.\n- For TTS, send the final text once instead of generating several voice variants\n  unless the user explicitly asks to compare voices.",
+    "frontmatter": {
+      "name": "voice",
+      "title": "dTelecom",
+      "description": "Use wallet-authenticated WebRTC voice, speech-to-text, and text-to-speech APIs for AI agents. Supports realtime bidirectional voice sessions, transcription, speech synthesis, low-latency communication, and pay-per-use voice workflows.",
+      "use_case": "Use for realtime AI voice conversations, WebRTC calling, speech-to-text transcription, text-to-speech playback, voice agents, audio interfaces, agent-to-user communication, low-latency conversations, and programmable voice workflows.",
+      "category": "ai_ml",
+      "service_url": "https://x402.dtelecom.org",
+      "openapi": {
+        "url": "https://x402.dtelecom.org/openapi.json"
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "v1/credits/purchase",
+      "url": "https://x402.dtelecom.org/v1/credits/purchase",
+      "summary": "Purchase credits via x402 payment",
+      "description": "Send a USDC payment through the x402 protocol to purchase microcredits. The X-Payment header must contain a valid x402 proof.",
+      "parameters": [
+        {
+          "name": "X-Payment",
+          "in": "header",
+          "required": true,
+          "description": "x402 payment proof",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "wallet_address",
+          "wallet_chain",
+          "amount_usd"
+        ],
+        "properties": {
+          "wallet_address": {
+            "type": "string",
+            "description": "Your wallet address"
+          },
+          "wallet_chain": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ],
+            "description": "Blockchain to use"
+          },
+          "amount_usd": {
+            "type": "number",
+            "minimum": 0.1,
+            "description": "Amount in USD to purchase"
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "credited_microcredits": {
+            "type": "string"
+          },
+          "amount_usd": {
+            "type": "number"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Credits purchased successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "credited_microcredits": {
+                    "type": "string"
+                  },
+                  "amount_usd": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Payment required — x402 payment header missing or invalid"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402",
+            "mpp"
+          ],
+          "pricingMode": "range",
+          "price": "0.10",
+          "minPrice": "0.10",
+          "maxPrice": "1000.00"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/credits/purchase/mpp",
+      "url": "https://x402.dtelecom.org/v1/credits/purchase/mpp",
+      "summary": "Purchase credits via MPP payment",
+      "description": "Send a Tempo payment through the Machine Payments Protocol to purchase microcredits. Returns a 402 challenge if no valid credential is provided.",
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "wallet_address",
+          "wallet_chain",
+          "amount_usd"
+        ],
+        "properties": {
+          "wallet_address": {
+            "type": "string",
+            "description": "Your wallet address (0x-prefixed)"
+          },
+          "wallet_chain": {
+            "type": "string",
+            "enum": [
+              "evm",
+              "tempo"
+            ],
+            "description": "Blockchain for wallet auth (same EVM key)"
+          },
+          "amount_usd": {
+            "type": "number",
+            "minimum": 0.1,
+            "description": "Amount in USD to purchase"
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "credited_microcredits": {
+            "type": "string"
+          },
+          "amount_usd": {
+            "type": "number"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Credits purchased successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "credited_microcredits": {
+                    "type": "string"
+                  },
+                  "amount_usd": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Payment required — MPP challenge returned"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "mpp"
+          ],
+          "pricingMode": "range",
+          "price": "0.10",
+          "minPrice": "0.10",
+          "maxPrice": "1000.00"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/credits/purchase/tron",
+      "url": "https://x402.dtelecom.org/v1/credits/purchase/tron",
+      "summary": "Purchase credits via TRON USDT (Bank of AI x402 facilitator)",
+      "description": "Send a TRON USDT (TRC-20) payment via the Bank of AI x402 facilitator (scheme `exact_permit`, network `tron:mainnet`). Returns a 402 challenge with PAYMENT-REQUIRED header if no valid PAYMENT-SIGNATURE is provided. Buyer wallet is taken from the signed payload, not the request body.",
+      "parameters": [
+        {
+          "name": "PAYMENT-SIGNATURE",
+          "in": "header",
+          "required": false,
+          "description": "Base64-encoded x402 payment payload (omit on first request to receive 402 challenge)",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "amount_usd"
+        ],
+        "properties": {
+          "amount_usd": {
+            "type": "number",
+            "minimum": 0.1,
+            "description": "Amount in USD to purchase"
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "credited_microcredits": {
+            "type": "string"
+          },
+          "amount_usd": {
+            "type": "number"
+          },
+          "tron_tx_hash": {
+            "type": "string"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Credits purchased successfully",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "credited_microcredits": {
+                    "type": "string"
+                  },
+                  "amount_usd": {
+                    "type": "number"
+                  },
+                  "tron_tx_hash": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Payment required — x402 challenge returned in PAYMENT-REQUIRED header"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "range",
+          "price": "0.10",
+          "minPrice": "0.10",
+          "maxPrice": "1000.00"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "v1/account",
+      "url": "https://x402.dtelecom.org/v1/account",
+      "summary": "Get account info and balance",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Account details and balances"
+        },
+        "401": {
+          "description": "Invalid or missing authentication"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "v1/account/transactions",
+      "url": "https://x402.dtelecom.org/v1/account/transactions",
+      "summary": "Get credit transaction history",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "schema": {
+            "type": "integer",
+            "default": 50
+          }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "schema": {
+            "type": "integer",
+            "default": 0
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Paginated transaction list"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "v1/account/sessions",
+      "url": "https://x402.dtelecom.org/v1/account/sessions",
+      "summary": "Get session list",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "schema": {
+            "type": "integer",
+            "default": 50
+          }
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "schema": {
+            "type": "integer",
+            "default": 0
+          }
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "schema": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed",
+              "expired"
+            ]
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Paginated session list"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/webrtc/token",
+      "url": "https://x402.dtelecom.org/v1/webrtc/token",
+      "summary": "Create a WebRTC session",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "room_name",
+          "participant_identity",
+          "duration_minutes"
+        ],
+        "properties": {
+          "room_name": {
+            "type": "string"
+          },
+          "participant_identity": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "number"
+          },
+          "metadata": {
+            "type": "string"
+          },
+          "client_ip": {
+            "type": "string",
+            "description": "End user's IP for geo-routing the ws_url to the nearest SFU. Use when your server creates tokens on behalf of remote users. Falls back to X-Forwarded-For if omitted."
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "ws_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "WebRTC session created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "ws_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Insufficient credits"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/webrtc/token/extend",
+      "url": "https://x402.dtelecom.org/v1/webrtc/token/extend",
+      "summary": "Extend a WebRTC session",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "additional_minutes"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "additional_minutes": {
+            "type": "number"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Session extended"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/stt/session",
+      "url": "https://x402.dtelecom.org/v1/stt/session",
+      "summary": "Create an STT session",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "duration_minutes"
+        ],
+        "properties": {
+          "duration_minutes": {
+            "type": "number"
+          },
+          "language": {
+            "type": "string",
+            "default": "en"
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "server_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "STT session created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "server_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Insufficient credits"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/stt/session/extend",
+      "url": "https://x402.dtelecom.org/v1/stt/session/extend",
+      "summary": "Extend an STT session",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "additional_minutes"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "additional_minutes": {
+            "type": "number"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Session extended"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/tts/session",
+      "url": "https://x402.dtelecom.org/v1/tts/session",
+      "summary": "Create a TTS session",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "max_characters"
+        ],
+        "properties": {
+          "max_characters": {
+            "type": "number"
+          },
+          "language": {
+            "type": "string"
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "server_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "TTS session created",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "token": {
+                    "type": "string"
+                  },
+                  "server_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Insufficient credits"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/tts/session/extend",
+      "url": "https://x402.dtelecom.org/v1/tts/session/extend",
+      "summary": "Extend a TTS session",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "additional_characters"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "additional_characters": {
+            "type": "number"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Session extended"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/agent-session",
+      "url": "https://x402.dtelecom.org/v1/agent-session",
+      "summary": "Create a bundled Agent session (WebRTC + STT + TTS)",
+      "description": "Creates WebRTC + STT + TTS sessions as a single bundle. When client_identity is provided, generates two WebRTC tokens (agent + client) with independent geo-routing. Without client_identity, returns a single WebRTC token (backwards compatible).",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "room_name",
+          "participant_identity",
+          "duration_minutes"
+        ],
+        "properties": {
+          "room_name": {
+            "type": "string"
+          },
+          "participant_identity": {
+            "type": "string",
+            "description": "Identity for the agent participant"
+          },
+          "duration_minutes": {
+            "type": "number"
+          },
+          "language": {
+            "type": "string"
+          },
+          "tts_max_characters": {
+            "type": "number",
+            "default": 10000
+          },
+          "metadata": {
+            "type": "string"
+          },
+          "client_ip": {
+            "type": "string",
+            "description": "End user's IP for geo-routing the WebRTC ws_url. In dual mode, routes the client token. In single mode, routes the only token. Falls back to X-Forwarded-For if omitted."
+          },
+          "client_identity": {
+            "type": "string",
+            "description": "Identity for the client participant. When provided, the gateway generates two WebRTC tokens: one for the agent (geo-routed by server IP) and one for the client (geo-routed by client_ip)."
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "bundle_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "webrtc": {
+            "description": "With client_identity: { agent: { session_id, token, ws_url }, client: { session_id, token, ws_url } }. Without: { session_id, token, ws_url }.",
+            "type": "object"
+          },
+          "stt": {
+            "type": "object",
+            "properties": {
+              "session_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "token": {
+                "type": "string"
+              },
+              "server_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "tts": {
+            "type": "object",
+            "properties": {
+              "session_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "token": {
+                "type": "string"
+              },
+              "server_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Bundled session created. Response shape depends on whether client_identity was provided.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bundle_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "webrtc": {
+                    "description": "With client_identity: { agent: { session_id, token, ws_url }, client: { session_id, token, ws_url } }. Without: { session_id, token, ws_url }.",
+                    "type": "object"
+                  },
+                  "stt": {
+                    "type": "object",
+                    "properties": {
+                      "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "server_url": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    }
+                  },
+                  "tts": {
+                    "type": "object",
+                    "properties": {
+                      "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "server_url": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    }
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Insufficient credits"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "v1/agent-session/extend",
+      "url": "https://x402.dtelecom.org/v1/agent-session/extend",
+      "summary": "Extend an Agent session",
+      "description": "Extends all sessions in a bundle. When the bundle has two WebRTC sessions (dual mode), returns refreshed tokens for both agent and client. Otherwise returns a single refreshed WebRTC token.",
+      "parameters": [
+        {
+          "name": "Authorization",
+          "in": "header",
+          "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Address",
+          "in": "header",
+          "description": "Wallet address",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "X-Wallet-Chain",
+          "in": "header",
+          "description": "solana or evm",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "solana",
+              "evm"
+            ]
+          }
+        },
+        {
+          "name": "X-Timestamp",
+          "in": "header",
+          "description": "Unix epoch seconds",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "requestSchema": {
+        "type": "object",
+        "required": [
+          "bundle_id",
+          "additional_minutes"
+        ],
+        "properties": {
+          "bundle_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "additional_minutes": {
+            "type": "number"
+          },
+          "additional_tts_characters": {
+            "type": "number"
+          }
+        }
+      },
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "webrtc": {
+            "description": "Dual mode: { agent: { session_id, token, ws_url, new_expires_at }, client: { session_id, token, ws_url, new_expires_at } }. Single mode: { token, new_expires_at }.",
+            "type": "object"
+          },
+          "stt": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string"
+              },
+              "new_expires_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "tts": {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string"
+              },
+              "new_expires_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Session extended. WebRTC response shape mirrors the create response: dual mode returns { agent, client } objects, single mode returns a flat object.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "webrtc": {
+                    "description": "Dual mode: { agent: { session_id, token, ws_url, new_expires_at }, client: { session_id, token, ws_url, new_expires_at } }. Single mode: { token, new_expires_at }.",
+                    "type": "object"
+                  },
+                  "stt": {
+                    "type": "object",
+                    "properties": {
+                      "token": {
+                        "type": "string"
+                      },
+                      "new_expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  },
+                  "tts": {
+                    "type": "object",
+                    "properties": {
+                      "token": {
+                        "type": "string"
+                      },
+                      "new_expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "402": {
+          "description": "Insufficient credits"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "siwx"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "v1/pricing",
+      "url": "https://x402.dtelecom.org/v1/pricing",
+      "summary": "Get current pricing and limits",
+      "responseSchema": {
+        "type": "object",
+        "properties": {
+          "microcredits_per_usd": {
+            "type": "integer"
+          },
+          "rates": {
+            "type": "object"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Pricing information",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "microcredits_per_usd": {
+                    "type": "integer"
+                  },
+                  "rates": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "unprotected"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "v1/servers/status",
+      "url": "https://x402.dtelecom.org/v1/servers/status",
+      "summary": "Get server availability by service type",
+      "responses": {
+        "200": {
+          "description": "Server status by service"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "unprotected"
+        }
+      }
+    }
+  ],
+  "openapi": {
+    "openapi": "3.0.3",
+    "info": {
+      "title": "dTelecom x402 Gateway",
+      "version": "1.0.0",
+      "description": "Pay-per-use WebRTC, Speech-to-Text, and Text-to-Speech for AI agents via x402 and MPP payment protocols. No API keys, no accounts — wallet-based auth only. Accepts USDC on Solana, Base (EVM), Tempo (MPP), and USDT on TRON.",
+      "contact": {
+        "url": "https://dtelecom.org"
+      },
+      "guidance": "Buy credits via POST /v1/credits/purchase (x402, USDC on Solana/Base) or POST /v1/credits/purchase/mpp (MPP, pathUSD on Tempo). Then create sessions (WebRTC, STT, TTS, or bundled agent-session) using wallet signature auth. Billed for actual usage; unused credits refunded."
+    },
+    "servers": [
+      {
+        "url": "https://x402.dtelecom.org"
+      }
+    ],
+    "paths": {
+      "/v1/credits/purchase": {
+        "post": {
+          "summary": "Purchase credits via x402 payment",
+          "description": "Send a USDC payment through the x402 protocol to purchase microcredits. The X-Payment header must contain a valid x402 proof.",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-info": {
+            "protocols": [
+              "x402",
+              "mpp"
+            ],
+            "pricingMode": "range",
+            "price": "0.10",
+            "minPrice": "0.10",
+            "maxPrice": "1000.00"
+          },
+          "parameters": [
+            {
+              "name": "X-Payment",
+              "in": "header",
+              "required": true,
+              "description": "x402 payment proof",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "wallet_address",
+                    "wallet_chain",
+                    "amount_usd"
+                  ],
+                  "properties": {
+                    "wallet_address": {
+                      "type": "string",
+                      "description": "Your wallet address"
+                    },
+                    "wallet_chain": {
+                      "type": "string",
+                      "enum": [
+                        "solana",
+                        "evm"
+                      ],
+                      "description": "Blockchain to use"
+                    },
+                    "amount_usd": {
+                      "type": "number",
+                      "minimum": 0.1,
+                      "description": "Amount in USD to purchase"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Credits purchased successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "account_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "credited_microcredits": {
+                        "type": "string"
+                      },
+                      "amount_usd": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Payment required — x402 payment header missing or invalid"
+            }
+          }
+        }
+      },
+      "/v1/credits/purchase/mpp": {
+        "post": {
+          "summary": "Purchase credits via MPP payment",
+          "description": "Send a Tempo payment through the Machine Payments Protocol to purchase microcredits. Returns a 402 challenge if no valid credential is provided.",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-info": {
+            "protocols": [
+              "mpp"
+            ],
+            "pricingMode": "range",
+            "price": "0.10",
+            "minPrice": "0.10",
+            "maxPrice": "1000.00"
+          },
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "wallet_address",
+                    "wallet_chain",
+                    "amount_usd"
+                  ],
+                  "properties": {
+                    "wallet_address": {
+                      "type": "string",
+                      "description": "Your wallet address (0x-prefixed)"
+                    },
+                    "wallet_chain": {
+                      "type": "string",
+                      "enum": [
+                        "evm",
+                        "tempo"
+                      ],
+                      "description": "Blockchain for wallet auth (same EVM key)"
+                    },
+                    "amount_usd": {
+                      "type": "number",
+                      "minimum": 0.1,
+                      "description": "Amount in USD to purchase"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Credits purchased successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "account_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "credited_microcredits": {
+                        "type": "string"
+                      },
+                      "amount_usd": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Payment required — MPP challenge returned"
+            }
+          }
+        }
+      },
+      "/v1/credits/purchase/tron": {
+        "post": {
+          "summary": "Purchase credits via TRON USDT (Bank of AI x402 facilitator)",
+          "description": "Send a TRON USDT (TRC-20) payment via the Bank of AI x402 facilitator (scheme `exact_permit`, network `tron:mainnet`). Returns a 402 challenge with PAYMENT-REQUIRED header if no valid PAYMENT-SIGNATURE is provided. Buyer wallet is taken from the signed payload, not the request body.",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "range",
+            "price": "0.10",
+            "minPrice": "0.10",
+            "maxPrice": "1000.00"
+          },
+          "parameters": [
+            {
+              "name": "PAYMENT-SIGNATURE",
+              "in": "header",
+              "required": false,
+              "description": "Base64-encoded x402 payment payload (omit on first request to receive 402 challenge)",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "amount_usd"
+                  ],
+                  "properties": {
+                    "amount_usd": {
+                      "type": "number",
+                      "minimum": 0.1,
+                      "description": "Amount in USD to purchase"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Credits purchased successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "account_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "credited_microcredits": {
+                        "type": "string"
+                      },
+                      "amount_usd": {
+                        "type": "number"
+                      },
+                      "tron_tx_hash": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Payment required — x402 challenge returned in PAYMENT-REQUIRED header"
+            }
+          }
+        }
+      },
+      "/v1/account": {
+        "get": {
+          "summary": "Get account info and balance",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Account details and balances"
+            },
+            "401": {
+              "description": "Invalid or missing authentication"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/account/transactions": {
+        "get": {
+          "summary": "Get credit transaction history",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Paginated transaction list"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/account/sessions": {
+        "get": {
+          "summary": "Get session list",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "name": "offset",
+              "in": "query",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            },
+            {
+              "name": "status",
+              "in": "query",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "completed",
+                  "expired"
+                ]
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Paginated session list"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/webrtc/token": {
+        "post": {
+          "summary": "Create a WebRTC session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "room_name",
+                    "participant_identity",
+                    "duration_minutes"
+                  ],
+                  "properties": {
+                    "room_name": {
+                      "type": "string"
+                    },
+                    "participant_identity": {
+                      "type": "string"
+                    },
+                    "duration_minutes": {
+                      "type": "number"
+                    },
+                    "metadata": {
+                      "type": "string"
+                    },
+                    "client_ip": {
+                      "type": "string",
+                      "description": "End user's IP for geo-routing the ws_url to the nearest SFU. Use when your server creates tokens on behalf of remote users. Falls back to X-Forwarded-For if omitted."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "WebRTC session created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "ws_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Insufficient credits"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/webrtc/token/extend": {
+        "post": {
+          "summary": "Extend a WebRTC session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "session_id",
+                    "additional_minutes"
+                  ],
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "additional_minutes": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Session extended"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/stt/session": {
+        "post": {
+          "summary": "Create an STT session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "duration_minutes"
+                  ],
+                  "properties": {
+                    "duration_minutes": {
+                      "type": "number"
+                    },
+                    "language": {
+                      "type": "string",
+                      "default": "en"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "STT session created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "server_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Insufficient credits"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/stt/session/extend": {
+        "post": {
+          "summary": "Extend an STT session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "session_id",
+                    "additional_minutes"
+                  ],
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "additional_minutes": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Session extended"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/tts/session": {
+        "post": {
+          "summary": "Create a TTS session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "max_characters"
+                  ],
+                  "properties": {
+                    "max_characters": {
+                      "type": "number"
+                    },
+                    "language": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "TTS session created",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "token": {
+                        "type": "string"
+                      },
+                      "server_url": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Insufficient credits"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/tts/session/extend": {
+        "post": {
+          "summary": "Extend a TTS session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "session_id",
+                    "additional_characters"
+                  ],
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "additional_characters": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Session extended"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/agent-session": {
+        "post": {
+          "summary": "Create a bundled Agent session (WebRTC + STT + TTS)",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "description": "Creates WebRTC + STT + TTS sessions as a single bundle. When client_identity is provided, generates two WebRTC tokens (agent + client) with independent geo-routing. Without client_identity, returns a single WebRTC token (backwards compatible).",
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "room_name",
+                    "participant_identity",
+                    "duration_minutes"
+                  ],
+                  "properties": {
+                    "room_name": {
+                      "type": "string"
+                    },
+                    "participant_identity": {
+                      "type": "string",
+                      "description": "Identity for the agent participant"
+                    },
+                    "duration_minutes": {
+                      "type": "number"
+                    },
+                    "language": {
+                      "type": "string"
+                    },
+                    "tts_max_characters": {
+                      "type": "number",
+                      "default": 10000
+                    },
+                    "metadata": {
+                      "type": "string"
+                    },
+                    "client_ip": {
+                      "type": "string",
+                      "description": "End user's IP for geo-routing the WebRTC ws_url. In dual mode, routes the client token. In single mode, routes the only token. Falls back to X-Forwarded-For if omitted."
+                    },
+                    "client_identity": {
+                      "type": "string",
+                      "description": "Identity for the client participant. When provided, the gateway generates two WebRTC tokens: one for the agent (geo-routed by server IP) and one for the client (geo-routed by client_ip)."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Bundled session created. Response shape depends on whether client_identity was provided.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "bundle_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "webrtc": {
+                        "description": "With client_identity: { agent: { session_id, token, ws_url }, client: { session_id, token, ws_url } }. Without: { session_id, token, ws_url }.",
+                        "type": "object"
+                      },
+                      "stt": {
+                        "type": "object",
+                        "properties": {
+                          "session_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "token": {
+                            "type": "string"
+                          },
+                          "server_url": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        }
+                      },
+                      "tts": {
+                        "type": "object",
+                        "properties": {
+                          "session_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "token": {
+                            "type": "string"
+                          },
+                          "server_url": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        }
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Insufficient credits"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/agent-session/extend": {
+        "post": {
+          "summary": "Extend an Agent session",
+          "x-agentcash-auth": {
+            "mode": "siwx"
+          },
+          "description": "Extends all sessions in a bundle. When the bundle has two WebRTC sessions (dual mode), returns refreshed tokens for both agent and client. Otherwise returns a single refreshed WebRTC token.",
+          "parameters": [
+            {
+              "name": "Authorization",
+              "in": "header",
+              "description": "<chain>:<signature> (e.g. solana:<base64sig>)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Address",
+              "in": "header",
+              "description": "Wallet address",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "X-Wallet-Chain",
+              "in": "header",
+              "description": "solana or evm",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "solana",
+                  "evm"
+                ]
+              }
+            },
+            {
+              "name": "X-Timestamp",
+              "in": "header",
+              "description": "Unix epoch seconds",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "bundle_id",
+                    "additional_minutes"
+                  ],
+                  "properties": {
+                    "bundle_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "additional_minutes": {
+                      "type": "number"
+                    },
+                    "additional_tts_characters": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Session extended. WebRTC response shape mirrors the create response: dual mode returns { agent, client } objects, single mode returns a flat object.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "webrtc": {
+                        "description": "Dual mode: { agent: { session_id, token, ws_url, new_expires_at }, client: { session_id, token, ws_url, new_expires_at } }. Single mode: { token, new_expires_at }.",
+                        "type": "object"
+                      },
+                      "stt": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string"
+                          },
+                          "new_expires_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "tts": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string"
+                          },
+                          "new_expires_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "402": {
+              "description": "Insufficient credits"
+            }
+          },
+          "security": [
+            {
+              "walletAuth": []
+            }
+          ]
+        }
+      },
+      "/v1/pricing": {
+        "get": {
+          "summary": "Get current pricing and limits",
+          "x-agentcash-auth": {
+            "mode": "unprotected"
+          },
+          "responses": {
+            "200": {
+              "description": "Pricing information",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "microcredits_per_usd": {
+                        "type": "integer"
+                      },
+                      "rates": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/servers/status": {
+        "get": {
+          "summary": "Get server availability by service type",
+          "x-agentcash-auth": {
+            "mode": "unprotected"
+          },
+          "responses": {
+            "200": {
+              "description": "Server status by service"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "securitySchemes": {
+        "walletAuth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "Authorization",
+          "description": "Wallet signature auth. Sign 'METHOD\\nPATH\\nTIMESTAMP' with Ed25519 (Solana) or ECDSA (EVM). Value format: <chain>:<signature>"
+        }
+      }
+    }
+  }
+}

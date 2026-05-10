@@ -53,7 +53,7 @@ export function Sidebar({ active, approvalCount = 0, user }: SidebarProps) {
 
   return (
     <aside
-      className={`border-r border-hairline flex-shrink-0 flex flex-col bg-bg-deep/40 transition-[width] duration-200 ${
+      className={`border-r border-hairline flex-shrink-0 flex flex-col bg-bg-deep/40 ${
         collapsed ? "w-[72px]" : "w-[240px]"
       }`}
     >
@@ -76,7 +76,7 @@ export function Sidebar({ active, approvalCount = 0, user }: SidebarProps) {
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-expanded={!collapsed}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="grid size-8 shrink-0 place-items-center border border-hairline text-t4 hover:border-signal-dim hover:text-signal transition-colors"
+            className="motion-press grid size-8 shrink-0 place-items-center border border-hairline text-t4 transition-colors hover:border-signal-dim hover:text-signal"
           >
             <span className="mono text-[13px]">{collapsed ? ">" : "<"}</span>
           </button>
@@ -100,7 +100,7 @@ export function Sidebar({ active, approvalCount = 0, user }: SidebarProps) {
               href={item.href}
               title={collapsed ? item.label : undefined}
               aria-label={item.label}
-              className={`group relative flex items-center gap-3 py-2 text-[13px] transition-colors ${
+              className={`motion-row group relative flex items-center gap-3 py-2 text-[13px] transition-colors ${
                 collapsed ? "justify-center px-0" : "px-6"
               } ${
                 isActive
@@ -173,7 +173,7 @@ export function Sidebar({ active, approvalCount = 0, user }: SidebarProps) {
           <button
             type="submit"
             title="Sign out"
-            className="label text-t4 hover:text-deny transition-colors mt-1 cursor-pointer"
+            className="motion-press label mt-1 cursor-pointer text-t4 transition-colors hover:text-deny"
           >
             {collapsed ? "OUT" : "SIGN OUT"}
           </button>

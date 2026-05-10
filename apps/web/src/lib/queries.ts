@@ -1,8 +1,18 @@
 import "server-only";
-import { agents, approvals, policies, receipts, spendWindows, wallets } from "@warden/db";
+import { randomUUID } from "node:crypto";
+import {
+  agentResponseArtifacts,
+  agentChatMessages,
+  agents,
+  approvals,
+  policies,
+  receipts,
+  spendWindows,
+  wallets,
+} from "@warden/db";
 import { PolicyConfigSchema, type PolicyConfig } from "@warden/core";
 import { createWalletService } from "@warden/wallet";
-import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { getCurrentUser } from "./auth";
 import { getDb } from "./db";
 import { requireEnv } from "./env";
@@ -34,6 +44,19 @@ export interface ReceiptRow {
   decisionReason: string;
   responseStatus: number;
   txSignature: string | undefined;
+  artifacts?: ResponseArtifactRow[];
+  createdAt: number;
+}
+
+export interface ResponseArtifactRow {
+  id: string;
+  title: string;
+  operationId: string | undefined;
+  url: string;
+  method: string;
+  responseStatus: number | undefined;
+  responseBody: unknown;
+  endpointMetadata: unknown;
   createdAt: number;
 }
 
@@ -47,6 +70,41 @@ export interface ApprovalRow {
   triggeringRule: string;
   reason: string;
   createdAt: number;
+}
+
+export interface AgentChatToolCall {
+  tool: string;
+  arguments: Record<string, unknown>;
+  result: unknown;
+  isError: boolean;
+}
+
+export interface AgentChatMessageRow {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  calls?: AgentChatToolCall[];
+  artifacts?: ResponseArtifactRow[];
+  createdAt: number;
+}
+
+interface NewAgentChatMessage {
+  role: "user" | "assistant";
+  text: string;
+  calls?: AgentChatToolCall[];
+}
+
+interface ResponseArtifactInsert {
+  messageId: string;
+  receiptId?: string;
+  toolName: string;
+  url: string;
+  method: string;
+  responseStatus?: number;
+  title: string;
+  operationId?: string;
+  endpointMetadata?: unknown;
+  responseBody: unknown;
 }
 
 function dayKey(): string {
@@ -68,7 +126,13 @@ function inferProvider(host: string): string {
 
 function receiptAmount(value: number | null, reason: string | null): number {
   if (value !== null) return value;
-  if (reason === "no_payment_required") return 0;
+  if (
+    reason === "no_payment_required" ||
+    reason === "zero_payment_required" ||
+    reason?.startsWith("provider_http_error:")
+  ) {
+    return 0;
+  }
   throw new Error("Paid receipt is missing amountUsd");
 }
 
@@ -77,13 +141,25 @@ function receiptCurrency(
   reason: string | null,
 ): "USDC" | "SOL" | "UNPAID" {
   if (value === "USDC" || value === "SOL") return value;
-  if (reason === "no_payment_required") return "UNPAID";
+  if (
+    reason === "no_payment_required" ||
+    reason === "zero_payment_required" ||
+    reason?.startsWith("provider_http_error:")
+  ) {
+    return "UNPAID";
+  }
   throw new Error("Paid receipt is missing currency");
 }
 
 function receiptNetwork(value: string | null, reason: string | null): string {
   if (value) return value;
-  if (reason === "no_payment_required") return "unpaid";
+  if (
+    reason === "no_payment_required" ||
+    reason === "zero_payment_required" ||
+    reason?.startsWith("provider_http_error:")
+  ) {
+    return "unpaid";
+  }
   throw new Error("Paid receipt is missing network");
 }
 
@@ -108,6 +184,7 @@ export async function getAgents(): Promise<AgentRow[]> {
       status: agents.status,
       publicKey: wallets.publicKey,
       network: wallets.network,
+      policyVersion: policies.version,
       policyConfig: policies.config,
       spentTodayUsd: spendWindows.amountUsd,
       lastReceiptAt: receipts.createdAt,
@@ -127,15 +204,24 @@ export async function getAgents(): Promise<AgentRow[]> {
     .orderBy(desc(receipts.createdAt));
 
   // collapse multiple receipt joins to one row per agent (max receipt timestamp wins)
-  const byAgent = new Map<string, AgentRow & { walletId: string }>();
+  const byAgent = new Map<
+    string,
+    AgentRow & { walletId: string; policyVersion: number }
+  >();
   for (const r of rows) {
-    if (!r.publicKey || !r.network || !r.walletId) continue;
+    if (!r.publicKey || !r.network || !r.walletId || r.policyVersion === null) {
+      continue;
+    }
     const policy = parsePolicy(r.policyConfig);
     const last = byAgent.get(r.id);
     const lastActivityAt = Math.max(
       last?.lastActivityAt ?? 0,
       r.lastReceiptAt?.getTime() ?? 0,
     );
+    if (last && r.policyVersion < last.policyVersion) {
+      byAgent.set(r.id, { ...last, lastActivityAt });
+      continue;
+    }
     byAgent.set(r.id, {
       id: r.id,
       name: r.name,
@@ -148,16 +234,22 @@ export async function getAgents(): Promise<AgentRow[]> {
       lastActivityAt,
       policy,
       walletId: r.walletId,
+      policyVersion: r.policyVersion,
     });
   }
   const walletService = createWalletService({
     db,
     rpcUrl: requireEnv("SOLANA_RPC_URL"),
+    rpcUrls: {
+      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+      devnet: process.env.SOLANA_DEVNET_RPC_URL,
+      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    },
   });
   const withBalances = await Promise.all(
     [...byAgent.values()].map(async (agent) => {
       const balance = await walletService.getUsdcBalance(agent.walletId);
-      const { walletId, ...row } = agent;
+      const { walletId, policyVersion, ...row } = agent;
       return { ...row, balanceUsd: balance.usd };
     }),
   );
@@ -167,6 +259,246 @@ export async function getAgents(): Promise<AgentRow[]> {
 export async function getAgent(id: string): Promise<AgentRow | undefined> {
   const all = await getAgents();
   return all.find((a) => a.id === id);
+}
+
+export async function requireCurrentUserAgent(agentId: string) {
+  const db = getDb();
+  const currentUser = await getCurrentUser();
+  const [agent] = await db
+    .select({ id: agents.id })
+    .from(agents)
+    .where(and(eq(agents.id, agentId), eq(agents.userId, currentUser.id)))
+    .limit(1);
+
+  if (!agent) {
+    throw new Error("Agent not found");
+  }
+
+  return currentUser;
+}
+
+function parseToolCalls(value: unknown): AgentChatToolCall[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.filter((item): item is AgentChatToolCall => {
+    const call = item as Partial<AgentChatToolCall>;
+    return (
+      typeof call.tool === "string" &&
+      typeof call.arguments === "object" &&
+      call.arguments !== null &&
+      typeof call.isError === "boolean"
+    );
+  });
+}
+
+export async function getAgentChatMessages(
+  agentId: string,
+): Promise<AgentChatMessageRow[] | undefined> {
+  const db = getDb();
+  const currentUser = await requireCurrentUserAgent(agentId).catch((error) => {
+    if ((error as Error).message === "Agent not found") return undefined;
+    throw error;
+  });
+  if (!currentUser) return undefined;
+
+  const rows = await db
+    .select({
+      id: agentChatMessages.id,
+      role: agentChatMessages.role,
+      text: agentChatMessages.content,
+      calls: agentChatMessages.toolCalls,
+      createdAt: agentChatMessages.createdAt,
+    })
+    .from(agentChatMessages)
+    .where(
+      and(
+        eq(agentChatMessages.agentId, agentId),
+        eq(agentChatMessages.userId, currentUser.id),
+      ),
+    )
+    .orderBy(
+      agentChatMessages.createdAt,
+      sql`case when ${agentChatMessages.role} = 'user' then 0 else 1 end`,
+    );
+
+  const messageRows = rows.map((row) => ({
+    id: row.id,
+    role: row.role,
+    text: row.text,
+    ...(parseToolCalls(row.calls) ? { calls: parseToolCalls(row.calls) } : {}),
+    createdAt: row.createdAt.getTime(),
+  }));
+  const ids = messageRows.map((row) => row.id);
+  if (ids.length === 0) return messageRows;
+
+  const artifactRows = await db
+    .select({
+      id: agentResponseArtifacts.id,
+      messageId: agentResponseArtifacts.messageId,
+      title: agentResponseArtifacts.title,
+      operationId: agentResponseArtifacts.operationId,
+      url: agentResponseArtifacts.url,
+      method: agentResponseArtifacts.method,
+      responseStatus: agentResponseArtifacts.responseStatus,
+      responseBody: agentResponseArtifacts.responseBody,
+      endpointMetadata: agentResponseArtifacts.endpointMetadata,
+      createdAt: agentResponseArtifacts.createdAt,
+    })
+    .from(agentResponseArtifacts)
+    .where(inArray(agentResponseArtifacts.messageId, ids))
+    .orderBy(desc(agentResponseArtifacts.createdAt));
+  const artifactsByMessage = new Map<string, ResponseArtifactRow[]>();
+  for (const artifact of artifactRows) {
+    if (!artifact.messageId) continue;
+    const list = artifactsByMessage.get(artifact.messageId) ?? [];
+    list.push({
+      id: artifact.id,
+      title: artifact.title,
+      operationId: artifact.operationId ?? undefined,
+      url: artifact.url,
+      method: artifact.method,
+      responseStatus: artifact.responseStatus ?? undefined,
+      responseBody: artifact.responseBody,
+      endpointMetadata: artifact.endpointMetadata,
+      createdAt: artifact.createdAt.getTime(),
+    });
+    artifactsByMessage.set(artifact.messageId, list);
+  }
+  return messageRows.map((row) => ({
+    ...row,
+    ...(artifactsByMessage.get(row.id)?.length
+      ? { artifacts: artifactsByMessage.get(row.id) }
+      : {}),
+  }));
+}
+
+export async function appendAgentChatMessages(
+  agentId: string,
+  messages: NewAgentChatMessage[],
+) {
+  if (messages.length === 0) return;
+
+  const db = getDb();
+  const currentUser = await requireCurrentUserAgent(agentId);
+  const rows = messages.map((message) => ({
+    id: `acm_${randomUUID()}`,
+    agentId,
+    userId: currentUser.id,
+    role: message.role,
+    content: message.text,
+    toolCalls: message.calls ?? null,
+    message,
+  }));
+
+  await db.insert(agentChatMessages).values(
+    rows.map(({ message: _message, ...row }) => row),
+  );
+
+  const artifacts = rows.flatMap((row) =>
+    responseArtifactsForCalls(row.message.calls ?? [], row.id),
+  );
+  if (artifacts.length === 0) return;
+
+  await db.insert(agentResponseArtifacts).values(
+    artifacts.map((artifact) => ({
+      id: `ara_${randomUUID()}`,
+      agentId,
+      userId: currentUser.id,
+      messageId: artifact.messageId,
+      ...(artifact.receiptId !== undefined ? { receiptId: artifact.receiptId } : {}),
+      toolName: artifact.toolName,
+      url: artifact.url,
+      method: artifact.method,
+      ...(artifact.responseStatus !== undefined
+        ? { responseStatus: artifact.responseStatus }
+        : {}),
+      title: artifact.title,
+      ...(artifact.operationId !== undefined
+        ? { operationId: artifact.operationId }
+        : {}),
+      ...(artifact.endpointMetadata !== undefined
+        ? { endpointMetadata: artifact.endpointMetadata }
+        : {}),
+      responseBody: artifact.responseBody,
+    })),
+  );
+}
+
+function responseArtifactsForCalls(
+  calls: AgentChatToolCall[],
+  messageId: string,
+): ResponseArtifactInsert[] {
+  return calls.flatMap((call) => {
+    if (call.isError || (call.tool !== "warden_fetch" && call.tool !== "warden_pay")) {
+      return [];
+    }
+    const body = responseBodyFromToolResult(call.result);
+    if (body === undefined) return [];
+    const endpoint = endpointForCall(calls, call);
+    const data = isRecord(call.result) ? call.result.data : undefined;
+    const response = isRecord(data) ? data.response : undefined;
+    const receiptId = isRecord(data) && typeof data.receiptId === "string"
+      ? data.receiptId
+      : undefined;
+    return [
+      {
+        messageId,
+        ...(receiptId !== undefined ? { receiptId } : {}),
+        toolName: call.tool,
+        url: typeof call.arguments.url === "string" ? call.arguments.url : "",
+        method: typeof call.arguments.method === "string" ? call.arguments.method : "GET",
+        ...(isRecord(response) && typeof response.status === "number"
+          ? { responseStatus: response.status }
+          : {}),
+        title:
+          (endpoint && typeof endpoint.summary === "string"
+            ? endpoint.summary
+            : undefined) ?? "x402 response",
+        ...(endpoint && typeof endpoint.operationId === "string"
+          ? { operationId: endpoint.operationId }
+          : {}),
+        ...(endpoint ? { endpointMetadata: endpoint } : {}),
+        responseBody: body,
+      },
+    ];
+  });
+}
+
+function responseBodyFromToolResult(result: unknown) {
+  if (!isRecord(result)) return undefined;
+  const data = result.data;
+  if (!isRecord(data)) return undefined;
+  const response = data.response;
+  if (!isRecord(response)) return undefined;
+  return response.body;
+}
+
+function endpointForCall(calls: AgentChatToolCall[], fetchCall: AgentChatToolCall) {
+  const url = typeof fetchCall.arguments.url === "string" ? fetchCall.arguments.url : "";
+  if (!url) return undefined;
+  for (const call of calls) {
+    if (call.tool !== "get_skill_endpoints" || !isRecord(call.result)) continue;
+    const data = call.result.data;
+    if (!isRecord(data) || !Array.isArray(data.endpoints)) continue;
+    const endpoint = data.endpoints.find((candidate) => {
+      if (!isRecord(candidate)) return false;
+      const endpointUrl = typeof candidate.url === "string" ? candidate.url : "";
+      return endpointUrl === url || templateMatches(endpointUrl, url);
+    });
+    if (isRecord(endpoint)) return endpoint;
+  }
+  return undefined;
+}
+
+function templateMatches(template: string, url: string) {
+  if (!template.includes("{")) return false;
+  const escaped = template
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\\\{[^}]+\\\}/g, "[^/]+");
+  return new RegExp(`^${escaped}$`).test(url);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export async function getReceipts(opts: {
@@ -204,7 +536,7 @@ export async function getReceipts(opts: {
     .orderBy(desc(receipts.createdAt))
     .limit(opts.limit ?? 200);
 
-  return rows.map((r) => ({
+  const receiptRows = rows.map((r) => ({
     id: r.id,
     agentId: r.agentId,
     agentName: r.agentName,
@@ -219,6 +551,48 @@ export async function getReceipts(opts: {
     responseStatus: requiredReceiptNumber(r.responseStatus, "responseStatus"),
     txSignature: r.txSignature ?? undefined,
     createdAt: r.createdAt.getTime(),
+  }));
+  const ids = receiptRows.map((row) => row.id);
+  if (ids.length === 0) return receiptRows;
+
+  const artifactRows = await db
+    .select({
+      id: agentResponseArtifacts.id,
+      receiptId: agentResponseArtifacts.receiptId,
+      title: agentResponseArtifacts.title,
+      operationId: agentResponseArtifacts.operationId,
+      url: agentResponseArtifacts.url,
+      method: agentResponseArtifacts.method,
+      responseStatus: agentResponseArtifacts.responseStatus,
+      responseBody: agentResponseArtifacts.responseBody,
+      endpointMetadata: agentResponseArtifacts.endpointMetadata,
+      createdAt: agentResponseArtifacts.createdAt,
+    })
+    .from(agentResponseArtifacts)
+    .where(inArray(agentResponseArtifacts.receiptId, ids))
+    .orderBy(desc(agentResponseArtifacts.createdAt));
+  const artifactsByReceipt = new Map<string, ResponseArtifactRow[]>();
+  for (const artifact of artifactRows) {
+    if (!artifact.receiptId) continue;
+    const list = artifactsByReceipt.get(artifact.receiptId) ?? [];
+    list.push({
+      id: artifact.id,
+      title: artifact.title,
+      operationId: artifact.operationId ?? undefined,
+      url: artifact.url,
+      method: artifact.method,
+      responseStatus: artifact.responseStatus ?? undefined,
+      responseBody: artifact.responseBody,
+      endpointMetadata: artifact.endpointMetadata,
+      createdAt: artifact.createdAt.getTime(),
+    });
+    artifactsByReceipt.set(artifact.receiptId, list);
+  }
+  return receiptRows.map((row) => ({
+    ...row,
+    ...(artifactsByReceipt.get(row.id)?.length
+      ? { artifacts: artifactsByReceipt.get(row.id) }
+      : {}),
   }));
 }
 

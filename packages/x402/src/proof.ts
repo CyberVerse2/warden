@@ -20,7 +20,12 @@ const SOLANA_MAINNET_CAIP = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 const BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 export interface X402SvmProofBuilderOptions {
-  rpcUrl: string;
+  rpcUrl?: string;
+  rpcUrls?: {
+    mainnet?: string | undefined;
+    devnet?: string | undefined;
+    testnet?: string | undefined;
+  };
 }
 
 /**
@@ -42,7 +47,7 @@ export function createX402SvmProofBuilder(
         walletId,
         walletService,
         challenge,
-        rpcUrl: opts.rpcUrl,
+        rpcUrl: selectRpcUrl(challenge.raw.network, opts),
       });
     },
   };
@@ -57,15 +62,16 @@ async function buildSdkExactPaymentProof({
   walletId: string;
   walletService: WalletService;
   challenge: ParsedChallenge;
-  rpcUrl: string;
+  rpcUrl?: string | undefined;
 }): Promise<PaymentProof> {
   const signer = await createWalletServiceSvmSigner(walletService, walletId);
   const paymentRequirements = toSdkPaymentRequirements(challenge);
   const x402Version = challenge.x402Version === 1 ? 1 : 2;
+  const config = rpcUrl === undefined ? {} : { rpcUrl };
   const scheme =
     x402Version === 1
-      ? new ExactSvmSchemeV1(signer, { rpcUrl })
-      : new ExactSvmScheme(signer, { rpcUrl });
+      ? new ExactSvmSchemeV1(signer, config)
+      : new ExactSvmScheme(signer, config);
   const sdkPayload = await scheme.createPaymentPayload(
     x402Version,
     paymentRequirements,
@@ -95,6 +101,22 @@ async function buildSdkExactPaymentProof({
     ...(Object.keys(extraHeaders).length > 0 ? { extraHeaders } : {}),
     proofHash: createHash("sha256").update(headerJson).digest("hex"),
   };
+}
+
+function selectRpcUrl(
+  network: string,
+  opts: X402SvmProofBuilderOptions,
+): string | undefined {
+  if (network === SOLANA_MAINNET_CAIP || network === "solana-mainnet" || network === "solana") {
+    return opts.rpcUrls?.mainnet;
+  }
+  if (network === SOLANA_DEVNET_CAIP || network === "solana-devnet") {
+    return opts.rpcUrls?.devnet ?? opts.rpcUrl;
+  }
+  if (network === "solana:4uhcVJyU9pJkvQyS88uRDiswHXSCkY3z" || network === "solana-testnet") {
+    return opts.rpcUrls?.testnet;
+  }
+  return opts.rpcUrl;
 }
 
 async function createWalletServiceSvmSigner(

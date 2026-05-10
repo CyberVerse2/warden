@@ -49,7 +49,7 @@ export async function dryRunPolicy(
       .select()
       .from(policies)
       .where(and(eq(policies.agentId, agentId), isNotNull(policies.activatedAt)))
-      .orderBy(desc(policies.activatedAt))
+      .orderBy(desc(policies.version))
       .limit(1);
     if (!policyRow) return { error: "Agent has no active policy" };
 

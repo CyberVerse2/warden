@@ -33,25 +33,34 @@ async function readPrivyToken() {
 
 async function upsertUser(input: CurrentUser): Promise<CurrentUser> {
   const db = getDb();
+  const email = normalizeEmail(input.email);
   await db
     .insert(users)
     .values({
       id: input.id,
-      email: input.email,
+      email,
       ...(input.name ? { name: input.name } : {}),
     })
     .onConflictDoUpdate({
       target: users.id,
       set: {
-        email: input.email,
+        email,
         name: input.name ?? null,
       },
     });
-  return input;
+  return {
+    ...input,
+    email,
+  };
 }
 
 function firstPresent(...values: Array<string | null | undefined>) {
   return values.find((v) => v && v.trim().length > 0)?.trim();
+}
+
+function normalizeEmail(value: string | null | undefined) {
+  const email = firstPresent(value)?.toLowerCase();
+  return email ?? null;
 }
 
 function shortIdentity(value: string) {
@@ -111,12 +120,17 @@ export async function getCurrentUser(): Promise<CurrentUser> {
   const token = await readPrivyToken();
 
   if (token) {
-    const claims = await client.verifyAuthToken(token);
-    const privyUser = await client.getUser(claims.userId);
-    return upsertUser({
-      id: claims.userId,
-      ...getProfileFromPrivyUser(privyUser),
-    });
+    try {
+      const claims = await client.verifyAuthToken(token);
+      const privyUser = await client.getUser(claims.userId);
+      return upsertUser({
+        id: claims.userId,
+        ...getProfileFromPrivyUser(privyUser),
+      });
+    } catch (error) {
+      console.error("Privy session verification failed", error);
+      redirect("/login?auth=expired");
+    }
   }
 
   redirect("/login");

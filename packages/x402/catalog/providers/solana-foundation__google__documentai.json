@@ -1,0 +1,2961 @@
+{
+  "fqn": "solana-foundation/google/documentai",
+  "name": "documentai",
+  "title": "Cloud Document AI API",
+  "description": "Extract structured data from PDFs, scans, and document images using OCR and ML. Handles invoices, receipts, forms, contracts, tax documents, IDs, and custom schemas, returning text, tables, entities, fields, and confidence signals.",
+  "useCase": "Use for invoice and receipt parsing, OCR on scanned files, form digitization, contract analysis, tax document processing, ID extraction, table extraction, document classification, custom schema extraction, and human-review workflows.",
+  "category": "ai_ml",
+  "serviceUrl": "https://documentai.google.gateway-402.com",
+  "version": "v1",
+  "pageUrl": "https://pay.sh/services/solana-foundation/google/documentai",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/solana-foundation/google/documentai/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://documentai.google.gateway-402.com/openapi.json",
+      "resolved": true,
+      "originUrl": "https://documentai.googleapis.com/$discovery/rest?version=v1",
+      "originResolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "## Spend-aware usage\n\n- Use document processing endpoints only when an existing processor is known or\n  the provider instructions returned a ready processor path. Creating processors,\n  schemas, or schema versions is setup work and should be confirmed separately.\n- For one document, use the synchronous process endpoint when available. Use\n  batch or long-running operations only for multiple documents or large files.\n- Request only the needed extraction fields or processor type. Do not create a\n  custom schema just to parse a one-off document.\n- Poll operation IDs returned by async calls. Do not resubmit the same document\n  because an operation is still running.",
+    "frontmatter": {
+      "category": "ai_ml",
+      "description": "Extract structured data from PDFs, scans, and document images using OCR and ML. Handles invoices, receipts, forms, contracts, tax documents, IDs, and custom schemas, returning text, tables, entities, fields, and confidence signals.",
+      "use_case": "Use for invoice and receipt parsing, OCR on scanned files, form digitization, contract analysis, tax document processing, ID extraction, table extraction, document classification, custom schema extraction, and human-review workflows.",
+      "openapi": {
+        "url": "https://documentai.google.gateway-402.com/openapi.json"
+      },
+      "name": "documentai",
+      "service_url": "https://documentai.google.gateway-402.com",
+      "title": "Cloud Document AI API",
+      "version": "v1"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.operations.get",
+      "summary": "Gets the latest state of a long-running operation. Clients can use this method to poll the operation result at intervals as recommended by the API service.",
+      "description": "Gets the latest state of a long-running operation. Clients can use this method to poll the operation result at intervals as recommended by the API service.",
+      "parameters": {
+        "name": {
+          "description": "The name of the operation resource.",
+          "pattern": "^projects/[^/]+/operations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}:fetchProcessorTypes",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}:fetchProcessorTypes",
+      "operationId": "documentai.projects.locations.fetchProcessorTypes",
+      "summary": "Fetches processor types. Note that we don't use ListProcessorTypes here, because it isn't paginated.",
+      "description": "Fetches processor types. Note that we don't use ListProcessorTypes here, because it isn't paginated.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The location of processor types to list. Format: `projects/{project}/locations/{location}`.",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1FetchProcessorTypesResponse",
+        "description": "Response message for the FetchProcessorTypes method.",
+        "type": "object",
+        "properties": {
+          "processorTypes": {
+            "description": "The list of processor types.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorType"
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}/locations",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}/locations",
+      "operationId": "documentai.projects.locations.list",
+      "summary": "Lists information about the supported locations for this service. This method lists locations based on the resource scope provided in the [ListLocationsRequest.name] field: * **Global locations**: If `name` is empty, the method lists the public locations available to all projects. * **Project-specific locations**: If `name` follows the format `projects/{project}`, the method lists locations visible to that specific project. This includes public, private, or other project-specific locations enabled for the project. For gRPC and client library implementations, the resource name is passed as the `name` field. For direct service calls, the resource name is incorporated into the request path based on the specific service implementation and version.",
+      "description": "Lists information about the supported locations for this service. This method lists locations based on the resource scope provided in the [ListLocationsRequest.name] field: * **Global locations**: If `name` is empty, the method lists the public locations available to all projects. * **Project-specific locations**: If `name` follows the format `projects/{project}`, the method lists locations visible to that specific project. This includes public, private, or other project-specific locations enabled for the project. For gRPC and client library implementations, the resource name is passed as the `name` field. For direct service calls, the resource name is incorporated into the request path based on the specific service implementation and version.",
+      "parameters": {
+        "name": {
+          "description": "The resource that owns the locations collection, if applicable.",
+          "pattern": "^projects/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "filter": {
+          "description": "A filter to narrow down results to a preferred subset. The filtering language accepts strings like `\"displayName=tokyo\"`, and is documented in more detail in [AIP-160](https://google.aip.dev/160).",
+          "location": "query",
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The maximum number of results to return. If not set, the service selects a default.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "A page token received from the `next_page_token` field in the response. Send that page token to receive the subsequent page.",
+          "location": "query",
+          "type": "string"
+        },
+        "extraLocationTypes": {
+          "description": "Optional. Do not use this field. It is unsupported and is ignored unless explicitly documented otherwise. This is primarily for internal usage.",
+          "location": "query",
+          "repeated": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudLocationListLocationsResponse",
+        "description": "The response message for Locations.ListLocations.",
+        "type": "object",
+        "properties": {
+          "locations": {
+            "description": "A list of locations that matches the specified filter in the request.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudLocationLocation"
+            }
+          },
+          "nextPageToken": {
+            "description": "The standard List next-page token.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.get",
+      "summary": "Gets information about a location.",
+      "description": "Gets information about a location.",
+      "parameters": {
+        "name": {
+          "description": "Resource name for the location.",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudLocationLocation",
+        "description": "A resource that represents a Google Cloud location.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Resource name for the location, which may vary between implementations. For example: `\"projects/example-project/locations/us-east1\"`",
+            "type": "string"
+          },
+          "locationId": {
+            "description": "The canonical id for this location. For example: `\"us-east1\"`.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The friendly name for this location, typically a nearby city name. For example, \"Tokyo\".",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Cross-service attributes for the location. For example {\"cloud.googleapis.com/region\": \"us-east1\"}",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "metadata": {
+            "description": "Service-specific metadata. For example the available capacity at the given location.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.operations.list",
+      "summary": "Lists operations that match the specified filter in the request. If the server doesn't support this method, it returns `UNIMPLEMENTED`.",
+      "description": "Lists operations that match the specified filter in the request. If the server doesn't support this method, it returns `UNIMPLEMENTED`.",
+      "parameters": {
+        "name": {
+          "description": "The name of the operation's parent resource.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/operations$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "filter": {
+          "description": "The standard list filter.",
+          "location": "query",
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The standard list page size.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "The standard list page token.",
+          "location": "query",
+          "type": "string"
+        },
+        "returnPartialSuccess": {
+          "description": "When set to `true`, operations that are reachable are returned as normal, and those that are unreachable are returned in the ListOperationsResponse.unreachable field. This can only be `true` when reading across collections. For example, when `parent` is set to `\"projects/example/locations/-\"`. This field is not supported by default and will result in an `UNIMPLEMENTED` error if set unless explicitly documented otherwise in service or product specific documentation.",
+          "location": "query",
+          "type": "boolean"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningListOperationsResponse",
+        "description": "The response message for Operations.ListOperations.",
+        "type": "object",
+        "properties": {
+          "operations": {
+            "description": "A list of operations that matches the specified filter in the request.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleLongrunningOperation"
+            }
+          },
+          "nextPageToken": {
+            "description": "The standard List next-page token.",
+            "type": "string"
+          },
+          "unreachable": {
+            "description": "Unordered list. Unreachable resources. Populated when the request sets `ListOperationsRequest.return_partial_success` and reads across collections. For example, when attempting to list all resources across all supported locations.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.operations.get",
+      "summary": "Gets the latest state of a long-running operation. Clients can use this method to poll the operation result at intervals as recommended by the API service.",
+      "description": "Gets the latest state of a long-running operation. Clients can use this method to poll the operation result at intervals as recommended by the API service.",
+      "parameters": {
+        "name": {
+          "description": "The name of the operation resource.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/operations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:cancel",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:cancel",
+      "operationId": "documentai.projects.locations.operations.cancel",
+      "summary": "Starts asynchronous cancellation on a long-running operation. The server makes a best effort to cancel the operation, but success is not guaranteed. If the server doesn't support this method, it returns `google.rpc.Code.UNIMPLEMENTED`. Clients can use Operations.GetOperation or other methods to check whether the cancellation succeeded or whether the operation completed despite cancellation. On successful cancellation, the operation is not deleted; instead, it becomes an operation with an Operation.error value with a google.rpc.Status.code of `1`, corresponding to `Code.CANCELLED`.",
+      "description": "Starts asynchronous cancellation on a long-running operation. The server makes a best effort to cancel the operation, but success is not guaranteed. If the server doesn't support this method, it returns `google.rpc.Code.UNIMPLEMENTED`. Clients can use Operations.GetOperation or other methods to check whether the cancellation succeeded or whether the operation completed despite cancellation. On successful cancellation, the operation is not deleted; instead, it becomes an operation with an Operation.error value with a google.rpc.Status.code of `1`, corresponding to `Code.CANCELLED`.",
+      "parameters": {
+        "name": {
+          "description": "The name of the operation resource to be cancelled.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/operations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleProtobufEmpty",
+        "description": "A generic empty message that you can re-use to avoid defining duplicated empty messages in your APIs. A typical example is to use it as the request or the response type of an API method. For instance: service Foo { rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty); }",
+        "type": "object",
+        "properties": {}
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:process",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:process",
+      "operationId": "documentai.projects.locations.processors.process",
+      "summary": "Processes a single document.",
+      "description": "Processes a single document.",
+      "parameters": {
+        "name": {
+          "description": "Required. The resource name of the Processor or ProcessorVersion to use for processing. If a Processor is specified, the server will use its default version. Format: `projects/{project}/locations/{location}/processors/{processor}`, or `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1ProcessRequest",
+        "description": "Request message for the ProcessDocument method.",
+        "type": "object",
+        "properties": {
+          "inlineDocument": {
+            "description": "An inline document proto.",
+            "$ref": "GoogleCloudDocumentaiV1Document"
+          },
+          "rawDocument": {
+            "description": "A raw document content (bytes).",
+            "$ref": "GoogleCloudDocumentaiV1RawDocument"
+          },
+          "gcsDocument": {
+            "description": "A raw document on Google Cloud Storage.",
+            "$ref": "GoogleCloudDocumentaiV1GcsDocument"
+          },
+          "skipHumanReview": {
+            "description": "Whether human review should be skipped for this request. Default to `false`.",
+            "deprecated": true,
+            "type": "boolean"
+          },
+          "fieldMask": {
+            "description": "Specifies which fields to include in the ProcessResponse.document output. Only supports top-level document and pages field, so it must be in the form of `{document_field_name}` or `pages.{page_field_name}`.",
+            "type": "string",
+            "format": "google-fieldmask"
+          },
+          "processOptions": {
+            "description": "Inference-time options for the process API",
+            "$ref": "GoogleCloudDocumentaiV1ProcessOptions"
+          },
+          "labels": {
+            "description": "Optional. The labels with user-defined metadata for the request. Label keys and values can be no longer than 63 characters (Unicode codepoints) and can only contain lowercase letters, numeric characters, underscores, and dashes. International characters are allowed. Label values are optional. Label keys must start with a letter.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "imagelessMode": {
+            "description": "Optional. Option to remove images from the document.",
+            "type": "boolean"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ProcessResponse",
+        "description": "Response message for the ProcessDocument method.",
+        "type": "object",
+        "properties": {
+          "document": {
+            "description": "The document payload, will populate fields based on the processor's behavior.",
+            "$ref": "GoogleCloudDocumentaiV1Document"
+          },
+          "humanReviewStatus": {
+            "description": "The status of human review on the processed document.",
+            "$ref": "GoogleCloudDocumentaiV1HumanReviewStatus"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:batchProcess",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:batchProcess",
+      "operationId": "documentai.projects.locations.processors.batchProcess",
+      "summary": "LRO endpoint to batch process many documents. The output is written to Cloud Storage as JSON in the [Document] format.",
+      "description": "LRO endpoint to batch process many documents. The output is written to Cloud Storage as JSON in the [Document] format.",
+      "parameters": {
+        "name": {
+          "description": "Required. The resource name of Processor or ProcessorVersion. Format: `projects/{project}/locations/{location}/processors/{processor}`, or `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1BatchProcessRequest",
+        "description": "Request message for BatchProcessDocuments.",
+        "type": "object",
+        "properties": {
+          "inputDocuments": {
+            "description": "The input documents for the BatchProcessDocuments method.",
+            "$ref": "GoogleCloudDocumentaiV1BatchDocumentsInputConfig"
+          },
+          "documentOutputConfig": {
+            "description": "The output configuration for the BatchProcessDocuments method.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentOutputConfig"
+          },
+          "skipHumanReview": {
+            "description": "Whether human review should be skipped for this request. Default to `false`.",
+            "deprecated": true,
+            "type": "boolean"
+          },
+          "processOptions": {
+            "description": "Inference-time options for the process API",
+            "$ref": "GoogleCloudDocumentaiV1ProcessOptions"
+          },
+          "labels": {
+            "description": "Optional. The labels with user-defined metadata for the request. Label keys and values can be no longer than 63 characters (Unicode codepoints) and can only contain lowercase letters, numeric characters, underscores, and dashes. International characters are allowed. Label values are optional. Label keys must start with a letter.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}/processors",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/processors",
+      "operationId": "documentai.projects.locations.processors.list",
+      "summary": "Lists all processors which belong to this project.",
+      "description": "Lists all processors which belong to this project.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project and location) which owns this collection of Processors. Format: `projects/{project}/locations/{location}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The maximum number of processors to return. If unspecified, at most `50` processors will be returned. The maximum value is `100`. Values above `100` will be coerced to `100`.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "We will return the processors sorted by creation time. The page token will point to the next processor.",
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ListProcessorsResponse",
+        "description": "Response message for the ListProcessors method.",
+        "type": "object",
+        "properties": {
+          "processors": {
+            "description": "The list of processors.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1Processor"
+            }
+          },
+          "nextPageToken": {
+            "description": "Points to the next processor, otherwise empty.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.processors.get",
+      "summary": "Gets a processor detail.",
+      "description": "Gets a processor detail.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor resource name.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1Processor",
+        "description": "The first-class citizen for Document AI. Each processor defines how to extract structural information from a document.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Output only. Immutable. The resource name of the processor. Format: `projects/{project}/locations/{location}/processors/{processor}`",
+            "readOnly": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "The processor type, such as: `OCR_PROCESSOR`, `INVOICE_PROCESSOR`. To get a list of processor types, see FetchProcessorTypes.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The display name of the processor.",
+            "type": "string"
+          },
+          "state": {
+            "description": "Output only. The state of the processor.",
+            "readOnly": true,
+            "type": "string",
+            "enumDescriptions": [
+              "The processor is in an unspecified state.",
+              "The processor is enabled, i.e., has an enabled version which can currently serve processing requests and all the feature dependencies have been successfully initialized.",
+              "The processor is disabled.",
+              "The processor is being enabled, will become `ENABLED` if successful.",
+              "The processor is being disabled, will become `DISABLED` if successful.",
+              "The processor is being created, will become either `ENABLED` (for successful creation) or `FAILED` (for failed ones). Once a processor is in this state, it can then be used for document processing, but the feature dependencies of the processor might not be fully created yet.",
+              "The processor failed during creation or initialization of feature dependencies. The user should delete the processor and recreate one as all the functionalities of the processor are disabled.",
+              "The processor is being deleted, will be removed if successful."
+            ],
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "ENABLED",
+              "DISABLED",
+              "ENABLING",
+              "DISABLING",
+              "CREATING",
+              "FAILED",
+              "DELETING"
+            ]
+          },
+          "defaultProcessorVersion": {
+            "description": "The default processor version.",
+            "type": "string"
+          },
+          "processorVersionAliases": {
+            "description": "Output only. The processor version aliases.",
+            "readOnly": true,
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorVersionAlias"
+            }
+          },
+          "processEndpoint": {
+            "description": "Output only. Immutable. The http endpoint that can be called to invoke processing.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "createTime": {
+            "description": "Output only. The time the processor was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "kmsKeyName": {
+            "description": "The [KMS key](https://cloud.google.com/security-key-management) used for encryption and decryption in CMEK scenarios.",
+            "type": "string"
+          },
+          "satisfiesPzs": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "satisfiesPzi": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "activeSchemaVersion": {
+            "description": "Optional. SchemaVersion used by the Processor. It is the same as Processor's DatasetSchema.schema_version Format is `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+parent}/processors",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/processors",
+      "operationId": "documentai.projects.locations.processors.create",
+      "summary": "Creates a processor from the ProcessorType provided. The processor will be at `ENABLED` state by default after its creation. Note that this method requires the `documentai.processors.create` permission on the project, which is highly privileged. A user or service account with this permission can create new processors that can interact with any gcs bucket in your project.",
+      "description": "Creates a processor from the ProcessorType provided. The processor will be at `ENABLED` state by default after its creation. Note that this method requires the `documentai.processors.create` permission on the project, which is highly privileged. A user or service account with this permission can create new processors that can interact with any gcs bucket in your project.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project and location) under which to create the processor. Format: `projects/{project}/locations/{location}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1Processor",
+        "description": "The first-class citizen for Document AI. Each processor defines how to extract structural information from a document.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Output only. Immutable. The resource name of the processor. Format: `projects/{project}/locations/{location}/processors/{processor}`",
+            "readOnly": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "The processor type, such as: `OCR_PROCESSOR`, `INVOICE_PROCESSOR`. To get a list of processor types, see FetchProcessorTypes.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The display name of the processor.",
+            "type": "string"
+          },
+          "state": {
+            "description": "Output only. The state of the processor.",
+            "readOnly": true,
+            "type": "string",
+            "enumDescriptions": [
+              "The processor is in an unspecified state.",
+              "The processor is enabled, i.e., has an enabled version which can currently serve processing requests and all the feature dependencies have been successfully initialized.",
+              "The processor is disabled.",
+              "The processor is being enabled, will become `ENABLED` if successful.",
+              "The processor is being disabled, will become `DISABLED` if successful.",
+              "The processor is being created, will become either `ENABLED` (for successful creation) or `FAILED` (for failed ones). Once a processor is in this state, it can then be used for document processing, but the feature dependencies of the processor might not be fully created yet.",
+              "The processor failed during creation or initialization of feature dependencies. The user should delete the processor and recreate one as all the functionalities of the processor are disabled.",
+              "The processor is being deleted, will be removed if successful."
+            ],
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "ENABLED",
+              "DISABLED",
+              "ENABLING",
+              "DISABLING",
+              "CREATING",
+              "FAILED",
+              "DELETING"
+            ]
+          },
+          "defaultProcessorVersion": {
+            "description": "The default processor version.",
+            "type": "string"
+          },
+          "processorVersionAliases": {
+            "description": "Output only. The processor version aliases.",
+            "readOnly": true,
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorVersionAlias"
+            }
+          },
+          "processEndpoint": {
+            "description": "Output only. Immutable. The http endpoint that can be called to invoke processing.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "createTime": {
+            "description": "Output only. The time the processor was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "kmsKeyName": {
+            "description": "The [KMS key](https://cloud.google.com/security-key-management) used for encryption and decryption in CMEK scenarios.",
+            "type": "string"
+          },
+          "satisfiesPzs": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "satisfiesPzi": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "activeSchemaVersion": {
+            "description": "Optional. SchemaVersion used by the Processor. It is the same as Processor's DatasetSchema.schema_version Format is `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}",
+            "type": "string"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1Processor",
+        "description": "The first-class citizen for Document AI. Each processor defines how to extract structural information from a document.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Output only. Immutable. The resource name of the processor. Format: `projects/{project}/locations/{location}/processors/{processor}`",
+            "readOnly": true,
+            "type": "string"
+          },
+          "type": {
+            "description": "The processor type, such as: `OCR_PROCESSOR`, `INVOICE_PROCESSOR`. To get a list of processor types, see FetchProcessorTypes.",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The display name of the processor.",
+            "type": "string"
+          },
+          "state": {
+            "description": "Output only. The state of the processor.",
+            "readOnly": true,
+            "type": "string",
+            "enumDescriptions": [
+              "The processor is in an unspecified state.",
+              "The processor is enabled, i.e., has an enabled version which can currently serve processing requests and all the feature dependencies have been successfully initialized.",
+              "The processor is disabled.",
+              "The processor is being enabled, will become `ENABLED` if successful.",
+              "The processor is being disabled, will become `DISABLED` if successful.",
+              "The processor is being created, will become either `ENABLED` (for successful creation) or `FAILED` (for failed ones). Once a processor is in this state, it can then be used for document processing, but the feature dependencies of the processor might not be fully created yet.",
+              "The processor failed during creation or initialization of feature dependencies. The user should delete the processor and recreate one as all the functionalities of the processor are disabled.",
+              "The processor is being deleted, will be removed if successful."
+            ],
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "ENABLED",
+              "DISABLED",
+              "ENABLING",
+              "DISABLING",
+              "CREATING",
+              "FAILED",
+              "DELETING"
+            ]
+          },
+          "defaultProcessorVersion": {
+            "description": "The default processor version.",
+            "type": "string"
+          },
+          "processorVersionAliases": {
+            "description": "Output only. The processor version aliases.",
+            "readOnly": true,
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorVersionAlias"
+            }
+          },
+          "processEndpoint": {
+            "description": "Output only. Immutable. The http endpoint that can be called to invoke processing.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "createTime": {
+            "description": "Output only. The time the processor was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "kmsKeyName": {
+            "description": "The [KMS key](https://cloud.google.com/security-key-management) used for encryption and decryption in CMEK scenarios.",
+            "type": "string"
+          },
+          "satisfiesPzs": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "satisfiesPzi": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "activeSchemaVersion": {
+            "description": "Optional. SchemaVersion used by the Processor. It is the same as Processor's DatasetSchema.schema_version Format is `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.processors.delete",
+      "summary": "Deletes the processor, unloads all deployed model artifacts if it was enabled and then deletes all artifacts associated with this processor.",
+      "description": "Deletes the processor, unloads all deployed model artifacts if it was enabled and then deletes all artifacts associated with this processor.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor resource name to be deleted.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:enable",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:enable",
+      "operationId": "documentai.projects.locations.processors.enable",
+      "summary": "Enables a processor",
+      "description": "Enables a processor",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor resource name to be enabled.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1EnableProcessorRequest",
+        "description": "Request message for the EnableProcessor method.",
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:disable",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:disable",
+      "operationId": "documentai.projects.locations.processors.disable",
+      "summary": "Disables a processor",
+      "description": "Disables a processor",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor resource name to be disabled.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1DisableProcessorRequest",
+        "description": "Request message for the DisableProcessor method.",
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+processor}:setDefaultProcessorVersion",
+      "url": "https://documentai.google.gateway-402.com/v1/{+processor}:setDefaultProcessorVersion",
+      "operationId": "documentai.projects.locations.processors.setDefaultProcessorVersion",
+      "summary": "Set the default (active) version of a Processor that will be used in ProcessDocument and BatchProcessDocuments.",
+      "description": "Set the default (active) version of a Processor that will be used in ProcessDocument and BatchProcessDocuments.",
+      "parameters": {
+        "processor": {
+          "description": "Required. The resource name of the Processor to change default version.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1SetDefaultProcessorVersionRequest",
+        "description": "Request message for the SetDefaultProcessorVersion method.",
+        "type": "object",
+        "properties": {
+          "defaultProcessorVersion": {
+            "description": "Required. The resource name of child ProcessorVersion to use as default. Format: `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{version}`",
+            "type": "string"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:process",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:process",
+      "operationId": "documentai.projects.locations.processors.processorVersions.process",
+      "summary": "Processes a single document.",
+      "description": "Processes a single document.",
+      "parameters": {
+        "name": {
+          "description": "Required. The resource name of the Processor or ProcessorVersion to use for processing. If a Processor is specified, the server will use its default version. Format: `projects/{project}/locations/{location}/processors/{processor}`, or `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1ProcessRequest",
+        "description": "Request message for the ProcessDocument method.",
+        "type": "object",
+        "properties": {
+          "inlineDocument": {
+            "description": "An inline document proto.",
+            "$ref": "GoogleCloudDocumentaiV1Document"
+          },
+          "rawDocument": {
+            "description": "A raw document content (bytes).",
+            "$ref": "GoogleCloudDocumentaiV1RawDocument"
+          },
+          "gcsDocument": {
+            "description": "A raw document on Google Cloud Storage.",
+            "$ref": "GoogleCloudDocumentaiV1GcsDocument"
+          },
+          "skipHumanReview": {
+            "description": "Whether human review should be skipped for this request. Default to `false`.",
+            "deprecated": true,
+            "type": "boolean"
+          },
+          "fieldMask": {
+            "description": "Specifies which fields to include in the ProcessResponse.document output. Only supports top-level document and pages field, so it must be in the form of `{document_field_name}` or `pages.{page_field_name}`.",
+            "type": "string",
+            "format": "google-fieldmask"
+          },
+          "processOptions": {
+            "description": "Inference-time options for the process API",
+            "$ref": "GoogleCloudDocumentaiV1ProcessOptions"
+          },
+          "labels": {
+            "description": "Optional. The labels with user-defined metadata for the request. Label keys and values can be no longer than 63 characters (Unicode codepoints) and can only contain lowercase letters, numeric characters, underscores, and dashes. International characters are allowed. Label values are optional. Label keys must start with a letter.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "imagelessMode": {
+            "description": "Optional. Option to remove images from the document.",
+            "type": "boolean"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ProcessResponse",
+        "description": "Response message for the ProcessDocument method.",
+        "type": "object",
+        "properties": {
+          "document": {
+            "description": "The document payload, will populate fields based on the processor's behavior.",
+            "$ref": "GoogleCloudDocumentaiV1Document"
+          },
+          "humanReviewStatus": {
+            "description": "The status of human review on the processed document.",
+            "$ref": "GoogleCloudDocumentaiV1HumanReviewStatus"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:batchProcess",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:batchProcess",
+      "operationId": "documentai.projects.locations.processors.processorVersions.batchProcess",
+      "summary": "LRO endpoint to batch process many documents. The output is written to Cloud Storage as JSON in the [Document] format.",
+      "description": "LRO endpoint to batch process many documents. The output is written to Cloud Storage as JSON in the [Document] format.",
+      "parameters": {
+        "name": {
+          "description": "Required. The resource name of Processor or ProcessorVersion. Format: `projects/{project}/locations/{location}/processors/{processor}`, or `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1BatchProcessRequest",
+        "description": "Request message for BatchProcessDocuments.",
+        "type": "object",
+        "properties": {
+          "inputDocuments": {
+            "description": "The input documents for the BatchProcessDocuments method.",
+            "$ref": "GoogleCloudDocumentaiV1BatchDocumentsInputConfig"
+          },
+          "documentOutputConfig": {
+            "description": "The output configuration for the BatchProcessDocuments method.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentOutputConfig"
+          },
+          "skipHumanReview": {
+            "description": "Whether human review should be skipped for this request. Default to `false`.",
+            "deprecated": true,
+            "type": "boolean"
+          },
+          "processOptions": {
+            "description": "Inference-time options for the process API",
+            "$ref": "GoogleCloudDocumentaiV1ProcessOptions"
+          },
+          "labels": {
+            "description": "Optional. The labels with user-defined metadata for the request. Label keys and values can be no longer than 63 characters (Unicode codepoints) and can only contain lowercase letters, numeric characters, underscores, and dashes. International characters are allowed. Label values are optional. Label keys must start with a letter.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+parent}/processorVersions:train",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/processorVersions:train",
+      "operationId": "documentai.projects.locations.processors.processorVersions.train",
+      "summary": "Trains a new processor version. Operation metadata is returned as TrainProcessorVersionMetadata.",
+      "description": "Trains a new processor version. Operation metadata is returned as TrainProcessorVersionMetadata.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project, location and processor) to create the new version for. Format: `projects/{project}/locations/{location}/processors/{processor}`.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1TrainProcessorVersionRequest",
+        "description": "Request message for the TrainProcessorVersion method.",
+        "type": "object",
+        "properties": {
+          "customDocumentExtractionOptions": {
+            "description": "Options to control Custom Document Extraction (CDE) Processor.",
+            "$ref": "GoogleCloudDocumentaiV1TrainProcessorVersionRequestCustomDocumentExtractionOptions"
+          },
+          "foundationModelTuningOptions": {
+            "description": "Options to control foundation model tuning of a processor.",
+            "$ref": "GoogleCloudDocumentaiV1TrainProcessorVersionRequestFoundationModelTuningOptions"
+          },
+          "processorVersion": {
+            "description": "Required. The processor version to be created.",
+            "$ref": "GoogleCloudDocumentaiV1ProcessorVersion"
+          },
+          "documentSchema": {
+            "description": "Optional. The schema the processor version will be trained with.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          },
+          "inputData": {
+            "description": "Optional. The input data used to train the ProcessorVersion.",
+            "$ref": "GoogleCloudDocumentaiV1TrainProcessorVersionRequestInputData"
+          },
+          "baseProcessorVersion": {
+            "description": "Optional. The processor version to use as a base for training. This processor version must be a child of `parent`. Format: `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`.",
+            "type": "string"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.processors.processorVersions.get",
+      "summary": "Gets a processor version detail.",
+      "description": "Gets a processor version detail.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor resource name.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ProcessorVersion",
+        "description": "A processor version is an implementation of a processor. Each processor can have multiple versions, pretrained by Google internally or uptrained by the customer. A processor can only have one default version at a time. Its document-processing behavior is defined by that version.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the processor version. Format: `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processor_version}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "The display name of the processor version.",
+            "type": "string"
+          },
+          "documentSchema": {
+            "description": "Output only. The schema of the processor version. Describes the output.",
+            "readOnly": true,
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          },
+          "state": {
+            "description": "Output only. The state of the processor version.",
+            "readOnly": true,
+            "type": "string",
+            "enumDescriptions": [
+              "The processor version is in an unspecified state.",
+              "The processor version is deployed and can be used for processing.",
+              "The processor version is being deployed.",
+              "The processor version is not deployed and cannot be used for processing.",
+              "The processor version is being undeployed.",
+              "The processor version is being created.",
+              "The processor version is being deleted.",
+              "The processor version failed and is in an indeterminate state.",
+              "The processor version is being imported."
+            ],
+            "enum": [
+              "STATE_UNSPECIFIED",
+              "DEPLOYED",
+              "DEPLOYING",
+              "UNDEPLOYED",
+              "UNDEPLOYING",
+              "CREATING",
+              "DELETING",
+              "FAILED",
+              "IMPORTING"
+            ]
+          },
+          "createTime": {
+            "description": "Output only. The time the processor version was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "latestEvaluation": {
+            "description": "Output only. The most recently invoked evaluation for the processor version.",
+            "readOnly": true,
+            "$ref": "GoogleCloudDocumentaiV1EvaluationReference"
+          },
+          "kmsKeyName": {
+            "description": "Output only. The KMS key name used for encryption.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "kmsKeyVersionName": {
+            "description": "Output only. The KMS key version with which data is encrypted.",
+            "readOnly": true,
+            "type": "string"
+          },
+          "googleManaged": {
+            "description": "Output only. Denotes that this `ProcessorVersion` is managed by Google.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "deprecationInfo": {
+            "description": "Output only. If set, information about the eventual deprecation of this version.",
+            "readOnly": true,
+            "$ref": "GoogleCloudDocumentaiV1ProcessorVersionDeprecationInfo"
+          },
+          "modelType": {
+            "description": "Output only. The model type of this processor version.",
+            "readOnly": true,
+            "type": "string",
+            "enumDescriptions": [
+              "The processor version has unspecified model type.",
+              "The processor version has generative model type.",
+              "The processor version has custom model type."
+            ],
+            "enum": [
+              "MODEL_TYPE_UNSPECIFIED",
+              "MODEL_TYPE_GENERATIVE",
+              "MODEL_TYPE_CUSTOM"
+            ]
+          },
+          "satisfiesPzs": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "satisfiesPzi": {
+            "description": "Output only. Reserved for future use.",
+            "readOnly": true,
+            "type": "boolean"
+          },
+          "genAiModelInfo": {
+            "description": "Output only. Information about Generative AI model-based processor versions.",
+            "readOnly": true,
+            "$ref": "GoogleCloudDocumentaiV1ProcessorVersionGenAiModelInfo"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}/processorVersions",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/processorVersions",
+      "operationId": "documentai.projects.locations.processors.processorVersions.list",
+      "summary": "Lists all versions of a processor.",
+      "description": "Lists all versions of a processor.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project, location and processor) to list all versions. Format: `projects/{project}/locations/{location}/processors/{processor}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The maximum number of processor versions to return. If unspecified, at most `10` processor versions will be returned. The maximum value is `20`. Values above `20` will be coerced to `20`.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "We will return the processor versions sorted by creation time. The page token will point to the next processor version.",
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ListProcessorVersionsResponse",
+        "description": "Response message for the ListProcessorVersions method.",
+        "type": "object",
+        "properties": {
+          "processorVersions": {
+            "description": "The list of processors.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorVersion"
+            }
+          },
+          "nextPageToken": {
+            "description": "Points to the next processor, otherwise empty.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.processors.processorVersions.delete",
+      "summary": "Deletes the processor version, all artifacts under the processor version will be deleted.",
+      "description": "Deletes the processor version, all artifacts under the processor version will be deleted.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor version resource name to be deleted.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:deploy",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:deploy",
+      "operationId": "documentai.projects.locations.processors.processorVersions.deploy",
+      "summary": "Deploys the processor version.",
+      "description": "Deploys the processor version.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor version resource name to be deployed.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1DeployProcessorVersionRequest",
+        "description": "Request message for the DeployProcessorVersion method.",
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+name}:undeploy",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}:undeploy",
+      "operationId": "documentai.projects.locations.processors.processorVersions.undeploy",
+      "summary": "Undeploys the processor version.",
+      "description": "Undeploys the processor version.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor version resource name to be undeployed.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1UndeployProcessorVersionRequest",
+        "description": "Request message for the UndeployProcessorVersion method.",
+        "type": "object",
+        "properties": {}
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+processorVersion}:evaluateProcessorVersion",
+      "url": "https://documentai.google.gateway-402.com/v1/{+processorVersion}:evaluateProcessorVersion",
+      "operationId": "documentai.projects.locations.processors.processorVersions.evaluateProcessorVersion",
+      "summary": "Evaluates a ProcessorVersion against annotated documents, producing an Evaluation.",
+      "description": "Evaluates a ProcessorVersion against annotated documents, producing an Evaluation.",
+      "parameters": {
+        "processorVersion": {
+          "description": "Required. The resource name of the ProcessorVersion to evaluate. `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1EvaluateProcessorVersionRequest",
+        "description": "Evaluates the given ProcessorVersion against the supplied documents.",
+        "type": "object",
+        "properties": {
+          "evaluationDocuments": {
+            "description": "Optional. The documents used in the evaluation. If unspecified, use the processor's dataset as evaluation input.",
+            "$ref": "GoogleCloudDocumentaiV1BatchDocumentsInputConfig"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.processors.processorVersions.evaluations.get",
+      "summary": "Retrieves a specific evaluation.",
+      "description": "Retrieves a specific evaluation.",
+      "parameters": {
+        "name": {
+          "description": "Required. The resource name of the Evaluation to get. `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}/evaluations/{evaluation}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+/evaluations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1Evaluation",
+        "description": "An evaluation of a ProcessorVersion's performance.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The resource name of the evaluation. Format: `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processor_version}/evaluations/{evaluation}`",
+            "type": "string"
+          },
+          "createTime": {
+            "description": "The time that the evaluation was created.",
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "documentCounters": {
+            "description": "Counters for the documents used in the evaluation.",
+            "$ref": "GoogleCloudDocumentaiV1EvaluationCounters"
+          },
+          "allEntitiesMetrics": {
+            "description": "Metrics for all the entities in aggregate.",
+            "$ref": "GoogleCloudDocumentaiV1EvaluationMultiConfidenceMetrics"
+          },
+          "entityMetrics": {
+            "description": "Metrics across confidence levels, for different entities.",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "GoogleCloudDocumentaiV1EvaluationMultiConfidenceMetrics"
+            }
+          },
+          "kmsKeyName": {
+            "description": "The KMS key name used for encryption.",
+            "type": "string"
+          },
+          "kmsKeyVersionName": {
+            "description": "The KMS key version with which data is encrypted.",
+            "type": "string"
+          },
+          "revisions": {
+            "description": "Contains all revisions of the evaluation, excluding the latest one.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1EvaluationEvaluationRevision"
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}/evaluations",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/evaluations",
+      "operationId": "documentai.projects.locations.processors.processorVersions.evaluations.list",
+      "summary": "Retrieves a set of evaluations for a given processor version.",
+      "description": "Retrieves a set of evaluations for a given processor version.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The resource name of the ProcessorVersion to list evaluations for. `projects/{project}/locations/{location}/processors/{processor}/processorVersions/{processorVersion}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/processorVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The standard list page size. If unspecified, at most `5` evaluations are returned. The maximum value is `100`. Values above `100` are coerced to `100`.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "A page token, received from a previous `ListEvaluations` call. Provide this to retrieve the subsequent page.",
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ListEvaluationsResponse",
+        "description": "The response from `ListEvaluations`.",
+        "type": "object",
+        "properties": {
+          "evaluations": {
+            "description": "The evaluations requested.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1Evaluation"
+            }
+          },
+          "nextPageToken": {
+            "description": "A token, which can be sent as `page_token` to retrieve the next page. If this field is omitted, there are no subsequent pages.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+humanReviewConfig}:reviewDocument",
+      "url": "https://documentai.google.gateway-402.com/v1/{+humanReviewConfig}:reviewDocument",
+      "operationId": "documentai.projects.locations.processors.humanReviewConfig.reviewDocument",
+      "summary": "Send a document for Human Review. The input document should be processed by the specified processor.",
+      "description": "Send a document for Human Review. The input document should be processed by the specified processor.",
+      "parameters": {
+        "humanReviewConfig": {
+          "description": "Required. The resource name of the HumanReviewConfig that the document will be reviewed with.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processors/[^/]+/humanReviewConfig$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1ReviewDocumentRequest",
+        "description": "Request message for the ReviewDocument method.",
+        "type": "object",
+        "properties": {
+          "inlineDocument": {
+            "description": "An inline document proto.",
+            "$ref": "GoogleCloudDocumentaiV1Document"
+          },
+          "enableSchemaValidation": {
+            "description": "Whether the validation should be performed on the ad-hoc review request.",
+            "type": "boolean"
+          },
+          "priority": {
+            "description": "The priority of the human review task.",
+            "type": "string",
+            "enumDescriptions": [
+              "The default priority level.",
+              "The urgent priority level. The labeling manager should allocate labeler resource to the urgent task queue to respect this priority level."
+            ],
+            "enum": [
+              "DEFAULT",
+              "URGENT"
+            ]
+          },
+          "documentSchema": {
+            "description": "The document schema of the human review task.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}/processorTypes",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/processorTypes",
+      "operationId": "documentai.projects.locations.processorTypes.list",
+      "summary": "Lists the processor types that exist.",
+      "description": "Lists the processor types that exist.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The location of processor types to list. Format: `projects/{project}/locations/{location}`.",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "The maximum number of processor types to return. If unspecified, at most `100` processor types will be returned. The maximum value is `500`. Values above `500` will be coerced to `500`.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "Used to retrieve the next page of results, empty if at the end of the list.",
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ListProcessorTypesResponse",
+        "description": "Response message for the ListProcessorTypes method.",
+        "type": "object",
+        "properties": {
+          "processorTypes": {
+            "description": "The processor types.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorType"
+            }
+          },
+          "nextPageToken": {
+            "description": "Points to the next page, otherwise empty.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.processorTypes.get",
+      "summary": "Gets a processor type detail.",
+      "description": "Gets a processor type detail.",
+      "parameters": {
+        "name": {
+          "description": "Required. The processor type resource name.",
+          "pattern": "^projects/[^/]+/locations/[^/]+/processorTypes/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ProcessorType",
+        "description": "A processor type is responsible for performing a certain document understanding task on a certain type of document.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The resource name of the processor type. Format: `projects/{project}/processorTypes/{processor_type}`",
+            "type": "string"
+          },
+          "type": {
+            "description": "The processor type, such as: `OCR_PROCESSOR`, `INVOICE_PROCESSOR`.",
+            "type": "string"
+          },
+          "category": {
+            "description": "The processor category, used by UI to group processor types.",
+            "type": "string"
+          },
+          "availableLocations": {
+            "description": "The locations in which this processor is available.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1ProcessorTypeLocationInfo"
+            }
+          },
+          "allowCreation": {
+            "description": "Whether the processor type allows creation. If true, users can create a processor of this processor type. Otherwise, users need to request access.",
+            "type": "boolean"
+          },
+          "launchStage": {
+            "description": "Launch stage of the processor type",
+            "type": "string",
+            "enumDescriptions": [
+              "Do not use this default value.",
+              "The feature is not yet implemented. Users can not use it.",
+              "Prelaunch features are hidden from users and are only visible internally.",
+              "Early Access features are limited to a closed group of testers. To use these features, you must sign up in advance and sign a Trusted Tester agreement (which includes confidentiality provisions). These features may be unstable, changed in backward-incompatible ways, and are not guaranteed to be released.",
+              "Alpha is a limited availability test for releases before they are cleared for widespread use. By Alpha, all significant design issues are resolved and we are in the process of verifying functionality. Alpha customers need to apply for access, agree to applicable terms, and have their projects allowlisted. Alpha releases don't have to be feature complete, no SLAs are provided, and there are no technical support obligations, but they will be far enough along that customers can actually use them in test environments or for limited-use tests -- just like they would in normal production cases.",
+              "Beta is the point at which we are ready to open a release for any customer to use. There are no SLA or technical support obligations in a Beta release. Products will be complete from a feature perspective, but may have some open outstanding issues. Beta releases are suitable for limited production use cases.",
+              "GA features are open to all developers and are considered stable and fully qualified for production use.",
+              "Deprecated features are scheduled to be shut down and removed. For more information, see the \"Deprecation Policy\" section of our [Terms of Service](https://cloud.google.com/terms/) and the [Google Cloud Platform Subject to the Deprecation Policy](https://cloud.google.com/terms/deprecation) documentation."
+            ],
+            "enum": [
+              "LAUNCH_STAGE_UNSPECIFIED",
+              "UNIMPLEMENTED",
+              "PRELAUNCH",
+              "EARLY_ACCESS",
+              "ALPHA",
+              "BETA",
+              "GA",
+              "DEPRECATED"
+            ]
+          },
+          "sampleDocumentUris": {
+            "description": "A set of Cloud Storage URIs of sample documents for this processor.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+parent}/schemas",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/schemas",
+      "operationId": "documentai.projects.locations.schemas.create",
+      "summary": "Creates a schema.",
+      "description": "Creates a schema.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project and location) under which to create the Schema. Format: `projects/{project}/locations/{location}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1NextSchema",
+        "description": "NextSchema is a collection of SchemaVersions.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the Schema. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the Schema.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the Schema.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the Schema was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "updateTime": {
+            "description": "Output only. The time when the Schema was last updated.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1NextSchema",
+        "description": "NextSchema is a collection of SchemaVersions.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the Schema. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the Schema.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the Schema.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the Schema was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "updateTime": {
+            "description": "Output only. The time when the Schema was last updated.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.schemas.patch",
+      "summary": "Updates a schema. Editable fields are: - `display_name` - `labels`",
+      "description": "Updates a schema. Editable fields are: - `display_name` - `labels`",
+      "parameters": {
+        "name": {
+          "description": "Identifier. The resource name of the Schema. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "updateMask": {
+          "description": "Optional. The update mask to apply to the resource. **Note:** Only the following fields can be updated: - `display_name` - `labels`",
+          "location": "query",
+          "type": "string",
+          "format": "google-fieldmask"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1NextSchema",
+        "description": "NextSchema is a collection of SchemaVersions.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the Schema. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the Schema.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the Schema.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the Schema was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "updateTime": {
+            "description": "Output only. The time when the Schema was last updated.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1NextSchema",
+        "description": "NextSchema is a collection of SchemaVersions.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the Schema. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the Schema.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the Schema.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the Schema was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "updateTime": {
+            "description": "Output only. The time when the Schema was last updated.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.schemas.delete",
+      "summary": "Deletes a schema.",
+      "description": "Deletes a schema.",
+      "parameters": {
+        "name": {
+          "description": "Required. The name of the Schema to be deleted. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "force": {
+          "description": "Optional. If set to true, any child resources of this Schema will also be deleted. (Otherwise, the request will only work if the Schema has no child resources.)",
+          "location": "query",
+          "type": "boolean"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}/schemas",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/schemas",
+      "operationId": "documentai.projects.locations.schemas.list",
+      "summary": "Lists Schemas.",
+      "description": "Lists Schemas.",
+      "parameters": {
+        "parent": {
+          "description": "Required. Format: `projects/{project}/locations/{location}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "Optional. The maximum number of schema groups to return. If unspecified, at most `10` Schema will be returned. The maximum value is `20`. Values above `20` will be coerced to `20`.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "Optional. Returns the schema groups sorted by creation time. The page token will point to the next Schema.",
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ListSchemasResponse",
+        "description": "Response message for ListSchemas.",
+        "type": "object",
+        "properties": {
+          "schemas": {
+            "description": "The list of Schemas.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1NextSchema"
+            }
+          },
+          "nextPageToken": {
+            "description": "Points to the next Schema, otherwise empty.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.schemas.get",
+      "summary": "Gets a schema.",
+      "description": "Gets a schema.",
+      "parameters": {
+        "name": {
+          "description": "Required. The name of the Schema to get. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1NextSchema",
+        "description": "NextSchema is a collection of SchemaVersions.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the Schema. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the Schema.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the Schema.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the Schema was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "updateTime": {
+            "description": "Output only. The time when the Schema was last updated.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+parent}/schemaVersions",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/schemaVersions",
+      "operationId": "documentai.projects.locations.schemas.schemaVersions.create",
+      "summary": "Creates a schema version.",
+      "description": "Creates a schema version.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project and location) under which to create the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1SchemaVersion",
+        "description": "SchemaVersion is a version of the Schema which is created in SchemaGroup.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the SchemaVersion.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the SchemaVersion.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the SchemaVersion was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "schema": {
+            "description": "Required. The schema of the SchemaVersion.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1SchemaVersion",
+        "description": "SchemaVersion is a version of the Schema which is created in SchemaGroup.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the SchemaVersion.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the SchemaVersion.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the SchemaVersion was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "schema": {
+            "description": "Required. The schema of the SchemaVersion.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.schemas.schemaVersions.patch",
+      "summary": "Updates a schema version. Editable fields are: - `display_name` - `labels`",
+      "description": "Updates a schema version. Editable fields are: - `display_name` - `labels`",
+      "parameters": {
+        "name": {
+          "description": "Identifier. The resource name of the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+/schemaVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "updateMask": {
+          "description": "Optional. The update mask to apply to the resource. **Note:** Only the following fields can be updated: - `display_name` - `labels`",
+          "location": "query",
+          "type": "string",
+          "format": "google-fieldmask"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1SchemaVersion",
+        "description": "SchemaVersion is a version of the Schema which is created in SchemaGroup.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the SchemaVersion.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the SchemaVersion.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the SchemaVersion was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "schema": {
+            "description": "Required. The schema of the SchemaVersion.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1SchemaVersion",
+        "description": "SchemaVersion is a version of the Schema which is created in SchemaGroup.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the SchemaVersion.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the SchemaVersion.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the SchemaVersion was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "schema": {
+            "description": "Required. The schema of the SchemaVersion.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "v1/{+parent}/schemaVersions:generate",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/schemaVersions:generate",
+      "operationId": "documentai.projects.locations.schemas.schemaVersions.generate",
+      "summary": "Generates a schema version.",
+      "description": "Generates a schema version.",
+      "parameters": {
+        "parent": {
+          "description": "Required. The parent (project, location and schema) under which to generate the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "requestSchema": {
+        "id": "GoogleCloudDocumentaiV1GenerateSchemaVersionRequest",
+        "description": "Request message for GenerateSchemaVersion.",
+        "type": "object",
+        "properties": {
+          "inlineDocuments": {
+            "description": "The set of documents specified inline. For each document, its `uri` or `content` field must be set.",
+            "$ref": "GoogleCloudDocumentaiV1Documents"
+          },
+          "rawDocuments": {
+            "description": "The set of raw documents.",
+            "$ref": "GoogleCloudDocumentaiV1RawDocuments"
+          },
+          "gcsDocuments": {
+            "description": "The set of documents placed on Cloud Storage.",
+            "$ref": "GoogleCloudDocumentaiV1GcsDocuments"
+          },
+          "gcsPrefix": {
+            "description": "The common prefix of documents placed on Cloud Storage.",
+            "$ref": "GoogleCloudDocumentaiV1GcsPrefix"
+          },
+          "baseSchemaVersion": {
+            "description": "The base schema version name to use for the schema generation. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+            "type": "string"
+          },
+          "generateSchemaVersionParams": {
+            "description": "Optional. User specified parameters for the schema generation.",
+            "$ref": "GoogleCloudDocumentaiV1GenerateSchemaVersionRequestGenerateSchemaVersionParams"
+          }
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1GenerateSchemaVersionResponse",
+        "description": "Response message for GenerateSchemaVersion.",
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "description": "The schema version generated by the model.",
+            "$ref": "GoogleCloudDocumentaiV1SchemaVersion"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.schemas.schemaVersions.delete",
+      "summary": "Deletes a schema version.",
+      "description": "Deletes a schema version.",
+      "parameters": {
+        "name": {
+          "description": "Required. The name of the SchemaVersion to delete. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+/schemaVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleLongrunningOperation",
+        "description": "This resource represents a long-running operation that is the result of a network API call.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          },
+          "done": {
+            "description": "If the value is `false`, it means the operation is still in progress. If `true`, the operation is completed, and either `error` or `response` is available.",
+            "type": "boolean"
+          },
+          "error": {
+            "description": "The error result of the operation in case of failure or cancellation.",
+            "$ref": "GoogleRpcStatus"
+          },
+          "response": {
+            "description": "The normal, successful response of the operation. If the original method returns no data on success, such as `Delete`, the response is `google.protobuf.Empty`. If the original method is standard `Get`/`Create`/`Update`, the response should be the resource. For other methods, the response should have the type `XxxResponse`, where `Xxx` is the original method name. For example, if the original method name is `TakeSnapshot()`, the inferred response type is `TakeSnapshotResponse`.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "any",
+              "description": "Properties of the object. Contains field @type with type URL."
+            }
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+parent}/schemaVersions",
+      "url": "https://documentai.google.gateway-402.com/v1/{+parent}/schemaVersions",
+      "operationId": "documentai.projects.locations.schemas.schemaVersions.list",
+      "summary": "Lists SchemaVersions.",
+      "description": "Lists SchemaVersions.",
+      "parameters": {
+        "parent": {
+          "description": "Required. Format: `projects/{project}/locations/{location}/schemas/{schema}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        },
+        "pageSize": {
+          "description": "Optional. The maximum number of SchemaVersion to return. If unspecified, at most `10` SchemaVersion will be returned. The maximum value is `20`. Values above `20` will be coerced to `20`.",
+          "location": "query",
+          "type": "integer",
+          "format": "int32"
+        },
+        "pageToken": {
+          "description": "Optional. Returns the SchemaVersion sorted by creation time. The page token will point to the next SchemaVersion.",
+          "location": "query",
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1ListSchemaVersionsResponse",
+        "description": "Response message for ListSchemaVersions.",
+        "type": "object",
+        "properties": {
+          "schemaVersions": {
+            "description": "The list of SchemaVersions.",
+            "type": "array",
+            "items": {
+              "$ref": "GoogleCloudDocumentaiV1SchemaVersion"
+            }
+          },
+          "nextPageToken": {
+            "description": "Points to the next SchemaVersion, otherwise empty.",
+            "type": "string"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.projects.locations.schemas.schemaVersions.get",
+      "summary": "Gets a schema version.",
+      "description": "Gets a schema version.",
+      "parameters": {
+        "name": {
+          "description": "Required. The name of the SchemaVersion to get. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+          "pattern": "^projects/[^/]+/locations/[^/]+/schemas/[^/]+/schemaVersions/[^/]+$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleCloudDocumentaiV1SchemaVersion",
+        "description": "SchemaVersion is a version of the Schema which is created in SchemaGroup.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Identifier. The resource name of the SchemaVersion. Format: `projects/{project}/locations/{location}/schemas/{schema}/schemaVersions/{schema_version}`",
+            "type": "string"
+          },
+          "displayName": {
+            "description": "Required. The user-defined name of the SchemaVersion.",
+            "type": "string"
+          },
+          "labels": {
+            "description": "Optional. The {{gcp_name_short}} labels for the SchemaVersion.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "createTime": {
+            "description": "Output only. The time when the SchemaVersion was created.",
+            "readOnly": true,
+            "type": "string",
+            "format": "google-datetime"
+          },
+          "schema": {
+            "description": "Required. The schema of the SchemaVersion.",
+            "$ref": "GoogleCloudDocumentaiV1DocumentSchema"
+          }
+        }
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "v1/{+name}",
+      "url": "https://documentai.google.gateway-402.com/v1/{+name}",
+      "operationId": "documentai.operations.delete",
+      "summary": "Deletes a long-running operation. This method indicates that the client is no longer interested in the operation result. It does not cancel the operation. If the server doesn't support this method, it returns `google.rpc.Code.UNIMPLEMENTED`.",
+      "description": "Deletes a long-running operation. This method indicates that the client is no longer interested in the operation result. It does not cancel the operation. If the server doesn't support this method, it returns `google.rpc.Code.UNIMPLEMENTED`.",
+      "parameters": {
+        "name": {
+          "description": "The name of the operation resource to be deleted.",
+          "pattern": "^operations/.*$",
+          "location": "path",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "responseSchema": {
+        "id": "GoogleProtobufEmpty",
+        "description": "A generic empty message that you can re-use to avoid defining duplicated empty messages in your APIs. A typical example is to use it as the request or the response type of an API method. For instance: service Foo { rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty); }",
+        "type": "object",
+        "properties": {}
+      },
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    }
+  ],
+  "openapi": {
+    "externalDocs": {
+      "url": "https://cloud.google.com/document-ai/docs/"
+    },
+    "info": {
+      "contact": {
+        "name": "Google",
+        "url": "https://google.com",
+        "x-twitter": "youtube"
+      },
+      "description": "Service to parse structured information from unstructured or semi-structured documents using state-of-the-art Google AI such as natural language, computer vision, translation, and AutoML.",
+      "license": {
+        "name": "Creative Commons Attribution 3.0",
+        "url": "http://creativecommons.org/licenses/by/3.0/"
+      },
+      "termsOfService": "https://developers.google.com/terms/",
+      "title": "Cloud Document AI API",
+      "version": "v1",
+      "x-apisguru-categories": [
+        "analytics",
+        "media"
+      ],
+      "x-logo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/e/e1/YouTube_play_buttom_icon_%282013-2017%29.svg"
+      },
+      "x-origin": [
+        {
+          "format": "google",
+          "url": "https://documentai.googleapis.com/$discovery/rest?version=v1",
+          "version": "v1"
+        }
+      ],
+      "x-preferred": false,
+      "x-providerName": "googleapis.com",
+      "x-serviceName": "documentai"
+    },
+    "openapi": "3.0.0",
+    "paths": {},
+    "servers": [
+      {
+        "url": "https://documentai.google.gateway-402.com"
+      }
+    ],
+    "tags": [
+      {
+        "name": "operations"
+      },
+      {
+        "name": "projects"
+      }
+    ]
+  }
+}

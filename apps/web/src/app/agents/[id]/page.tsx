@@ -6,6 +6,7 @@ import { Meter } from "~/components/meter";
 import { Metric } from "~/components/metric";
 import { StatusGlyph } from "~/components/status-glyph";
 import { FeedRow } from "~/components/feed-row";
+import { SpendOverTimeChart } from "~/components/receipt-charts";
 import { MCPSnippets } from "~/components/mcp-snippets";
 import { ConfirmSubmitButton } from "~/components/confirm-submit-button";
 import { CopyButton } from "~/components/copy-button";
@@ -107,7 +108,12 @@ export default async function AgentDetailPage({ params }: Props) {
         </div>
 
         <div className="mt-6 grid grid-cols-4 gap-px bg-hairline">
-          <Identity label="WALLET" value={shortKey(agent.publicKey, 8, 8)} mono />
+          <Identity
+            label="WALLET"
+            value={shortKey(agent.publicKey, 8, 8)}
+            mono
+            action={<CopyButton text={agent.publicKey} />}
+          />
           <div className="bg-bg-base p-4">
             <span className="label">NETWORK</span>
             <form
@@ -200,6 +206,9 @@ export default async function AgentDetailPage({ params }: Props) {
           title="Recent activity"
           meta={`${allReceipts.length} receipts`}
         >
+          <div className="mb-4">
+            <SpendOverTimeChart receipts={allReceipts} title="Agent spend over time" />
+          </div>
           <div className="overflow-x-auto">
             <div className="min-w-[680px]">
               <div className="grid grid-cols-[78px_22px_140px_1fr_88px_72px] gap-4 px-1 pb-2 border-b border-hairline-strong">
@@ -252,7 +261,11 @@ export default async function AgentDetailPage({ params }: Props) {
                 />
                 <PolicyTile
                   label="Network"
-                  value={agent.policy.allowedNetworks.join(" · ")}
+                  value={
+                    agent.policy.mode === "managed"
+                      ? agent.network
+                      : agent.policy.allowedNetworks.join(" · ")
+                  }
                 />
                 <PolicyTile
                   label="Token"
@@ -577,7 +590,7 @@ function Identity({
   label: string;
   value: string;
   mono?: boolean;
-  action?: string | (() => Promise<void>);
+  action?: React.ReactNode | (() => Promise<void>);
 }) {
   return (
     <div className="bg-bg-base px-4 py-3 flex flex-col gap-1.5">
@@ -593,9 +606,7 @@ function Identity({
             </ConfirmSubmitButton>
           </form>
         ) : action ? (
-          <button className="label text-signal hover:text-t1 transition-colors">
-            {action}
-          </button>
+          action
         ) : null}
       </div>
       <span className={`text-t1 text-[13px] ${mono ? "mono" : "label-num"}`}>

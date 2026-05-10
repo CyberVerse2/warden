@@ -19,7 +19,7 @@ export function StatusGlyph({
   const { glyph, color, label } = MAP[status];
   return (
     <span className="inline-flex items-center gap-2">
-      <span className={`mono ${color}`} aria-hidden>
+      <span className={`mono transition-transform duration-150 ${color}`} aria-hidden>
         {glyph}
       </span>
       {showLabel && <span className="label">{label}</span>}

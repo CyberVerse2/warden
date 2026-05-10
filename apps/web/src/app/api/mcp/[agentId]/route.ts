@@ -13,7 +13,7 @@ import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-const PROTOCOL_VERSION = "2024-11-05";
+const PROTOCOL_VERSION = "2025-11-25";
 const SERVER_INFO = { name: "warden", version: "0.1.0" };
 
 interface JsonRpcRequest {
@@ -136,6 +136,10 @@ function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
 }
 
 export async function GET(req: Request) {
+  if (req.headers.get("accept")?.includes("text/event-stream")) {
+    return new Response(null, { status: 405 });
+  }
+
   // Some clients probe with GET first.
   return jsonrpc(null, {
     serverInfo: SERVER_INFO,
@@ -178,9 +182,22 @@ export async function POST(
   }
 
   const db = getDb();
-  const walletService = createWalletService({ db, rpcUrl });
+  const walletService = createWalletService({
+    db,
+    rpcUrl,
+    rpcUrls: {
+      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+      devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
+      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    },
+  });
   const proofBuilder = createX402SvmProofBuilder(walletService, {
     rpcUrl,
+    rpcUrls: {
+      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+      devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
+      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    },
   });
   const tools = createWardenToolset({
     db,

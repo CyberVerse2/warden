@@ -1,0 +1,268 @@
+{
+  "fqn": "solana-foundation/alibaba/embeddings",
+  "name": "embeddings",
+  "title": "Alibaba Cloud Model Studio Embeddings",
+  "description": "Create text embeddings with Alibaba Cloud Model Studio's OpenAI-compatible embeddings API for retrieval and semantic search.",
+  "useCase": "Use for semantic search, retrieval, reranking pipelines, clustering, classification, and vector indexing.",
+  "category": "ai_ml",
+  "serviceUrl": "https://embeddings.alibaba.gateway-402.com",
+  "version": "v1",
+  "pageUrl": "https://pay.sh/services/solana-foundation/alibaba/embeddings",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/solana-foundation/alibaba/embeddings/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://embeddings.alibaba.gateway-402.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "## Spend-aware usage\n\n- Batch related texts into one embeddings request when possible and reuse stored vectors instead of re-embedding unchanged content.\n- Only generate embeddings when the task needs retrieval, ranking, clustering, or vector search rather than plain generation.\n- Prefer one well-formed request with the right model options over several trial-and-error calls, especially when the body selects the model behavior.",
+    "frontmatter": {
+      "category": "ai_ml",
+      "description": "Create text embeddings with Alibaba Cloud Model Studio's OpenAI-compatible embeddings API for retrieval and semantic search.",
+      "use_case": "Use for semantic search, retrieval, reranking pipelines, clustering, classification, and vector indexing.",
+      "openapi": {
+        "url": "https://embeddings.alibaba.gateway-402.com/openapi.json"
+      },
+      "name": "embeddings",
+      "service_url": "https://embeddings.alibaba.gateway-402.com",
+      "title": "Alibaba Cloud Model Studio Embeddings",
+      "version": "v1"
+    }
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "compatible-mode/v1/embeddings",
+      "url": "https://embeddings.alibaba.gateway-402.com/compatible-mode/v1/embeddings",
+      "operationId": "alibaba.embeddings.create",
+      "summary": "Create embeddings",
+      "description": "Create dense vector embeddings with the OpenAI-compatible embeddings endpoint in Alibaba Cloud Model Studio.",
+      "tags": [
+        "embeddings"
+      ],
+      "requestSchema": {
+        "$ref": "#/components/schemas/EmbeddingRequest"
+      },
+      "responseSchema": {
+        "$ref": "#/components/schemas/EmbeddingResponse"
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmbeddingResponse"
+              }
+            }
+          },
+          "description": "Successful embedding response."
+        },
+        "400": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            }
+          },
+          "description": "Invalid request."
+        }
+      },
+      "x402": {}
+    }
+  ],
+  "openapi": {
+    "components": {
+      "schemas": {
+        "EmbeddingRequest": {
+          "properties": {
+            "dimensions": {
+              "enum": [
+                2048,
+                1536,
+                1024,
+                768,
+                512,
+                256,
+                128,
+                64
+              ],
+              "type": "integer"
+            },
+            "encoding_format": {
+              "enum": [
+                "float",
+                "base64"
+              ],
+              "type": "string"
+            },
+            "input": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 10,
+                  "type": "array"
+                }
+              ]
+            },
+            "model": {
+              "enum": [
+                "text-embedding-v4"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "model",
+            "input"
+          ],
+          "type": "object"
+        },
+        "EmbeddingResponse": {
+          "properties": {
+            "data": {
+              "items": {
+                "properties": {
+                  "embedding": {
+                    "items": {
+                      "type": "number"
+                    },
+                    "type": "array"
+                  },
+                  "index": {
+                    "type": "integer"
+                  },
+                  "object": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "object": {
+              "type": "string"
+            },
+            "usage": {
+              "properties": {
+                "prompt_tokens": {
+                  "type": "integer"
+                },
+                "total_tokens": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "ErrorResponse": {
+          "properties": {
+            "error": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            },
+            "request_id": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      }
+    },
+    "info": {
+      "description": "Filtered OpenAPI description for the text embedding proxy backed by Alibaba Cloud Model Studio's OpenAI-compatible embeddings endpoint.",
+      "title": "Alibaba Cloud Model Studio Embeddings API",
+      "version": "v1"
+    },
+    "openapi": "3.0.3",
+    "paths": {
+      "/compatible-mode/v1/embeddings": {
+        "post": {
+          "description": "Create dense vector embeddings with the OpenAI-compatible embeddings endpoint in Alibaba Cloud Model Studio.",
+          "operationId": "alibaba.embeddings.create",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "encoding_format": "float",
+                  "input": "The quality of the clothes is excellent. They are beautiful.",
+                  "model": "text-embedding-v4"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/EmbeddingResponse"
+                  }
+                }
+              },
+              "description": "Successful embedding response."
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              },
+              "description": "Invalid request."
+            }
+          },
+          "summary": "Create embeddings",
+          "tags": [
+            "embeddings"
+          ]
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://embeddings.alibaba.gateway-402.com"
+      }
+    ],
+    "tags": [
+      {
+        "name": "embeddings"
+      }
+    ]
+  }
+}

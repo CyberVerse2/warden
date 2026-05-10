@@ -62,13 +62,32 @@ export interface WalletService {
 export interface WalletServiceDeps {
   db: Db;
   rpcUrl: string;
+  rpcUrls?: {
+    mainnet?: string | undefined;
+    devnet?: string | undefined;
+    testnet?: string | undefined;
+  };
 }
 
 export function createWalletService({
   db,
   rpcUrl,
+  rpcUrls,
 }: WalletServiceDeps): WalletService {
-  const connection = new Connection(rpcUrl, "confirmed");
+  const connections = new Map<string, Connection>();
+
+  function connectionFor(network: Network) {
+    const url =
+      network === "solana-mainnet"
+        ? rpcUrls?.mainnet ?? "https://api.mainnet-beta.solana.com"
+        : rpcUrls?.devnet ?? rpcUrl;
+    const key = `${network}:${url}`;
+    const cached = connections.get(key);
+    if (cached) return cached;
+    const connection = new Connection(url, "confirmed");
+    connections.set(key, connection);
+    return connection;
+  }
 
   async function loadWallet(walletId: string) {
     const [row] = await db
@@ -106,7 +125,9 @@ export function createWalletService({
 
     async getBalance(walletId) {
       const row = await loadWallet(walletId);
-      const lamports = await connection.getBalance(new PublicKey(row.publicKey));
+      const lamports = await connectionFor(row.network).getBalance(
+        new PublicKey(row.publicKey),
+      );
       return { lamports };
     },
 
@@ -116,7 +137,7 @@ export function createWalletService({
       const mint = new PublicKey(USDC_MINT[row.network]);
       const ata = getAssociatedTokenAddressSync(mint, owner);
       try {
-        const account = await getAccount(connection, ata);
+        const account = await getAccount(connectionFor(row.network), ata);
         const raw = account.amount;
         return { raw, usd: Number(raw) / 1_000_000 };
       } catch (error) {

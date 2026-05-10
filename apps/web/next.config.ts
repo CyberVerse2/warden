@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
     "@warden/policy",
     "@warden/runtime",
     "@warden/wallet",
+    "@warden/x402",
   ],
 };
 

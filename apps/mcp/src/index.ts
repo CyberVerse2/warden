@@ -22,9 +22,22 @@ if (!RPC_URL) {
 }
 
 const db = createDb(process.env.DATABASE_URL);
-const walletService = createWalletService({ db, rpcUrl: RPC_URL });
+const walletService = createWalletService({
+  db,
+  rpcUrl: RPC_URL,
+  rpcUrls: {
+    mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+    devnet: process.env.SOLANA_DEVNET_RPC_URL ?? RPC_URL,
+    testnet: process.env.SOLANA_TESTNET_RPC_URL,
+  },
+});
 const proofBuilder = createX402SvmProofBuilder(walletService, {
   rpcUrl: RPC_URL,
+  rpcUrls: {
+    mainnet: process.env.SOLANA_MAINNET_RPC_URL,
+    devnet: process.env.SOLANA_DEVNET_RPC_URL ?? RPC_URL,
+    testnet: process.env.SOLANA_TESTNET_RPC_URL,
+  },
 });
 
 const tools = createWardenToolset({

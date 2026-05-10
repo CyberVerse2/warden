@@ -1,0 +1,406 @@
+{
+  "fqn": "paysponge/screenshotone",
+  "name": "screenshotone",
+  "title": "ScreenshotOne",
+  "description": "Capture website screenshots, PDFs, rendered HTML, and animated video or GIF output from URLs or HTML payloads using ScreenshotOne, with GET and POST capture routes for browser-rendered visual web artifacts.",
+  "useCase": "Use for webpage screenshots, visual regression artifacts, PDF capture, rendered HTML capture, website preview images, GIF or video page recordings, and browser-rendered visual outputs from a URL or HTML input.",
+  "category": "media",
+  "serviceUrl": "https://screenshotone.x402.paysponge.com",
+  "pageUrl": "https://pay.sh/services/paysponge/screenshotone",
+  "source": {
+    "repository": "https://github.com/solana-foundation/pay-skills",
+    "payMdPath": "providers/paysponge/screenshotone/PAY.md",
+    "openapi": {
+      "type": "remote",
+      "url": "https://screenshotone.x402.paysponge.com/openapi.json",
+      "resolved": true
+    }
+  },
+  "documentation": {
+    "markdown": "ScreenshotOne browser-rendered capture endpoints exposed through PaySponge\nwith x402 payments.\n\nThe published spec currently exposes `/take` as both `GET` and `POST` plus an\n`/animate` `GET` route. The service is intended for website screenshots and\nrelated rendered outputs including PNG, JPEG, WebP, PDFs, rendered HTML, and\nanimated video or GIF captures from a URL or HTML payload.\n\nAll currently published routes are paid at $0.02 per request and accept x402\nUSDC on Solana mainnet, Base, and Avalanche.\n\nNote: the OpenAPI document is minimal and does not spell out rich request\nparameters inline. Agents that need exact capture options, media formats, or\nrequest body fields should inspect the linked spec directly before building\ncalls.\n\n## Spend-aware usage\n\n- Use `GET /take` for straightforward captures when the request fits cleanly in\n  query parameters and use `POST /take` when the capture options or HTML input\n  are larger or more structured.\n- Use `/animate` only when the caller explicitly needs motion output such as a\n  GIF or video. Do not spend animation pricing on a static screenshot task.\n- Capture only the asset type the user asked for. Avoid paying for repeated\n  format variants unless the output requirements are still unclear.",
+    "frontmatter": {
+      "name": "screenshotone",
+      "title": "ScreenshotOne",
+      "description": "Capture website screenshots, PDFs, rendered HTML, and animated video or GIF output from URLs or HTML payloads using ScreenshotOne, with GET and POST capture routes for browser-rendered visual web artifacts.",
+      "use_case": "Use for webpage screenshots, visual regression artifacts, PDF capture, rendered HTML capture, website preview images, GIF or video page recordings, and browser-rendered visual outputs from a URL or HTML input.",
+      "category": "media",
+      "service_url": "https://screenshotone.x402.paysponge.com",
+      "openapi": {
+        "url": "https://screenshotone.x402.paysponge.com/openapi.json"
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "animate",
+      "url": "https://screenshotone.x402.paysponge.com/animate",
+      "summary": "GET /animate",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.02"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "take",
+      "url": "https://screenshotone.x402.paysponge.com/take",
+      "summary": "GET /take",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.02"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "take",
+      "url": "https://screenshotone.x402.paysponge.com/take",
+      "summary": "POST /take",
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "402": {
+          "description": "Payment Required"
+        }
+      },
+      "x402": {
+        "x-agentcash-auth": {
+          "mode": "paid"
+        },
+        "x-payment-required": true,
+        "x-payment-info": {
+          "protocols": [
+            "x402"
+          ],
+          "pricingMode": "fixed",
+          "price": "$0.02"
+        }
+      }
+    }
+  ],
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "ScreenshotOne",
+      "description": "ScreenshotOne website screenshot API — PNG/JPEG/WebP screenshots, PDFs, rendered HTML, and animated videos/GIFs from any URL or HTML payload.",
+      "version": "1.0.0",
+      "x-agentcash-auth": {
+        "mode": "paid"
+      }
+    },
+    "servers": [
+      {
+        "url": "https://screenshotone.x402.paysponge.com"
+      }
+    ],
+    "paths": {
+      "/animate": {
+        "get": {
+          "summary": "GET /animate",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.02"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://screenshotone.x402.paysponge.com/animate",
+            "description": "GET /animate",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      },
+      "/take": {
+        "get": {
+          "summary": "GET /take",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.02"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://screenshotone.x402.paysponge.com/take",
+            "description": "GET /take",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        },
+        "post": {
+          "summary": "POST /take",
+          "x-agentcash-auth": {
+            "mode": "paid"
+          },
+          "x-payment-required": true,
+          "x-payment-info": {
+            "protocols": [
+              "x402"
+            ],
+            "pricingMode": "fixed",
+            "price": "$0.02"
+          },
+          "x402Version": 2,
+          "resource": {
+            "url": "https://screenshotone.x402.paysponge.com/take",
+            "description": "POST /take",
+            "mimeType": "application/json"
+          },
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "eip155:8453",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "eip155:43114",
+              "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            },
+            {
+              "scheme": "exact",
+              "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+              "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+              "asset": "usdc",
+              "amount": "20000",
+              "maxTimeoutSeconds": 300,
+              "extra": {}
+            }
+          ],
+          "extensions": {
+            "bazaar": {
+              "info": {
+                "input": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Success"
+            },
+            "402": {
+              "description": "Payment Required"
+            }
+          }
+        }
+      }
+    },
+    "x402Version": 2,
+    "resource": {
+      "url": "https://screenshotone.x402.paysponge.com/",
+      "description": "ScreenshotOne website screenshot API — PNG/JPEG/WebP screenshots, PDFs, rendered HTML, and animated videos/GIFs from any URL or HTML payload.",
+      "mimeType": "application/json"
+    },
+    "accepts": [
+      {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+        "asset": "usdc",
+        "amount": "20000",
+        "maxTimeoutSeconds": 300,
+        "extra": {}
+      },
+      {
+        "scheme": "exact",
+        "network": "eip155:43114",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f",
+        "asset": "usdc",
+        "amount": "20000",
+        "maxTimeoutSeconds": 300,
+        "extra": {}
+      },
+      {
+        "scheme": "exact",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ",
+        "asset": "usdc",
+        "amount": "20000",
+        "maxTimeoutSeconds": 300,
+        "extra": {}
+      }
+    ],
+    "x-payment-accepts": [
+      {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f"
+      },
+      {
+        "scheme": "exact",
+        "network": "eip155:43114",
+        "payTo": "0xD73912BA30832328a3db96BeE73ebfaB58b7429f"
+      },
+      {
+        "scheme": "exact",
+        "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "payTo": "9hw9Py9uMGtXRNpABZjifcK1t3suwzjyri9L9QYKg6zZ"
+      }
+    ]
+  }
+}
