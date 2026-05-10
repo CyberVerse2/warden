@@ -4,6 +4,28 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "CDP_API_KEY_ID",
+        "CDP_API_KEY_SECRET",
+        "COINBASE_X402_FACILITATOR_URL",
+        "DATABASE_URL",
+        "DEV_OPERATOR_EMAIL",
+        "DEV_OPERATOR_USER_ID",
+        "NEXT_PUBLIC_PRIVY_APP_ID",
+        "NODE_ENV",
+        "OPENAI_API_KEY",
+        "PRIVY_APP_SECRET",
+        "SOLANA_DEVNET_RPC_URL",
+        "SOLANA_MAINNET_RPC_URL",
+        "SOLANA_RPC_URL",
+        "SOLANA_TESTNET_RPC_URL",
+        "WARDEN_AGENT_CHAT_MODEL",
+        "WARDEN_AI_RISK_MODEL",
+        "WARDEN_ALLOW_DEV_AUTH",
+        "WARDEN_MASTER_KEY",
+        "WARDEN_PUBLIC_URL",
+        "X402_FACILITATOR_URL"
+      ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {

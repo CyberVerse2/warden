@@ -2,7 +2,8 @@ import { z } from "zod";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import type { PolicyConfig } from "@warden/core";
-import type { ParsedChallenge, HttpRequest } from "@warden/x402";
+import type { ParsedChallenge } from "@warden/x402/challenge";
+import type { HttpRequest } from "@warden/x402/http-client";
 
 export type AiRiskLevel = "trusted" | "unknown" | "suspicious" | "high_risk";
 

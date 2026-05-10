@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { discoverPayServices } from "@warden/x402";
+import { discoverPayServices } from "@warden/x402/discovery";
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
 import { Meter } from "~/components/meter";

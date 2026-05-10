@@ -6,7 +6,12 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./challenge": "./src/challenge.ts",
+    "./discovery": "./src/discovery.ts",
+    "./http-client": "./src/http-client.ts",
+    "./mpp": "./src/mpp.ts",
+    "./proof": "./src/proof.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

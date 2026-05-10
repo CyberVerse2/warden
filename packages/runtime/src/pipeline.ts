@@ -3,17 +3,23 @@ import { and, approvals, eq, receipts, type Db } from "@warden/db";
 import { evaluate, type PolicyDecision } from "@warden/policy";
 import type { WalletService } from "@warden/wallet";
 import {
-  createMppProofBuilder,
-  hashRequest,
-  mppResponseFromChallenge,
   parseChallenge,
-  parseMppChallenge,
+} from "@warden/x402/challenge";
+import {
+  hashRequest,
   sendRequest,
   type FetchLike,
   type HttpRequest,
+} from "@warden/x402/http-client";
+import {
+  createMppProofBuilder,
+  mppResponseFromChallenge,
+  parseMppChallenge,
   type MppProofBuilder,
+} from "@warden/x402/mpp";
+import {
   type ProofBuilder,
-} from "@warden/x402";
+} from "@warden/x402/proof";
 import { resolveAgentById, resolveAgentByToken } from "./auth";
 import {
   createOpenAiRiskAnalyzer,

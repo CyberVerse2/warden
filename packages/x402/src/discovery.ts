@@ -1,6 +1,5 @@
 import { WardenError } from "@warden/core";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import catalogIndex from "../catalog/index.json" with { type: "json" };
 
 export interface PayCatalogProvider {
@@ -127,22 +126,19 @@ async function readLocalProvider(fqn: string) {
   );
   if (!service?.providerFile) return undefined;
 
-  const candidates = [
-    new URL(`../catalog/${service.providerFile}`, import.meta.url),
-    join(process.cwd(), "packages/x402/catalog", service.providerFile),
-    join(process.cwd(), "../../packages/x402/catalog", service.providerFile),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      const contents = await readFile(candidate, "utf8");
-      return asRecord(JSON.parse(contents));
-    } catch {
-      // Try the next path. Next.js dev bundles source files in a different
-      // directory from the workspace catalog JSON files.
-    }
+  try {
+    const contents = await readFile(
+      new URL(`../catalog/${service.providerFile}`, import.meta.url),
+      "utf8",
+    );
+    return asRecord(JSON.parse(contents));
+  } catch (err) {
+    throw new WardenError("internal", "Could not read pay.sh catalog provider", {
+      fqn,
+      providerFile: service.providerFile,
+      cause: (err as Error).message,
+    });
   }
-  return undefined;
 }
 
 export async function discoverPayServices(

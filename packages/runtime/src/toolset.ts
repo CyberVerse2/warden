@@ -12,13 +12,16 @@ import { evaluate } from "@warden/policy";
 import {
   describePayService,
   discoverPayServices,
-  hashRequest,
-  parseChallenge,
-  sendRequest,
   type PayCatalogProvider,
+} from "@warden/x402/discovery";
+import {
+  parseChallenge,
   type ParsedChallenge,
+} from "@warden/x402/challenge";
+import { hashRequest, sendRequest } from "@warden/x402/http-client";
+import {
   type ProofBuilder,
-} from "@warden/x402";
+} from "@warden/x402/proof";
 import { createOpenAiRiskAnalyzer } from "./ai-risk";
 import { findMaliciousX402 } from "./threat-intel";
 

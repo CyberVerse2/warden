@@ -3,7 +3,7 @@
 import { agents, approvals } from "@warden/db";
 import { createRuntime } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder } from "@warden/x402";
+import { createX402SvmProofBuilder } from "@warden/x402/proof";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "~/lib/auth";

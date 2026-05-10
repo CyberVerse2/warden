@@ -16,13 +16,16 @@ function loadEnvFile(path: string) {
   }
 }
 
-for (const file of [resolve(process.cwd(), "../../.env"), resolve(process.cwd(), ".env")]) {
+for (const file of [
+  resolve(/*turbopackIgnore: true*/ process.cwd(), "../../.env"),
+  resolve(/*turbopackIgnore: true*/ process.cwd(), ".env"),
+]) {
   loadEnvFile(file);
 }
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: resolve(process.cwd(), "../.."),
+    root: resolve(/*turbopackIgnore: true*/ process.cwd(), "../.."),
   },
   transpilePackages: [
     "@warden/core",

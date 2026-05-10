@@ -1,5 +1,5 @@
 import maliciousX402s from "./malicious-x402s.json";
-import type { ParsedChallenge } from "@warden/x402";
+import type { ParsedChallenge } from "@warden/x402/challenge";
 
 type Reputation = "blocked" | "malicious";
 

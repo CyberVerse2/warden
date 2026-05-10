@@ -5,7 +5,7 @@ import {
   type WardenToolDefinition,
 } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder } from "@warden/x402";
+import { createX402SvmProofBuilder } from "@warden/x402/proof";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "~/lib/db";
 import { loadServerEnv } from "~/lib/env";
