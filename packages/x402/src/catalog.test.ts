@@ -1,5 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
+import { describePayService } from "./discovery";
 
 interface CatalogIndex {
   serviceCount: number;
@@ -66,5 +67,13 @@ describe("static x402 catalog", () => {
     }
 
     expect(endpointCount).toBe(index.endpointCount);
+  });
+
+  it("describes the fal provider from the packaged catalog", async () => {
+    const service = await describePayService({ fqn: "paysponge/fal" });
+
+    expect(service.fqn).toBe("paysponge/fal");
+    expect(service.operations.length).toBeGreaterThan(0);
+    expect(service.operations.some((operation) => operation.url.includes("fal.x402.paysponge.com"))).toBe(true);
   });
 });

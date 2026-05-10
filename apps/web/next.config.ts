@@ -27,6 +27,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: resolve(/*turbopackIgnore: true*/ process.cwd(), "../.."),
   },
+  outputFileTracingRoot: resolve(
+    /*turbopackIgnore: true*/ process.cwd(),
+    "../..",
+  ),
+  outputFileTracingIncludes: {
+    "/*": ["../../packages/x402/catalog/**/*"],
+  },
   transpilePackages: [
     "@warden/core",
     "@warden/db",
