@@ -90,6 +90,43 @@ function errorSummary(error: unknown) {
   };
 }
 
+function compactAnalyzeResult(value: unknown) {
+  const result = isRecord(value) ? value : undefined;
+  const data = isRecord(result?.data) ? result.data : undefined;
+  const policyPreview = isRecord(data?.policyPreview) ? data.policyPreview : undefined;
+  const policyDecision = isRecord(policyPreview?.decision)
+    ? policyPreview.decision
+    : undefined;
+  const x402 = isRecord(data?.x402) ? data.x402 : undefined;
+  const context = isRecord(data?.context) ? data.context : undefined;
+  const selectedEndpoint = isRecord(context?.selectedEndpoint)
+    ? context.selectedEndpoint
+    : undefined;
+
+  return {
+    ok: result?.ok,
+    decision: data?.decision,
+    rationale: data?.rationale,
+    risk: data?.risk,
+    threat: data?.threat,
+    policyDecision,
+    x402: {
+      amountUsd: x402?.amountUsd,
+      token: x402?.token,
+      network: x402?.network,
+      recipient: x402?.recipient,
+      challengeHash: x402?.challengeHash,
+      x402Version: x402?.x402Version,
+    },
+    selectedEndpoint: {
+      operationId: selectedEndpoint?.operationId,
+      method: selectedEndpoint?.method,
+      url: selectedEndpoint?.url,
+      price: selectedEndpoint?.price,
+    },
+  };
+}
+
 function plannerCallContext(calls: McpToolCall[]) {
   return calls.map((call) => ({
     tool: call.tool,
@@ -496,6 +533,9 @@ function wrapMcpTools({
                 endpoints: data?.endpoints,
               });
             }
+            if (toolName === "warden_analyze") {
+              logStage("tool.warden_analyze.compact_result", compactAnalyzeResult(storedResult));
+            }
             const call = {
               tool: toolName,
               arguments: args,
@@ -604,7 +644,7 @@ export async function POST(
               system: AI_SDK_AGENT_SYSTEM_PROMPT,
               prompt,
               tools: guardedTools,
-              stopWhen: stepCountIs(8),
+              stopWhen: stepCountIs(14),
               providerOptions: {
                 openai: {
                   store: false,
