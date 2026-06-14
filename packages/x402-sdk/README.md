@@ -49,3 +49,24 @@ const sdk = createWardenX402Sdk({
 `sdk.execute({ operationId, input, paymentHeader })` verifies payment through
 the configured verifier, executes the registered provider operation, and returns
 a receipt-shaped execution result.
+
+## HTTP Adapter
+
+```ts
+import { handleWardenX402Request } from "@warden/x402-sdk";
+
+export async function POST(request: Request) {
+  return handleWardenX402Request(sdk, request);
+}
+
+export async function GET(request: Request) {
+  return handleWardenX402Request(sdk, request);
+}
+```
+
+The adapter exposes:
+
+- `GET /x402/manifest`
+- `GET /x402/quote/:operationId`
+- `POST /x402/quote`
+- every registered operation path

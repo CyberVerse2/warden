@@ -7,6 +7,10 @@ export {
   type ExecutePaidOperationInput,
   type WardenX402Sdk,
 } from "./sdk";
+export {
+  handleWardenX402Request,
+  type WardenX402HttpAdapterOptions,
+} from "./adapter";
 export type {
   CeloNetwork,
   ExecutePaidOperationResult,
