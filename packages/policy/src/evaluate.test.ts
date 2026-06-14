@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { PolicyConfig } from "@warden/core";
+import {
+  CELO_MAINNET_NETWORK,
+  CELO_SEPOLIA_NETWORK,
+  type PolicyConfig,
+} from "@warden/core";
 import { evaluate, type PolicyInput } from "./evaluate";
 
 const basePolicy: PolicyConfig = {
   mode: "advanced",
   riskPosture: "balanced",
   allowedHosts: ["x402.example.com"],
-  allowedNetworks: ["solana-devnet"],
+  allowedNetworks: [CELO_SEPOLIA_NETWORK],
   allowedTokens: ["USDC"],
   allowedMethods: ["GET", "POST"],
   maxUsdPerRequest: 0.5,
@@ -18,7 +22,7 @@ const baseInput = (overrides: Partial<PolicyInput> = {}): PolicyInput => ({
   challenge: {
     amountUsd: 0.1,
     recipient: "rec",
-    network: "solana-devnet",
+    network: CELO_SEPOLIA_NETWORK,
     token: "USDC",
   },
   request: {
@@ -97,7 +101,7 @@ describe("policy.evaluate", () => {
         challenge: {
           amountUsd: 0.1,
           recipient: "rec",
-          network: "solana-mainnet",
+          network: CELO_MAINNET_NETWORK,
           token: "USDC",
         },
       }),
@@ -111,9 +115,10 @@ describe("policy.evaluate", () => {
         challenge: {
           amountUsd: 0.1,
           recipient: "rec",
-          network: "solana-devnet",
-          token: "SOL",
+          network: CELO_SEPOLIA_NETWORK,
+          token: "USDC",
         },
+        policy: { ...basePolicy, allowedTokens: [] },
       }),
     );
     expect(d).toMatchObject({ kind: "deny", rule: "policy.allowedTokens" });
@@ -125,7 +130,7 @@ describe("policy.evaluate", () => {
         challenge: {
           amountUsd: 0.6,
           recipient: "rec",
-          network: "solana-devnet",
+          network: CELO_SEPOLIA_NETWORK,
           token: "USDC",
         },
       }),
@@ -139,7 +144,7 @@ describe("policy.evaluate", () => {
         challenge: {
           amountUsd: 0.4,
           recipient: "rec",
-          network: "solana-devnet",
+          network: CELO_SEPOLIA_NETWORK,
           token: "USDC",
         },
         spendToDate: { dayUsd: 4.8 },

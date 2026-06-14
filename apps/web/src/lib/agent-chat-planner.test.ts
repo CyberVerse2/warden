@@ -116,7 +116,7 @@ describe("agent chat planner contract", () => {
         result: {
           ok: true,
           data: {
-            skills: [{ fqn: "solana-foundation/google/texttospeech" }],
+            skills: [{ fqn: "dtelecom/voice" }],
           },
         },
         isError: false,

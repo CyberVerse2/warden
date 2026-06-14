@@ -10,9 +10,9 @@ describe("discoverPayServices", () => {
     });
 
     expect(services.some((service) => service.fqn === "paysponge/fal")).toBe(true);
-    expect(
-      services.some((service) => service.fqn === "solana-foundation/alibaba/aigen"),
-    ).toBe(false);
+    expect(services.some((service) => service.fqn === "unknown/alibaba/aigen")).toBe(
+      false,
+    );
   });
 });
 

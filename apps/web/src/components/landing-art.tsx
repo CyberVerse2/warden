@@ -260,17 +260,17 @@ const FLOW_ROWS = [
     request: {
       agent: "research-agent",
       method: "GET",
-      host: "api.helius.xyz",
-      path: "/v0/transactions",
+      host: "api.coingecko.com",
+      path: "/api/v3/simple/price",
     },
     policy: {
       version: "v.04",
-      rule: "host · helius.xyz · ALLOWED",
+      rule: "host · coingecko.com · ALLOWED",
       cap: "$0.10 per req · 6% used",
     },
     payment: {
       amount: "$0.0125",
-      asset: "USDC · solana",
+      asset: "USDC · Celo",
       sig: "5Ah…q3F",
     },
     receipt: {
@@ -704,7 +704,7 @@ function AgentPreviewCard({
 const GATE_RULES = [
   { rule: "revoked agent", check: true },
   { rule: "host in allowlist", check: true },
-  { rule: "network · solana", check: true },
+  { rule: "network · Celo", check: true },
   { rule: "token · USDC", check: true },
   { rule: "per-request cap", check: true },
   { rule: "daily cap remaining", check: false },
@@ -725,7 +725,7 @@ export function PolicyGateVisual() {
           <span className="label text-[10px]">INBOUND</span>
           <div className="border border-hairline-strong p-3 flex flex-col gap-1.5 bg-bg-deep">
             <KV k="agent" v="research-01" mono accent />
-            <KV k="host" v="api.helius.xyz" mono />
+            <KV k="host" v="api.coingecko.com" mono />
             <KV k="cost" v="$0.0125 USDC" mono />
           </div>
           <span className="mono text-signal text-[10.5px]">request enters</span>
@@ -767,7 +767,7 @@ export function PolicyGateVisual() {
               <span className="mono text-t4 text-[10px]">→ x402 sign</span>
             </div>
             <span className="mono text-t3 text-[10.5px]">
-              SPL transfer · USDC · solana
+              ERC-20 payment · USDC · Celo
             </span>
           </div>
           <div className="border border-deny-dim/60 p-3 flex flex-col gap-1.5">

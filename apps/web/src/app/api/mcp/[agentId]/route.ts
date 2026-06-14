@@ -5,7 +5,7 @@ import {
   type WardenToolDefinition,
 } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder } from "@warden/x402/proof";
+import { createX402EvmProofBuilder } from "@warden/x402/proof";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "~/lib/db";
 import { loadServerEnv } from "~/lib/env";
@@ -172,12 +172,12 @@ export async function POST(
     return jsonrpcError(body.id ?? null, -32600, "Invalid request");
   }
 
-  const rpcUrl = process.env.SOLANA_RPC_URL;
+  const rpcUrl = process.env.CELO_RPC_URL;
   if (!rpcUrl) {
     return jsonrpcError(
       body.id,
       -32603,
-      "Server misconfigured: SOLANA_RPC_URL is required",
+      "Server misconfigured: CELO_RPC_URL is required",
     );
   }
 
@@ -186,17 +186,15 @@ export async function POST(
     db,
     rpcUrl,
     rpcUrls: {
-      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-      devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
-      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? rpcUrl,
     },
   });
-  const proofBuilder = createX402SvmProofBuilder(walletService, {
+  const proofBuilder = createX402EvmProofBuilder(walletService, {
     rpcUrl,
     rpcUrls: {
-      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-      devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
-      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? rpcUrl,
     },
   });
   const tools = createWardenToolset({

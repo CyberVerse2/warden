@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import { WardenError, type ChallengeRequirement } from "@warden/core";
+import {
+  CELO_MAINNET_NETWORK,
+  CELO_SEPOLIA_NETWORK,
+  WardenError,
+  type ChallengeRequirement,
+} from "@warden/core";
 import { z } from "zod";
 
 /**
@@ -49,51 +54,40 @@ export interface ParseChallengeOptions {
   allowedTokens?: ChallengeRequirement["token"][];
 }
 
-const USDC_DEVNET_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-const USDC_DEVNET_LEGACY_MINT = "8UAFd3yrj6XRNKDcSKAt4smgUfxXTTDZmXaM2y61MAC3";
-const USDC_DEVNET_SPL_MINT = "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr";
-const USDC_MAINNET_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-const SOLANA_DEVNET_CAIP = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1";
-const SOLANA_MAINNET_CAIP = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+const CELO_USDC_CONTRACT = "0xceba9300f2b948710d2653dd7b07f33a8b32118c";
+const CELO_SEPOLIA_USDC_CONTRACT =
+  "0x01c5c0122039549ad1493b8220cabedd739bc44e";
 
 function classifyNetwork(network: string): ChallengeRequirement["network"] {
-  if (network === "solana-devnet" || network === SOLANA_DEVNET_CAIP) {
-    return "solana-devnet";
+  if (network === CELO_MAINNET_NETWORK || network === "celo-mainnet") {
+    return CELO_MAINNET_NETWORK;
   }
-  if (network === "solana-mainnet" || network === SOLANA_MAINNET_CAIP) {
-    return "solana-mainnet";
+  if (network === CELO_SEPOLIA_NETWORK || network === "celo-sepolia") {
+    return CELO_SEPOLIA_NETWORK;
   }
   throw new WardenError("challenge_unsupported", `Unsupported x402 network: ${network}`, {
     network,
   });
 }
 
-function classifyToken(asset: string): "USDC" | "SOL" {
+function classifyToken(asset: string): "USDC" {
+  const normalized = asset.toLowerCase();
   if (
-    asset === USDC_DEVNET_MINT ||
-    asset === USDC_DEVNET_LEGACY_MINT ||
-    asset === USDC_DEVNET_SPL_MINT ||
-    asset === USDC_MAINNET_MINT ||
+    normalized === CELO_USDC_CONTRACT ||
+    normalized === CELO_SEPOLIA_USDC_CONTRACT ||
     asset.toUpperCase() === "USDC"
   ) {
     return "USDC";
   }
-  if (asset === "SOL" || asset === "11111111111111111111111111111111") {
-    return "SOL";
-  }
-  // Unknown SPL mint — we treat as unsupported until policy explicitly opts in.
   throw new WardenError(
     "challenge_unsupported",
-    `Unrecognised token asset: ${asset}`,
+    `Unrecognized token asset: ${asset}`,
     { asset },
   );
 }
 
-function rawToUsd(amountRaw: string, token: "USDC" | "SOL"): number {
-  if (token === "USDC") return Number(amountRaw) / 1_000_000;
-  // SOL conversion would call an oracle. For MVP we deny SOL-priced challenges
-  // unless explicitly allowed; surface raw lamports as a placeholder USD value.
-  return Number(amountRaw) / 1_000_000_000;
+function rawToUsd(amountRaw: string): number {
+  return Number(amountRaw) / 1_000_000;
 }
 
 function requirementAmountRaw(requirement: RawPaymentRequirement): string {
@@ -150,7 +144,7 @@ export function parseChallenge(
   );
   const selected = compatible[0] ?? candidates[0]!;
   const { requirement, network, token, amountRaw } = selected;
-  const amountUsd = rawToUsd(amountRaw, token);
+  const amountUsd = rawToUsd(amountRaw);
 
   const canonical = JSON.stringify(requirement);
   const hash = createHash("sha256").update(canonical).digest("hex");

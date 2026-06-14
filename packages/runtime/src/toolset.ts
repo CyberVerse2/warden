@@ -1,4 +1,9 @@
-import { newId, WardenError } from "@warden/core";
+import {
+  CELO_MAINNET_NETWORK,
+  CELO_SEPOLIA_NETWORK,
+  newId,
+  WardenError,
+} from "@warden/core";
 import { agentTokens, agents, and, desc, eq, isNull, receipts, type Db } from "@warden/db";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateObject } from "ai";
@@ -95,8 +100,8 @@ export const WardenQuotedFetchSchema = HttpRequestSchema.extend({
 
 const ParsedChallengeSchema = z.object({
   requirement: z.object({
-    network: z.enum(["solana-mainnet", "solana-devnet"]),
-    token: z.enum(["USDC", "SOL"]),
+    network: z.enum([CELO_MAINNET_NETWORK, CELO_SEPOLIA_NETWORK]),
+    token: z.enum(["USDC"]),
     recipient: z.string(),
     amountRaw: z.string(),
     amountUsd: z.number(),
@@ -498,12 +503,12 @@ function x402BridgeDemoChallenge(request: z.infer<typeof HttpRequestSchema>) {
     accepts: [
       {
         scheme: "exact",
-        network: "solana-devnet",
-        asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+        network: CELO_SEPOLIA_NETWORK,
+        asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
         payTo: "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5",
         maxAmountRequired: "100000",
         resource: request.url,
-        description: "Bridge transfer from Solana to Ethereum",
+        description: "Celo USDC payment",
       },
     ],
   };
@@ -956,12 +961,12 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
     {
       name: "warden_wallet_status",
       description:
-        "Return the agent's wallet public key, USDC and SOL balance, and remaining daily budget.",
+        "Return the agent's wallet address, USDC and CELO balance, and remaining daily budget.",
       inputSchema: EmptySchema,
       handler: async () => {
         try {
           const agent = await resolveAgentByToken(db, agentToken);
-          const [sol, usdc, { config: policy }, dayUsd, publicKey] =
+          const [celo, usdc, { config: policy }, dayUsd, publicKey] =
             await Promise.all([
               walletService.getBalance(agent.walletId),
               walletService.getUsdcBalance(agent.walletId),
@@ -975,8 +980,8 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
             publicKey,
             status: agent.status,
             balance: {
-              lamports: sol.lamports,
-              sol: sol.lamports / 1_000_000_000,
+              wei: celo.wei.toString(),
+              celo: celo.celo,
               usdcRaw: usdc.raw.toString(),
               usdcUsd: usdc.usd,
             },

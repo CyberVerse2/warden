@@ -9,7 +9,14 @@
  */
 import { createHash } from "node:crypto";
 import { createDb, agents, agentTokens, policies, receipts, approvals, users, wallets, spendWindows } from "@warden/db";
-import { loadServerEnv, newId, type PolicyConfig } from "@warden/core";
+import {
+  CELO_MAINNET_NETWORK,
+  CELO_SEPOLIA_NETWORK,
+  loadServerEnv,
+  newId,
+  type Network,
+  type PolicyConfig,
+} from "@warden/core";
 import { createWalletService } from "@warden/wallet";
 import { sql } from "drizzle-orm";
 
@@ -18,7 +25,7 @@ const m = (mins: number) => new Date(NOW - mins * 60_000);
 
 interface SeedAgentInput {
   name: string;
-  network: "solana-mainnet" | "solana-devnet";
+  network: Network;
   policy: PolicyConfig;
   spentTodayUsd: number;
 }
@@ -26,11 +33,11 @@ interface SeedAgentInput {
 const AGENTS: SeedAgentInput[] = [
   {
     name: "research-agent",
-    network: "solana-devnet",
+    network: CELO_SEPOLIA_NETWORK,
     spentTodayUsd: 0.42,
     policy: {
-      allowedHosts: ["x402.quicknode.com", "api.helius.xyz"],
-      allowedNetworks: ["solana-devnet"],
+      allowedHosts: ["api.thirdweb.com", "api.coingecko.com"],
+      allowedNetworks: [CELO_SEPOLIA_NETWORK],
       allowedTokens: ["USDC"],
       allowedMethods: ["GET", "POST"],
       maxUsdPerRequest: 0.05,
@@ -39,11 +46,11 @@ const AGENTS: SeedAgentInput[] = [
   },
   {
     name: "data-pipeline",
-    network: "solana-devnet",
+    network: CELO_SEPOLIA_NETWORK,
     spentTodayUsd: 3.18,
     policy: {
-      allowedHosts: ["api.bigquery.com", "api.helius.xyz"],
-      allowedNetworks: ["solana-devnet"],
+      allowedHosts: ["api.bigquery.com", "api.coingecko.com"],
+      allowedNetworks: [CELO_SEPOLIA_NETWORK],
       allowedTokens: ["USDC"],
       allowedMethods: ["GET", "POST"],
       maxUsdPerRequest: 0.5,
@@ -53,11 +60,11 @@ const AGENTS: SeedAgentInput[] = [
   },
   {
     name: "market-watch",
-    network: "solana-mainnet",
+    network: CELO_MAINNET_NETWORK,
     spentTodayUsd: 1.62,
     policy: {
-      allowedHosts: ["api.coingecko.com", "x402.quicknode.com"],
-      allowedNetworks: ["solana-mainnet"],
+      allowedHosts: ["api.coingecko.com", "api.thirdweb.com"],
+      allowedNetworks: [CELO_MAINNET_NETWORK],
       allowedTokens: ["USDC"],
       allowedMethods: ["GET", "POST"],
       maxUsdPerRequest: 0.25,
@@ -66,11 +73,11 @@ const AGENTS: SeedAgentInput[] = [
   },
   {
     name: "legacy-fetch",
-    network: "solana-devnet",
+    network: CELO_SEPOLIA_NETWORK,
     spentTodayUsd: 0,
     policy: {
       allowedHosts: [],
-      allowedNetworks: ["solana-devnet"],
+      allowedNetworks: [CELO_SEPOLIA_NETWORK],
       allowedTokens: ["USDC"],
       allowedMethods: ["GET"],
       maxUsdPerRequest: 0,
@@ -88,8 +95,8 @@ async function main() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL env var is required");
   }
-  if (!process.env.SOLANA_RPC_URL) {
-    throw new Error("SOLANA_RPC_URL env var is required");
+  if (!process.env.CELO_RPC_URL) {
+    throw new Error("CELO_RPC_URL env var is required");
   }
   if (!process.env.DEV_OPERATOR_USER_ID || !process.env.DEV_OPERATOR_EMAIL) {
     throw new Error("DEV_OPERATOR_USER_ID and DEV_OPERATOR_EMAIL env vars are required");
@@ -97,11 +104,10 @@ async function main() {
   const db = createDb(process.env.DATABASE_URL);
   const walletService = createWalletService({
     db,
-    rpcUrl: process.env.SOLANA_RPC_URL,
+    rpcUrl: process.env.CELO_RPC_URL,
     rpcUrls: {
-      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-      devnet: process.env.SOLANA_DEVNET_RPC_URL,
-      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? process.env.CELO_RPC_URL,
     },
   });
 
@@ -180,20 +186,20 @@ async function main() {
   const sample: R[] = [
     {
       id: newId.receipt(), agentId: market.id, walletId: market.walletId,
-      url: "https://x402.quicknode.com/solana-mainnet", method: "POST",
-      host: "x402.quicknode.com", provider: "QuickNode",
+      url: "https://api.thirdweb.com/x402/celo", method: "POST",
+      host: "api.thirdweb.com", provider: "thirdweb",
       amountRaw: "50000", amountUsd: 0.05, currency: "USDC",
-      network: "solana-mainnet", recipient: "facilitator",
+      network: CELO_MAINNET_NETWORK, recipient: "facilitator",
       challengeHash: "c1", requestHash: "r1", responseStatus: 200,
       txSignature: "5pXaQzRm4fDgKj8nLb2VtY", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(0.5),
     },
     {
       id: newId.receipt(), agentId: research.id, walletId: research.walletId,
-      url: "https://api.helius.xyz/v0/transactions", method: "GET",
-      host: "api.helius.xyz", provider: "Helius",
+      url: "https://api.coingecko.com/api/v3/simple/price", method: "GET",
+      host: "api.coingecko.com", provider: "CoinGecko",
       amountRaw: "12500", amountUsd: 0.0125, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c2", requestHash: "r2", responseStatus: 200,
       txSignature: "3kLmZxQp7rNc2JeBtV4hG", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(2),
@@ -203,7 +209,7 @@ async function main() {
       url: "https://api.suspicious-provider.com/feed", method: "GET",
       host: "api.suspicious-provider.com", provider: "unknown",
       amountRaw: "8000000", amountUsd: 8.0, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c3", requestHash: "r3", responseStatus: 402,
       decision: "deny",
       decisionReason: "policy.allowedHosts: Host not in allowlist",
@@ -214,7 +220,7 @@ async function main() {
       url: "https://api.bigquery.com/v2/queries", method: "POST",
       host: "api.bigquery.com", provider: "BigQuery",
       amountRaw: "420000", amountUsd: 0.42, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c4", requestHash: "r4", responseStatus: 200,
       txSignature: "8tRpYwJk5mQc3FzAhB6vL", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(7),
@@ -224,7 +230,7 @@ async function main() {
       url: "https://api.bigquery.com/v2/queries", method: "POST",
       host: "api.bigquery.com", provider: "BigQuery",
       amountRaw: "2500000", amountUsd: 2.5, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c5", requestHash: "r5", responseStatus: 402,
       decision: "deny",
       decisionReason: "policy.maxUsdPerRequest: $2.5000 exceeds per-request cap of $0.50",
@@ -235,47 +241,47 @@ async function main() {
       url: "https://api.coingecko.com/api/v3/simple/price", method: "GET",
       host: "api.coingecko.com", provider: "CoinGecko",
       amountRaw: "1000", amountUsd: 0.001, currency: "USDC",
-      network: "solana-mainnet", recipient: "facilitator",
+      network: CELO_MAINNET_NETWORK, recipient: "facilitator",
       challengeHash: "c6", requestHash: "r6", responseStatus: 200,
       txSignature: "2kMnQpRzL4fJh8AxBcTvE", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(18),
     },
     {
       id: newId.receipt(), agentId: research.id, walletId: research.walletId,
-      url: "https://api.helius.xyz/v0/addresses", method: "GET",
-      host: "api.helius.xyz", provider: "Helius",
+      url: "https://api.coingecko.com/api/v3/coins/celo", method: "GET",
+      host: "api.coingecko.com", provider: "CoinGecko",
       amountRaw: "25000", amountUsd: 0.025, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c7", requestHash: "r7", responseStatus: 503,
       txSignature: "9wXcVnMqPrK4tBhZeJaFu", decision: "failed",
       decisionReason: "payment_failed:503", createdAt: m(24),
     },
     {
       id: newId.receipt(), agentId: dataPipeline.id, walletId: dataPipeline.walletId,
-      url: "https://api.helius.xyz/v0/addresses", method: "GET",
-      host: "api.helius.xyz", provider: "Helius",
+      url: "https://api.coingecko.com/api/v3/coins/celo", method: "GET",
+      host: "api.coingecko.com", provider: "CoinGecko",
       amountRaw: "25000", amountUsd: 0.025, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c8", requestHash: "r8", responseStatus: 200,
       txSignature: "6jVbXcPnQ3rK9tFzWeMaE", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(31),
     },
     {
       id: newId.receipt(), agentId: market.id, walletId: market.walletId,
-      url: "https://x402.quicknode.com/solana-mainnet", method: "POST",
-      host: "x402.quicknode.com", provider: "QuickNode",
+      url: "https://api.thirdweb.com/x402/celo", method: "POST",
+      host: "api.thirdweb.com", provider: "thirdweb",
       amountRaw: "50000", amountUsd: 0.05, currency: "USDC",
-      network: "solana-mainnet", recipient: "facilitator",
+      network: CELO_MAINNET_NETWORK, recipient: "facilitator",
       challengeHash: "c9", requestHash: "r9", responseStatus: 200,
       txSignature: "4nYxQpCmLk2VrJ8HbTeGa", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(42),
     },
     {
       id: newId.receipt(), agentId: research.id, walletId: research.walletId,
-      url: "https://x402.quicknode.com/solana-devnet", method: "POST",
-      host: "x402.quicknode.com", provider: "QuickNode",
+      url: "https://api.thirdweb.com/x402/celo-sepolia", method: "POST",
+      host: "api.thirdweb.com", provider: "thirdweb",
       amountRaw: "50000", amountUsd: 0.05, currency: "USDC",
-      network: "solana-devnet", recipient: "facilitator",
+      network: CELO_SEPOLIA_NETWORK, recipient: "facilitator",
       challengeHash: "c10", requestHash: "r10", responseStatus: 200,
       txSignature: "7sQzKmRvL3fXc1JtBhWeP", decision: "allow",
       decisionReason: "policy.allow", createdAt: m(58),

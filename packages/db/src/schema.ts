@@ -118,7 +118,7 @@ export const wallets = pgTable(
     agentId: text("agent_id")
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
-    network: text("network", { enum: ["solana-mainnet", "solana-devnet"] })
+    network: text("network", { enum: ["eip155:42220", "eip155:11142220"] })
       .notNull(),
     publicKey: text("public_key").notNull(),
     encryptedSecret: text("encrypted_secret").notNull(),

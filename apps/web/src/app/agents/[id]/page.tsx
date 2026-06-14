@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CELO_MAINNET_NETWORK, CELO_SEPOLIA_NETWORK } from "@warden/core";
 import { discoverPayServices } from "@warden/x402/discovery";
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
@@ -10,11 +11,10 @@ import { SpendOverTimeChart } from "~/components/receipt-charts";
 import { MCPSnippets } from "~/components/mcp-snippets";
 import { ConfirmSubmitButton } from "~/components/confirm-submit-button";
 import { CopyButton } from "~/components/copy-button";
-import { fmtRelative, fmtUsd, shortKey } from "~/lib/format";
+import { fmtNetwork, fmtRelative, fmtUsd, shortKey } from "~/lib/format";
 import { getOrigin } from "~/lib/origin";
 import { getAgent, getApprovals, getReceipts } from "~/lib/queries";
 import {
-  airdropDevnetSol,
   revokeAgent,
   rotateAgentToken,
   switchAgentNetwork,
@@ -86,16 +86,6 @@ export default async function AgentDetailPage({ params }: Props) {
             >
               OPEN CHAT
             </a>
-            {agent.network === "solana-devnet" && (
-              <form action={airdropDevnetSol.bind(null, agent.id)}>
-                <ConfirmSubmitButton
-                  confirm={`Request 2 devnet SOL for ${agent.name}?`}
-                  className="label px-4 py-2 border border-hairline-strong text-t2 hover:text-t1 hover:border-t2 transition-colors"
-                >
-                  AIRDROP 2 SOL
-                </ConfirmSubmitButton>
-              </form>
-            )}
             <form action={revokeAgent.bind(null, agent.id)}>
               <ConfirmSubmitButton
                 confirm={`Revoke ${agent.name}? This revokes the agent wallet and all agent tokens.`}
@@ -121,8 +111,8 @@ export default async function AgentDetailPage({ params }: Props) {
               className="mt-2 grid grid-cols-2 border border-hairline-strong"
             >
               {[
-                ["solana-mainnet", "MAINNET"],
-                ["solana-devnet", "DEVNET"],
+                [CELO_MAINNET_NETWORK, "CELO"],
+                [CELO_SEPOLIA_NETWORK, "SEPOLIA"],
               ].map(([network, label]) => {
                 const active = agent.network === network;
                 return (
@@ -263,8 +253,8 @@ export default async function AgentDetailPage({ params }: Props) {
                   label="Network"
                   value={
                     agent.policy.mode === "managed"
-                      ? agent.network
-                      : agent.policy.allowedNetworks.join(" · ")
+                      ? fmtNetwork(agent.network)
+                      : agent.policy.allowedNetworks.map(fmtNetwork).join(" · ")
                   }
                 />
                 <PolicyTile

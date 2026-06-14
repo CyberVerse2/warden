@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ResponseArtifact } from "~/components/response-artifact";
 import { StatusGlyph } from "~/components/status-glyph";
-import { fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
+import { fmtNetwork, fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
 import type { ReceiptRow } from "~/lib/queries";
 
 export function ReceiptsLedger({ receipts }: { receipts: ReceiptRow[] }) {
@@ -77,7 +77,7 @@ export function ReceiptsLedger({ receipts }: { receipts: ReceiptRow[] }) {
                   <span className="mono text-t4 text-[10.5px]">{receipt.currency}</span>
                 </div>
                 <span className="mono text-t3 text-[10.5px]">
-                  {receipt.network.replace("solana-", "")}
+                  {fmtNetwork(receipt.network)}
                 </span>
                 <span className="mono text-right text-t4 text-[10.5px]">
                   {shortKey(receipt.id, 3, 5)}

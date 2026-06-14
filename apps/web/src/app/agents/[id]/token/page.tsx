@@ -66,7 +66,7 @@ export default async function AgentTokenPage({ params, searchParams }: Props) {
               <SetupStep
                 code="03"
                 title="Fund wallet"
-                body="Send devnet SOL and USDC to the agent wallet before its first paid request."
+                body="Send CELO and USDC to the agent wallet before its first paid request."
               />
             </ol>
           </div>

@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Warden · Spend control",
   description:
-    "Programmable spend-control layer for autonomous AI agents using x402 payments on Solana.",
+    "Programmable spend-control layer for autonomous AI agents using x402 payments on Celo.",
   icons: {
     icon: "/brand/warden-logo.png",
     apple: "/brand/warden-logo.png",

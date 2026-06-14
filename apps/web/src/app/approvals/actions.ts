@@ -3,7 +3,7 @@
 import { agents, approvals } from "@warden/db";
 import { createRuntime } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder } from "@warden/x402/proof";
+import { createX402EvmProofBuilder } from "@warden/x402/proof";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "~/lib/auth";
@@ -39,22 +39,20 @@ export async function decideApproval(
     .where(eq(approvals.id, approvalId));
 
   if (decision === "approved") {
-    const rpcUrl = requireEnv("SOLANA_RPC_URL");
+    const rpcUrl = requireEnv("CELO_RPC_URL");
     const walletService = createWalletService({
       db,
       rpcUrl,
       rpcUrls: {
-        mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-        devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
-        testnet: process.env.SOLANA_TESTNET_RPC_URL,
+        mainnet: process.env.CELO_MAINNET_RPC_URL,
+        sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? rpcUrl,
       },
     });
-    const proofBuilder = createX402SvmProofBuilder(walletService, {
+    const proofBuilder = createX402EvmProofBuilder(walletService, {
       rpcUrl,
       rpcUrls: {
-        mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-        devnet: process.env.SOLANA_DEVNET_RPC_URL ?? rpcUrl,
-        testnet: process.env.SOLANA_TESTNET_RPC_URL,
+        mainnet: process.env.CELO_MAINNET_RPC_URL,
+        sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? rpcUrl,
       },
     });
     const runtime = createRuntime({ db, walletService, proofBuilder });

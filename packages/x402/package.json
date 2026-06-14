@@ -10,7 +10,6 @@
     "./challenge": "./src/challenge.ts",
     "./discovery": "./src/discovery.ts",
     "./http-client": "./src/http-client.ts",
-    "./mpp": "./src/mpp.ts",
     "./proof": "./src/proof.ts"
   },
   "scripts": {
@@ -18,15 +17,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@coinbase/cdp-sdk": "^1.48.3",
-    "@solana/kit": "^6.9.0",
-    "@solana/mpp": "^0.5.2",
-    "@solana/spl-token": "^0.4.14",
-    "@solana/web3.js": "^1.98.4",
     "@warden/core": "workspace:*",
     "@warden/wallet": "workspace:*",
-    "@x402/core": "^2.11.0",
-    "@x402/svm": "^2.11.0",
+    "@x402/core": "^2.15.0",
+    "@x402/evm": "^2.15.0",
+    "viem": "^2.52.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {

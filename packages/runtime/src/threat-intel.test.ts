@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CELO_SEPOLIA_NETWORK } from "@warden/core";
 import { parseChallenge } from "@warden/x402";
 import { findMaliciousX402 } from "./threat-intel";
 
@@ -7,8 +8,8 @@ function challenge(overrides: Record<string, unknown> = {}) {
     accepts: [
       {
         scheme: "exact",
-        network: "solana-devnet",
-        asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+        network: CELO_SEPOLIA_NETWORK,
+        asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
         payTo: "safe-recipient",
         maxAmountRequired: "1000",
         ...overrides,

@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { CELO_SEPOLIA_NETWORK } from "@warden/core";
 import { parseChallenge } from "./challenge";
 
 describe("parseChallenge", () => {
-  it("parses a USDC devnet challenge and converts amount to USD", () => {
+  it("parses a Celo Sepolia USDC challenge and converts amount to USD", () => {
     const body = {
       x402Version: 1,
       accepts: [
         {
           scheme: "exact",
-          network: "solana-devnet",
-          asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+          network: CELO_SEPOLIA_NETWORK,
+          asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
           payTo: "abc",
           maxAmountRequired: "50000",
         },
@@ -26,8 +27,8 @@ describe("parseChallenge", () => {
       accepts: [
         {
           scheme: "exact",
-          network: "solana-devnet",
-          asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+          network: CELO_SEPOLIA_NETWORK,
+          asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
           payTo: "abc",
           maxAmountRequired: "1",
         },
@@ -41,8 +42,8 @@ describe("parseChallenge", () => {
       accepts: [
         {
           scheme: "exact",
-          network: "solana-devnet",
-          asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+          network: CELO_SEPOLIA_NETWORK,
+          asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
           payTo: "header-recipient",
           maxAmountRequired: "25000",
         },
@@ -70,8 +71,8 @@ describe("parseChallenge", () => {
       accepts: [
         {
           scheme: "exact",
-          network: "solana-devnet",
-          asset: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+          network: CELO_SEPOLIA_NETWORK,
+          asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
           payTo: "v1-recipient",
           maxAmountRequired: "1000",
         },
@@ -102,7 +103,7 @@ describe("parseChallenge", () => {
         accepts: [
           {
             scheme: "exact",
-            network: "solana-devnet",
+            network: CELO_SEPOLIA_NETWORK,
             asset: "UNKNOWN_MINT_XXX",
             payTo: "abc",
             maxAmountRequired: "1",

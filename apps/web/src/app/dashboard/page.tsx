@@ -41,7 +41,7 @@ export default async function DashboardPage() {
           <Metric
             label="TREASURY · POOLED"
             value={fmtUsd(s.totalBalance)}
-            delta={{ value: "live · solana", tone: "neutral" }}
+            delta={{ value: "live · Celo", tone: "neutral" }}
           />
         </div>
         <div className="px-6">

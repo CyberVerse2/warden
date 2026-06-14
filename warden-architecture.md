@@ -9,8 +9,8 @@
 - **Database:** Postgres via Drizzle ORM
 - **Auth (web):** Auth.js with email + GitHub
 - **Auth (MCP):** per-agent API tokens, hashed at rest
-- **Chain:** Solana (`@solana/web3.js`, SPL token for USDC)
-- **x402:** custom minimal client (challenge parser + Solana proof signer + retry)
+- **Chain:** Celo (`viem`, ERC-20 USDC)
+- **x402:** Celo/EVM client (`@x402/evm` challenge proof signing + retry)
 - **Crypto:** AES-256-GCM, master key from env (MVP) → KMS (later)
 - **Validation:** Zod everywhere at boundaries
 

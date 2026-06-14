@@ -152,8 +152,8 @@ Set at least:
 ```txt
 WARDEN_MASTER_KEY=...
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/warden
-SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_DEVNET_RPC_URL=https://api.devnet.solana.com
+CELO_RPC_URL=https://forno.celo-sepolia.celo-testnet.org
+CELO_SEPOLIA_RPC_URL=https://forno.celo-sepolia.celo-testnet.org
 WARDEN_PUBLIC_URL=http://localhost:3000
 WARDEN_ALLOW_DEV_AUTH=1
 ```
@@ -192,7 +192,7 @@ To run the standalone stdio MCP server, set:
 
 ```txt
 WARDEN_AGENT_TOKEN=...
-SOLANA_RPC_URL=...
+CELO_RPC_URL=...
 DATABASE_URL=...
 WARDEN_MASTER_KEY=...
 ```

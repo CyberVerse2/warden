@@ -7,8 +7,10 @@ export function fmtUsd(n: number, opts: { precise?: boolean } = {}): string {
   })}`;
 }
 
-export function fmtSol(lamports: number): string {
-  return `${(lamports / 1_000_000_000).toFixed(4)} SOL`;
+export function fmtNetwork(network: string): string {
+  if (network === "eip155:42220") return "Celo";
+  if (network === "eip155:11142220") return "Celo Sepolia";
+  return network;
 }
 
 export function shortKey(key: string, head = 4, tail = 4): string {

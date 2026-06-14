@@ -1,7 +1,7 @@
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
 import { ConfirmSubmitButton } from "~/components/confirm-submit-button";
-import { fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
+import { fmtNetwork, fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
 import { getAgents, getApprovals } from "~/lib/queries";
 import { decideApproval } from "./actions";
 
@@ -119,7 +119,7 @@ export default async function ApprovalsPage() {
                         </span>
                         <span className="label-num text-t4 text-[10.5px] mt-1">
                           USDC ·{" "}
-                          {agent?.network.replace("solana-", "") ?? ""}
+                          {agent ? fmtNetwork(agent.network) : ""}
                         </span>
                       </div>
                       <div className="flex gap-2">

@@ -15,8 +15,6 @@
     "@ai-sdk/openai": "^3.0.63",
     "@privy-io/react-auth": "^3.23.1",
     "@privy-io/server-auth": "^1.32.5",
-    "@solana/kit": "^6.9.0",
-    "@solana/web3.js": "^1.98.4",
     "@warden/core": "workspace:*",
     "@warden/db": "workspace:*",
     "@warden/policy": "workspace:*",

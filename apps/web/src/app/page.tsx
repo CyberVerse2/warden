@@ -119,7 +119,7 @@ export default async function LandingPage() {
           <div className="flex items-center gap-3">
             <span className="mono inline-flex items-center gap-1.5 text-allow text-[11px]">
               <span className="size-1.5 rounded-full bg-allow animate-pulse" />
-              LIVE · SOLANA DEVNET
+              LIVE · CELO SEPOLIA
             </span>
             <span className="mono text-t4 text-[11px]">·</span>
             <span className="mono text-t4 text-[11px]">
@@ -615,7 +615,7 @@ agent ←  200 OK · receipt rcpt_01J9…`}
       {/* FOOTER */}
       <footer className="max-w-[1240px] mx-auto px-8 py-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px]">
         <span className="mono text-signal">warden</span>
-        <span className="mono text-t4">v0.1 · walleting · solana · x402 · mcp</span>
+        <span className="mono text-t4">v0.1 · walleting · Celo · x402 · mcp</span>
         <span className="mono text-t4 hidden sm:inline">
           ©{new Date().getFullYear()}
         </span>

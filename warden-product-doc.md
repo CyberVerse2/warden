@@ -281,9 +281,9 @@ Example policy:
 ```json
 {
   "agentId": "research-agent",
-  "allowedHosts": ["x402.quicknode.com"],
+  "allowedHosts": ["api.thirdweb.com"],
   "allowedTokens": ["USDC"],
-  "allowedNetworks": ["solana-mainnet"],
+  "allowedNetworks": ["eip155:42220"],
   "maxUsdPerRequest": "0.05",
   "maxUsdPerDay": "2.00"
 }
@@ -407,17 +407,14 @@ Receipts should be queryable locally and exportable.
 ## Example Agent Flow
 
 ```text
-Agent: "Fetch latest Solana account balance through QuickNode."
+Agent: "Fetch the latest CELO price through a paid x402 endpoint."
 
 Agent calls:
   warden_fetch({
-    url: "https://x402.quicknode.com/solana-mainnet",
+    url: "https://api.thirdweb.com/x402/celo",
     method: "POST",
     body: {
-      jsonrpc: "2.0",
-      id: 1,
-      method: "getBalance",
-      params: ["..."]
+      query: "celo price"
     }
   })
 
@@ -428,7 +425,7 @@ Warden:
   - signs with the agent wallet
   - retries request
   - stores receipt
-  - returns QuickNode response
+  - returns paid response
 ```
 
 ## Security Requirements

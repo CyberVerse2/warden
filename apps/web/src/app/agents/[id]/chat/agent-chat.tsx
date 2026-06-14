@@ -80,7 +80,7 @@ const EXAMPLES = [
   "what's my wallet status",
   "generate an image of girl dancing",
   "get the latest AI news",
-  "find the price of SOL",
+  "find the price of CELO",
   "take a screenshot of example.com",
   "find restaurants in Lagos",
   "parse a PDF document",

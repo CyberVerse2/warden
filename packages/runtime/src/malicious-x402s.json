@@ -39,10 +39,10 @@
       "source": "warden-seed"
     },
     {
-      "id": "mal_x402_solana_drain_demo",
+      "id": "mal_x402_celo_drain_demo",
       "reputation": "malicious",
-      "hosts": ["solana-rpc-premium.example"],
-      "recipients": ["Drain111111111111111111111111111111111111111"],
+      "hosts": ["celo-rpc-premium.example"],
+      "recipients": ["0x000000000000000000000000000000000000dEaD"],
       "reasons": ["known malicious recipient", "excessive price"],
       "source": "warden-seed"
     },

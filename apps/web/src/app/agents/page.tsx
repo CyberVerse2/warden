@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CELO_SEPOLIA_NETWORK } from "@warden/core";
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
 import { Meter } from "~/components/meter";
@@ -51,7 +52,7 @@ export default async function AgentsPage() {
               defaultValue="General x402 spend"
               className="bg-bg-base border border-hairline-strong px-3 py-2 text-[13px] text-t1 outline-none"
             />
-            <input type="hidden" name="network" value="solana-devnet" />
+            <input type="hidden" name="network" value={CELO_SEPOLIA_NETWORK} />
             <button className="label px-4 py-2 border border-signal-dim text-signal hover:bg-signal hover:text-bg-base hover:border-signal transition-colors">
               + NEW AGENT
             </button>

@@ -1,6 +1,11 @@
-export type Network = "solana-mainnet" | "solana-devnet";
+export const CELO_MAINNET_NETWORK = "eip155:42220";
+export const CELO_SEPOLIA_NETWORK = "eip155:11142220";
 
-export type SupportedToken = "USDC" | "SOL";
+export type Network =
+  | typeof CELO_MAINNET_NETWORK
+  | typeof CELO_SEPOLIA_NETWORK;
+
+export type SupportedToken = "USDC";
 
 export type AgentStatus = "active" | "revoked";
 
@@ -11,13 +16,13 @@ export type ApprovalStatus = "pending" | "approved" | "denied" | "expired";
 export interface ChallengeRequirement {
   /** Network the payment must be made on. */
   network: Network;
-  /** SPL token mint or "SOL". For USDC on devnet/mainnet, the mint string. */
+  /** ERC-20 payment token. */
   token: SupportedToken;
-  /** Recipient base58-encoded public key. */
+  /** Recipient EVM address. */
   recipient: string;
   /** Amount in smallest unit (e.g. USDC has 6 decimals). */
   amountRaw: string;
-  /** USD-denominated amount (USDC ~= 1:1, SOL converted via oracle). */
+  /** USD-denominated amount (USDC ~= 1:1). */
   amountUsd: number;
   /** Opaque facilitator-supplied nonce / challenge id. */
   nonce: string;
@@ -34,6 +39,6 @@ export interface PaymentProof {
   extraHeaders?: Record<string, string>;
   /** Hash of the proof payload (sha256 hex) for receipt audit. */
   proofHash: string;
-  /** Optional Solana transaction signature once submitted. */
+  /** Optional transaction signature once submitted. */
   txSignature?: string;
 }

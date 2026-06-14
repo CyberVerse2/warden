@@ -12,12 +12,6 @@ import {
   type HttpRequest,
 } from "@warden/x402/http-client";
 import {
-  createMppProofBuilder,
-  mppResponseFromChallenge,
-  parseMppChallenge,
-  type MppProofBuilder,
-} from "@warden/x402/mpp";
-import {
   type ProofBuilder,
 } from "@warden/x402/proof";
 import { resolveAgentById, resolveAgentByToken } from "./auth";
@@ -34,7 +28,6 @@ export interface RuntimeDeps {
   db: Db;
   walletService: WalletService;
   proofBuilder: ProofBuilder;
-  mppProofBuilder?: MppProofBuilder;
   fetchImpl?: FetchLike;
   riskAnalyzer?: AiRiskAnalyzer;
 }
@@ -86,9 +79,7 @@ export interface Runtime {
 export function createRuntime(deps: RuntimeDeps): Runtime {
   const {
     db,
-    walletService,
     proofBuilder,
-    mppProofBuilder = createMppProofBuilder(walletService),
     fetchImpl,
     riskAnalyzer = createOpenAiRiskAnalyzer(),
   } = deps;
@@ -157,213 +148,6 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     // 4. Load policy + today's spend
     const { policyId, config: policy } = await loadActivePolicy(db, agent.agentId);
     const dayUsd = await getDailySpend(db, agent.agentId);
-
-    const mppChallenge = parseMppChallenge(initial.headers, {
-      allowedNetworks: policy.allowedNetworks,
-      allowedTokens: policy.allowedTokens,
-    });
-    if (mppChallenge) {
-      if (
-        mppChallenge.requirement.amountUsd === 0 &&
-        !isZeroValueFollowupRequest(input.request)
-      ) {
-        const receiptId = newId.receipt();
-        await db.insert(receipts).values({
-          id: receiptId,
-          agentId: agent.agentId,
-          walletId: agent.walletId,
-          policyId,
-          url: input.request.url,
-          method: input.request.method.toUpperCase(),
-          host,
-          amountRaw: mppChallenge.requirement.amountRaw,
-          amountUsd: 0,
-          currency: mppChallenge.requirement.token,
-          network: mppChallenge.requirement.network,
-          recipient: mppChallenge.requirement.recipient,
-          challengeHash: mppChallenge.hash,
-          requestHash: reqHash,
-          responseStatus: 402,
-          decision: "allow",
-          decisionReason: "zero_payment_required",
-          ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
-        });
-        return {
-          kind: "failed",
-          receiptId,
-          reason:
-            "Provider returned a zero-value MPP payment challenge; Warden did not sign a zero-value transfer.",
-        };
-      }
-      const decision = input.skipPolicy
-        ? ({ kind: "allow" } as const)
-        : evaluate({
-            agent: { id: agent.agentId, status: agent.status },
-            challenge: {
-              amountUsd: mppChallenge.requirement.amountUsd,
-              recipient: mppChallenge.requirement.recipient,
-              network: mppChallenge.requirement.network,
-              token: mppChallenge.requirement.token,
-            },
-            request: {
-              url: input.request.url,
-              method: input.request.method,
-              host,
-            },
-            spendToDate: { dayUsd },
-            policy,
-          });
-
-      if (decision.kind === "deny") {
-        const receiptId = newId.receipt();
-        await db.insert(receipts).values({
-          id: receiptId,
-          agentId: agent.agentId,
-          walletId: agent.walletId,
-          policyId,
-          url: input.request.url,
-          method: input.request.method.toUpperCase(),
-          host,
-          amountRaw: mppChallenge.requirement.amountRaw,
-          amountUsd: mppChallenge.requirement.amountUsd,
-          currency: mppChallenge.requirement.token,
-          network: mppChallenge.requirement.network,
-          recipient: mppChallenge.requirement.recipient,
-          challengeHash: mppChallenge.hash,
-          requestHash: reqHash,
-          responseStatus: 402,
-          decision: "deny",
-          decisionReason: `${decision.rule}: ${decision.reason}`,
-          ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
-        });
-        return {
-          kind: "denied",
-          receiptId,
-          reason: decision.reason,
-          rule: decision.rule,
-        };
-      }
-
-      if (decision.kind === "requires_approval") {
-        const approval = await findOrCreateApproval({
-          agentId: agent.agentId,
-          amountUsd: mppChallenge.requirement.amountUsd,
-          triggeringRule: decision.rule,
-          requestSnapshot: {
-            request: input.request,
-            challenge: mppChallenge.requirement,
-            protocol: "mpp",
-            requestHash: reqHash,
-            challengeHash: mppChallenge.hash,
-            taskId: input.taskId,
-          },
-          requestHash: reqHash,
-          challengeHash: mppChallenge.hash,
-        });
-        return {
-          kind: "approval_required",
-          approvalId: approval.id,
-          reason: decision.reason,
-          rule: decision.rule,
-        };
-      }
-
-      let proof;
-      try {
-        proof = await mppProofBuilder.build({
-          walletId: agent.walletId,
-          challenge: mppChallenge,
-          response: mppResponseFromChallenge(mppChallenge),
-        });
-      } catch (error) {
-        const receiptId = newId.receipt();
-        const reason = `mpp_payment_proof_failed:${errorMessage(error)}`;
-        await db.insert(receipts).values({
-          id: receiptId,
-          agentId: agent.agentId,
-          walletId: agent.walletId,
-          policyId,
-          url: input.request.url,
-          method: input.request.method.toUpperCase(),
-          host,
-          amountRaw: mppChallenge.requirement.amountRaw,
-          amountUsd: mppChallenge.requirement.amountUsd,
-          currency: mppChallenge.requirement.token,
-          network: mppChallenge.requirement.network,
-          recipient: mppChallenge.requirement.recipient,
-          challengeHash: mppChallenge.hash,
-          requestHash: reqHash,
-          responseStatus: 402,
-          decision: "failed",
-          decisionReason: reason,
-          ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
-        });
-        return {
-          kind: "failed",
-          receiptId,
-          reason,
-        };
-      }
-
-      const paid = await sendRequest(
-        {
-          ...input.request,
-          headers: {
-            ...(input.request.headers ?? {}),
-            [proof.headerName ?? "Authorization"]: proof.header,
-            ...(proof.extraHeaders ?? {}),
-          },
-        },
-        fetchImpl,
-      );
-
-      const succeeded = paid.status >= 200 && paid.status < 300;
-      const receiptId = newId.receipt();
-      if (succeeded) {
-        await incrementDailySpend(db, agent.agentId, mppChallenge.requirement.amountUsd);
-      }
-      await db.insert(receipts).values({
-        id: receiptId,
-        agentId: agent.agentId,
-        walletId: agent.walletId,
-        policyId,
-        url: input.request.url,
-        method: input.request.method.toUpperCase(),
-        host,
-        amountRaw: mppChallenge.requirement.amountRaw,
-        amountUsd: mppChallenge.requirement.amountUsd,
-        currency: mppChallenge.requirement.token,
-        network: mppChallenge.requirement.network,
-        recipient: mppChallenge.requirement.recipient,
-        challengeHash: mppChallenge.hash,
-        requestHash: reqHash,
-        responseStatus: paid.status,
-        decision: succeeded ? "allow" : "failed",
-        decisionReason: succeeded
-          ? input.skipPolicy?.reason ?? "policy.allow:mpp"
-          : `mpp_payment_failed:${paid.status}`,
-        ...(input.taskId !== undefined ? { taskId: input.taskId } : {}),
-      });
-
-      const failureDetail =
-        !succeeded && paid.rawBody ? `: ${paid.rawBody.slice(0, 2_000)}` : "";
-      if (!succeeded) {
-        return {
-          kind: "failed",
-          receiptId,
-          reason: `MPP paid retry returned ${paid.status}${failureDetail}`,
-        };
-      }
-      return {
-        kind: "ok",
-        receiptId,
-        response: { status: paid.status, body: paid.body, headers: paid.headers },
-        payment: {
-          amountUsd: mppChallenge.requirement.amountUsd,
-          proofHash: proof.proofHash,
-        },
-      };
-    }
 
     // 5. Parse the first policy-compatible 402 challenge.
     const challenge = parseChallenge(initial.body, {
@@ -663,32 +447,6 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
     if (initial.status !== 402) return { kind: "no_payment_required" as const };
 
     const { config: policy } = await loadActivePolicy(db, agent.agentId);
-    const mppChallenge = parseMppChallenge(initial.headers, {
-      allowedNetworks: policy.allowedNetworks,
-      allowedTokens: policy.allowedTokens,
-    });
-    if (mppChallenge) {
-      if (mppChallenge.requirement.amountUsd === 0) {
-        return { kind: "no_payment_required" as const };
-      }
-      const dayUsd = await getDailySpend(db, agent.agentId);
-      return evaluate({
-        agent: { id: agent.agentId, status: agent.status },
-        challenge: {
-          amountUsd: mppChallenge.requirement.amountUsd,
-          recipient: mppChallenge.requirement.recipient,
-          network: mppChallenge.requirement.network,
-          token: mppChallenge.requirement.token,
-        },
-        request: {
-          url: input.request.url,
-          method: input.request.method,
-          host: urlHost(input.request.url),
-        },
-        spendToDate: { dayUsd },
-        policy,
-      });
-    }
     const challenge = parseChallenge(
       initial.body,
       {

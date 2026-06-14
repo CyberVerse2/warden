@@ -2,7 +2,7 @@ import { loadServerEnv, requireEnv } from "@warden/core";
 import { agents, and, createDb, desc, eq, receipts, wallets } from "@warden/db";
 import { createRuntime, resolveAgentByToken } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder, discoverPayServices } from "@warden/x402";
+import { createX402EvmProofBuilder, discoverPayServices } from "@warden/x402";
 
 loadServerEnv();
 
@@ -97,11 +97,11 @@ async function findFundedAgent(
 ) {
   for (const candidate of candidates) {
     const publicKey = await walletService.getPublicKey(candidate.walletId);
-    const [sol, usdc] = await Promise.all([
+    const [celo, usdc] = await Promise.all([
       walletService.getBalance(candidate.walletId),
       walletService.getUsdcBalance(candidate.walletId),
     ]);
-    if (sol.lamports > 0 && usdc.raw > 0n) {
+    if (celo.wei > 0n && usdc.raw > 0n) {
       return { ...candidate, publicKey };
     }
   }
@@ -112,7 +112,7 @@ async function resolveSmokeUrl() {
   const explicit = arg("--url") ?? process.env.WARDEN_SMOKE_X402_URL;
   if (explicit) return { url: explicit, source: "env" };
 
-  const query = process.env.WARDEN_SMOKE_DISCOVERY_QUERY ?? "x402 devnet";
+  const query = process.env.WARDEN_SMOKE_DISCOVERY_QUERY ?? "x402 celo";
   const services = await discoverPayServices({ query, limit: 10 });
   const service =
     services.find((candidate) => candidate.minPriceUsd > 0) ?? services[0];
@@ -126,7 +126,7 @@ async function resolveSmokeUrl() {
 
 async function main() {
   const databaseUrl = requireEnv("DATABASE_URL");
-  const rpcUrl = requireEnv("SOLANA_RPC_URL");
+  const rpcUrl = requireEnv("CELO_RPC_URL");
   required("WARDEN_MASTER_KEY", "needed to decrypt and sign with the custodial agent wallet");
   required("OPENAI_API_KEY", "needed so the real GPT-5.4 Mini risk layer runs");
 
@@ -138,14 +138,20 @@ async function main() {
   const method = process.env.WARDEN_SMOKE_METHOD ?? "GET";
   const db = createDb(databaseUrl);
   const walletService = createWalletService({ db, rpcUrl });
-  const proofBuilder = createX402SvmProofBuilder(walletService, { rpcUrl });
+  const proofBuilder = createX402EvmProofBuilder(walletService, {
+    rpcUrl,
+    rpcUrls: {
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? rpcUrl,
+    },
+  });
   const runtime = createRuntime({ db, walletService, proofBuilder });
 
   const candidates = await resolveSmokeAgent(db, agentToken);
   const resolved = await findFundedAgent(candidates, walletService);
   if (!resolved) {
     throw new Error(
-      "No active DB agent wallet has both devnet SOL and devnet USDC. Fund one or set WARDEN_SMOKE_AGENT_ID to a funded agent.",
+      "No active DB agent wallet has both CELO and USDC. Fund one or set WARDEN_SMOKE_AGENT_ID to a funded agent.",
     );
   }
   assert(resolved.agent.status === "active", "smoke agent is not active");

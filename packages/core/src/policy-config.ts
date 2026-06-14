@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { CELO_MAINNET_NETWORK, CELO_SEPOLIA_NETWORK } from "./types";
+
+export const SupportedNetworkSchema = z.enum([
+  CELO_MAINNET_NETWORK,
+  CELO_SEPOLIA_NETWORK,
+]);
 
 export const PolicyConfigSchema = z.object({
   mode: z.enum(["managed", "advanced"]).default("advanced"),
@@ -7,10 +13,8 @@ export const PolicyConfigSchema = z.object({
     .default("balanced"),
   purpose: z.string().optional(),
   allowedHosts: z.array(z.string().min(1)).default([]),
-  allowedNetworks: z
-    .array(z.enum(["solana-mainnet", "solana-devnet"]))
-    .default(["solana-devnet"]),
-  allowedTokens: z.array(z.enum(["USDC", "SOL"])).default(["USDC"]),
+  allowedNetworks: z.array(SupportedNetworkSchema).default([CELO_SEPOLIA_NETWORK]),
+  allowedTokens: z.array(z.enum(["USDC"])).default(["USDC"]),
   allowedMethods: z
     .array(z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]))
     .default(["GET", "POST"]),
@@ -27,7 +31,7 @@ export const DEFAULT_POLICY: PolicyConfig = {
   riskPosture: "balanced",
   purpose: "General x402 agent spend",
   allowedHosts: [],
-  allowedNetworks: ["solana-devnet"],
+  allowedNetworks: [CELO_SEPOLIA_NETWORK],
   allowedTokens: ["USDC"],
   allowedMethods: ["GET", "POST"],
   maxUsdPerRequest: 1,

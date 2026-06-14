@@ -2,7 +2,7 @@ import { loadServerEnv } from "@warden/core";
 import { createDb } from "@warden/db";
 import { createWardenToolset } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402SvmProofBuilder } from "@warden/x402";
+import { createX402EvmProofBuilder } from "@warden/x402";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { z } from "zod";
@@ -15,9 +15,9 @@ if (!AGENT_TOKEN) {
   process.exit(1);
 }
 
-const RPC_URL = process.env.SOLANA_RPC_URL;
+const RPC_URL = process.env.CELO_RPC_URL;
 if (!RPC_URL) {
-  console.error("SOLANA_RPC_URL env var is required");
+  console.error("CELO_RPC_URL env var is required");
   process.exit(1);
 }
 
@@ -26,17 +26,15 @@ const walletService = createWalletService({
   db,
   rpcUrl: RPC_URL,
   rpcUrls: {
-    mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-    devnet: process.env.SOLANA_DEVNET_RPC_URL ?? RPC_URL,
-    testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    mainnet: process.env.CELO_MAINNET_RPC_URL,
+    sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? RPC_URL,
   },
 });
-const proofBuilder = createX402SvmProofBuilder(walletService, {
+const proofBuilder = createX402EvmProofBuilder(walletService, {
   rpcUrl: RPC_URL,
   rpcUrls: {
-    mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-    devnet: process.env.SOLANA_DEVNET_RPC_URL ?? RPC_URL,
-    testnet: process.env.SOLANA_TESTNET_RPC_URL,
+    mainnet: process.env.CELO_MAINNET_RPC_URL,
+    sepolia: process.env.CELO_SEPOLIA_RPC_URL ?? RPC_URL,
   },
 });
 

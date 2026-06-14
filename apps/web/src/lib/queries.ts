@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { PolicyConfigSchema, type PolicyConfig, type Network } from "@warden/core";
 import {
   agentResponseArtifacts,
   agentChatMessages,
@@ -10,7 +11,6 @@ import {
   spendWindows,
   wallets,
 } from "@warden/db";
-import { PolicyConfigSchema, type PolicyConfig } from "@warden/core";
 import { createWalletService } from "@warden/wallet";
 import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { getCurrentUser } from "./auth";
@@ -22,7 +22,7 @@ export interface AgentRow {
   name: string;
   status: "active" | "revoked";
   publicKey: string;
-  network: "solana-mainnet" | "solana-devnet";
+  network: Network;
   balanceUsd: number;
   spentTodayUsd: number;
   dailyCapUsd: number;
@@ -38,7 +38,7 @@ export interface ReceiptRow {
   url: string;
   method: string;
   amountUsd: number;
-  currency: "USDC" | "SOL" | "UNPAID";
+  currency: "USDC" | "UNPAID";
   network: string;
   decision: "allow" | "deny" | "failed";
   decisionReason: string;
@@ -139,8 +139,8 @@ function receiptAmount(value: number | null, reason: string | null): number {
 function receiptCurrency(
   value: string | null,
   reason: string | null,
-): "USDC" | "SOL" | "UNPAID" {
-  if (value === "USDC" || value === "SOL") return value;
+): "USDC" | "UNPAID" {
+  if (value === "USDC") return value;
   if (
     reason === "no_payment_required" ||
     reason === "zero_payment_required" ||
@@ -239,11 +239,10 @@ export async function getAgents(): Promise<AgentRow[]> {
   }
   const walletService = createWalletService({
     db,
-    rpcUrl: requireEnv("SOLANA_RPC_URL"),
+    rpcUrl: requireEnv("CELO_RPC_URL"),
     rpcUrls: {
-      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-      devnet: process.env.SOLANA_DEVNET_RPC_URL,
-      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL,
     },
   });
   const withBalances = await Promise.all(

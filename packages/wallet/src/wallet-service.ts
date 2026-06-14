@@ -1,19 +1,30 @@
-import { createHash } from "node:crypto";
-import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import {
-  getAccount,
-  getAssociatedTokenAddressSync,
-  TokenAccountNotFoundError,
-} from "@solana/spl-token";
-import { newId, WardenError, type Network } from "@warden/core";
+import { CELO_MAINNET_NETWORK, newId, WardenError, type Network } from "@warden/core";
 import { wallets, type Db } from "@warden/db";
 import { eq } from "drizzle-orm";
-import nacl from "tweetnacl";
+import {
+  createPublicClient,
+  erc20Abi,
+  formatUnits,
+  http,
+  isAddress,
+  type Address,
+  type Hex,
+  type PublicClient,
+} from "viem";
+import { celo, celoSepolia } from "viem/chains";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { decryptSecret, encryptSecret } from "./crypto";
 
-const USDC_MINT: Record<Network, string> = {
-  "solana-mainnet": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-  "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+const USDC_CONTRACT: Record<Network, Address> = {
+  "eip155:42220": "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+  "eip155:11142220": "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
+};
+
+export type TypedDataToSign = {
+  domain: Record<string, unknown>;
+  types: Record<string, unknown>;
+  primaryType: string;
+  message: Record<string, unknown>;
 };
 
 export interface WalletService {
@@ -24,37 +35,14 @@ export interface WalletService {
 
   getPublicKey(walletId: string): Promise<string>;
 
-  getBalance(walletId: string): Promise<{ lamports: number }>;
+  getBalance(walletId: string): Promise<{ wei: bigint; celo: number }>;
 
-  /**
-   * Read the wallet's USDC SPL token balance. Returns 0 if no token account
-   * exists yet. The amount is in USDC base units (6 decimals).
-   */
   getUsdcBalance(walletId: string): Promise<{ raw: bigint; usd: number }>;
 
-  /**
-   * Sign an opaque payload (e.g. an x402 challenge digest) using the wallet's
-   * Ed25519 secret key. The plaintext secret is decrypted in-memory and zeroed
-   * immediately after signing.
-   */
-  signPayload(
+  signTypedData(
     walletId: string,
-    payload: Buffer,
-  ): Promise<{ signatureBase64: string; publicKey: string }>;
-
-  /**
-   * Sign raw message bytes with the wallet's Ed25519 secret key.
-   */
-  signMessage(
-    walletId: string,
-    message: Uint8Array,
-  ): Promise<{ signature: Uint8Array; publicKey: string }>;
-
-  signTransaction(
-    walletId: string,
-    transaction: Transaction,
-    opts?: { requireAllSignatures?: boolean; verifySignatures?: boolean },
-  ): Promise<{ transactionBase64: string; signature: string; publicKey: string }>;
+    typedData: TypedDataToSign,
+  ): Promise<{ signature: Hex; publicKey: string }>;
 
   revoke(walletId: string): Promise<void>;
 }
@@ -64,8 +52,7 @@ export interface WalletServiceDeps {
   rpcUrl: string;
   rpcUrls?: {
     mainnet?: string | undefined;
-    devnet?: string | undefined;
-    testnet?: string | undefined;
+    sepolia?: string | undefined;
   };
 }
 
@@ -74,19 +61,24 @@ export function createWalletService({
   rpcUrl,
   rpcUrls,
 }: WalletServiceDeps): WalletService {
-  const connections = new Map<string, Connection>();
+  const clients = new Map<string, PublicClient>();
 
-  function connectionFor(network: Network) {
-    const url =
-      network === "solana-mainnet"
-        ? rpcUrls?.mainnet ?? "https://api.mainnet-beta.solana.com"
-        : rpcUrls?.devnet ?? rpcUrl;
-    const key = `${network}:${url}`;
-    const cached = connections.get(key);
+  function rpcUrlFor(network: Network) {
+    return network === CELO_MAINNET_NETWORK
+      ? rpcUrls?.mainnet ?? rpcUrl
+      : rpcUrls?.sepolia ?? rpcUrl;
+  }
+
+  function clientFor(network: Network) {
+    const url = rpcUrlFor(network);
+    const cached = clients.get(`${network}:${url}`);
     if (cached) return cached;
-    const connection = new Connection(url, "confirmed");
-    connections.set(key, connection);
-    return connection;
+    const client = createPublicClient({
+      chain: network === CELO_MAINNET_NETWORK ? celo : celoSepolia,
+      transport: http(url),
+    }) as PublicClient;
+    clients.set(`${network}:${url}`, client);
+    return client;
   }
 
   async function loadWallet(walletId: string) {
@@ -97,25 +89,45 @@ export function createWalletService({
     if (!row) {
       throw new WardenError("wallet_not_found", `Wallet ${walletId} not found`);
     }
-    return row;
+    if (!isAddress(row.publicKey)) {
+      throw new WardenError("internal", `Wallet ${walletId} has an invalid EVM address`);
+    }
+    return { ...row, publicKey: row.publicKey as Address };
+  }
+
+  function accountFor(row: Awaited<ReturnType<typeof loadWallet>>) {
+    const secret = decryptSecret(
+      {
+        ciphertext: row.encryptedSecret,
+        iv: row.iv,
+        authTag: row.authTag,
+      },
+      row.id,
+    );
+    try {
+      return privateKeyToAccount(`0x${secret.toString("hex")}` as Hex);
+    } finally {
+      secret.fill(0);
+    }
   }
 
   return {
     async createWallet({ agentId, network }) {
-      const keypair = Keypair.generate();
+      const privateKey = generatePrivateKey();
+      const account = privateKeyToAccount(privateKey);
       const walletId = newId.wallet();
-      const enc = encryptSecret(Buffer.from(keypair.secretKey), walletId);
+      const enc = encryptSecret(Buffer.from(privateKey.slice(2), "hex"), walletId);
       await db.insert(wallets).values({
         id: walletId,
         agentId,
         network,
-        publicKey: keypair.publicKey.toBase58(),
+        publicKey: account.address,
         encryptedSecret: enc.ciphertext,
         iv: enc.iv,
         authTag: enc.authTag,
         status: "active",
       });
-      return { walletId, publicKey: keypair.publicKey.toBase58() };
+      return { walletId, publicKey: account.address };
     },
 
     async getPublicKey(walletId) {
@@ -125,113 +137,31 @@ export function createWalletService({
 
     async getBalance(walletId) {
       const row = await loadWallet(walletId);
-      const lamports = await connectionFor(row.network).getBalance(
-        new PublicKey(row.publicKey),
-      );
-      return { lamports };
+      const wei = await clientFor(row.network).getBalance({
+        address: row.publicKey,
+      });
+      return { wei, celo: Number(formatUnits(wei, 18)) };
     },
 
     async getUsdcBalance(walletId) {
       const row = await loadWallet(walletId);
-      const owner = new PublicKey(row.publicKey);
-      const mint = new PublicKey(USDC_MINT[row.network]);
-      const ata = getAssociatedTokenAddressSync(mint, owner);
-      try {
-        const account = await getAccount(connectionFor(row.network), ata);
-        const raw = account.amount;
-        return { raw, usd: Number(raw) / 1_000_000 };
-      } catch (error) {
-        if (error instanceof TokenAccountNotFoundError) {
-          return { raw: 0n, usd: 0 };
-        }
-        throw error;
-      }
+      const raw = await clientFor(row.network).readContract({
+        address: USDC_CONTRACT[row.network],
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [row.publicKey],
+      });
+      return { raw, usd: Number(formatUnits(raw, 6)) };
     },
 
-    async signPayload(walletId, payload) {
+    async signTypedData(walletId, typedData) {
       const row = await loadWallet(walletId);
       if (row.status !== "active") {
         throw new WardenError("agent_revoked", "Wallet is revoked");
       }
-      const secret = decryptSecret(
-        {
-          ciphertext: row.encryptedSecret,
-          iv: row.iv,
-          authTag: row.authTag,
-        },
-        row.id,
-      );
-      try {
-        const digest = createHash("sha256").update(payload).digest();
-        const sig = nacl.sign.detached(digest, secret);
-        return {
-          signatureBase64: Buffer.from(sig).toString("base64"),
-          publicKey: row.publicKey,
-        };
-      } finally {
-        secret.fill(0);
-      }
-    },
-
-    async signMessage(walletId, message) {
-      const row = await loadWallet(walletId);
-      if (row.status !== "active") {
-        throw new WardenError("agent_revoked", "Wallet is revoked");
-      }
-      const secret = decryptSecret(
-        {
-          ciphertext: row.encryptedSecret,
-          iv: row.iv,
-          authTag: row.authTag,
-        },
-        row.id,
-      );
-      try {
-        const sig = nacl.sign.detached(message, secret);
-        return {
-          signature: sig,
-          publicKey: row.publicKey,
-        };
-      } finally {
-        secret.fill(0);
-      }
-    },
-
-    async signTransaction(walletId, transaction, opts) {
-      const row = await loadWallet(walletId);
-      if (row.status !== "active") {
-        throw new WardenError("agent_revoked", "Wallet is revoked");
-      }
-      const secret = decryptSecret(
-        {
-          ciphertext: row.encryptedSecret,
-          iv: row.iv,
-          authTag: row.authTag,
-        },
-        row.id,
-      );
-      try {
-        const keypair = Keypair.fromSecretKey(secret);
-        transaction.sign(keypair);
-        const signature = transaction.signatures
-          .find(({ publicKey }) => publicKey.equals(keypair.publicKey))
-          ?.signature?.toString("base64");
-        if (!signature) {
-          throw new WardenError("payment_failed", "Transaction was not signed");
-        }
-        return {
-          transactionBase64: transaction
-            .serialize({
-              requireAllSignatures: opts?.requireAllSignatures ?? true,
-              verifySignatures: opts?.verifySignatures ?? true,
-            })
-            .toString("base64"),
-          signature,
-          publicKey: row.publicKey,
-        };
-      } finally {
-        secret.fill(0);
-      }
+      const account = accountFor(row);
+      const signature = await account.signTypedData(typedData as never);
+      return { signature, publicKey: row.publicKey };
     },
 
     async revoke(walletId) {

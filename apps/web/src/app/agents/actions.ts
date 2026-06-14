@@ -1,6 +1,11 @@
 "use server";
 
-import { newId, PolicyConfigSchema } from "@warden/core";
+import {
+  CELO_MAINNET_NETWORK,
+  CELO_SEPOLIA_NETWORK,
+  newId,
+  PolicyConfigSchema,
+} from "@warden/core";
 import { agentTokens, agents, policies, wallets } from "@warden/db";
 import { hashToken } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
@@ -26,8 +31,8 @@ function requiredFormString(formData: FormData, key: string) {
 
 function formNetwork(formData: FormData) {
   const value = requiredFormString(formData, "network");
-  if (value !== "solana-mainnet" && value !== "solana-devnet") {
-    throw new Error("network must be solana-mainnet or solana-devnet");
+  if (value !== CELO_MAINNET_NETWORK && value !== CELO_SEPOLIA_NETWORK) {
+    throw new Error(`network must be ${CELO_MAINNET_NETWORK} or ${CELO_SEPOLIA_NETWORK}`);
   }
   return value;
 }
@@ -88,11 +93,10 @@ export async function createAgent(formData: FormData) {
   const rawToken = newId.token();
   const walletService = createWalletService({
     db,
-    rpcUrl: requireEnv("SOLANA_RPC_URL"),
+    rpcUrl: requireEnv("CELO_RPC_URL"),
     rpcUrls: {
-      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-      devnet: process.env.SOLANA_DEVNET_RPC_URL,
-      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL,
     },
   });
 
@@ -203,11 +207,10 @@ export async function switchAgentNetwork(agentId: string, formData: FormData) {
 
   const walletService = createWalletService({
     db,
-    rpcUrl: requireEnv("SOLANA_RPC_URL"),
+    rpcUrl: requireEnv("CELO_RPC_URL"),
     rpcUrls: {
-      mainnet: process.env.SOLANA_MAINNET_RPC_URL,
-      devnet: process.env.SOLANA_DEVNET_RPC_URL,
-      testnet: process.env.SOLANA_TESTNET_RPC_URL,
+      mainnet: process.env.CELO_MAINNET_RPC_URL,
+      sepolia: process.env.CELO_SEPOLIA_RPC_URL,
     },
   });
   if (currentWallet) {
@@ -292,24 +295,4 @@ export async function rotateAgentToken(agentId: string) {
 
   revalidatePath(`/agents/${agentId}`);
   redirect(`/agents/${agentId}/token?token=${encodeURIComponent(rawToken)}`);
-}
-
-export async function airdropDevnetSol(agentId: string) {
-  const db = getDb();
-  const currentUser = await getCurrentUser();
-  const [row] = await db
-    .select({ publicKey: wallets.publicKey, network: wallets.network })
-    .from(agents)
-    .innerJoin(wallets, eq(wallets.agentId, agents.id))
-    .where(and(eq(agents.id, agentId), eq(agents.userId, currentUser.id)));
-  if (!row || row.network !== "solana-devnet") return;
-
-  const { Connection, LAMPORTS_PER_SOL, PublicKey } = await import("@solana/web3.js");
-  const connection = new Connection(
-    requireEnv("SOLANA_RPC_URL"),
-    "confirmed",
-  );
-  await connection.requestAirdrop(new PublicKey(row.publicKey), 2 * LAMPORTS_PER_SOL);
-  revalidatePath(`/agents/${agentId}`);
-  revalidatePath("/agents");
 }
