@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AI_SDK_AGENT_SYSTEM_PROMPT,
   CLASSIFIER_SYSTEM_PROMPT,
   FINAL_ANSWER_SYSTEM_PROMPT,
   IntentClassificationSchema,
@@ -259,6 +260,8 @@ describe("agent chat planner contract", () => {
     expect(SKILL_PLANNER_SYSTEM_PROMPT).toContain("Every call argument object");
     expect(SKILL_PLANNER_SYSTEM_PROMPT).toContain("Do not invent providers");
     expect(SKILL_PLANNER_SYSTEM_PROMPT).toContain("Do not resubmit");
+    expect(AI_SDK_AGENT_SYSTEM_PROMPT).toContain("live/current market-price");
+    expect(AI_SDK_AGENT_SYSTEM_PROMPT).toContain("Do not stop after token metadata");
     expect(FINAL_ANSWER_SYSTEM_PROMPT).toContain("MCP results prove it");
   });
 });
