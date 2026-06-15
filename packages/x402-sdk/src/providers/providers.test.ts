@@ -81,10 +81,10 @@ describe("provider operations", () => {
 
   it("maps Fish TTS to binary audio response", async () => {
     const [operation] = createFishAudioOperations({ apiKey: "fish-key" });
+    let body: unknown;
     const output = await operation!.handler(
       {
         text: "hello",
-        referenceId: "voice-id",
         model: "s2-pro",
         format: "mp3",
         sampleRate: 44100,
@@ -96,11 +96,17 @@ describe("provider operations", () => {
             authorization: "Bearer fish-key",
             model: "s2-pro",
           });
+          body = JSON.parse(String(init?.body));
           return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
         },
       },
     );
 
+    expect(body).toEqual({
+      text: "hello",
+      format: "mp3",
+      sample_rate: 44100,
+    });
     expect(output).toEqual({
       contentType: "audio/mpeg",
       audioBase64: "AQID",

@@ -4,7 +4,9 @@ import type { PaidOperation } from "../types";
 
 const FishTtsInputSchema = z.object({
   text: z.string().min(1),
-  referenceId: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]),
+  referenceId: z
+    .union([z.string().min(1), z.array(z.string().min(1)).min(1)])
+    .optional(),
   model: z.enum(["s1", "s2-pro"]).default("s2-pro"),
   format: z.enum(["mp3", "wav", "pcm"]).default("mp3"),
   sampleRate: z.number().int().positive().default(44100),
@@ -46,7 +48,7 @@ export function createFishAudioOperations(
           },
           body: JSON.stringify({
             text: parsed.text,
-            reference_id: parsed.referenceId,
+            ...(parsed.referenceId ? { reference_id: parsed.referenceId } : {}),
             format: parsed.format,
             sample_rate: parsed.sampleRate,
           }),
