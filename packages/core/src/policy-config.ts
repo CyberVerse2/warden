@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { CELO_MAINNET_NETWORK, CELO_SEPOLIA_NETWORK } from "./types";
 
-export const SupportedNetworkSchema = z.enum([
-  CELO_MAINNET_NETWORK,
-  CELO_SEPOLIA_NETWORK,
-]);
+export const SupportedNetworkSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim() : value),
+  z.enum([CELO_MAINNET_NETWORK, CELO_SEPOLIA_NETWORK]),
+);
 
 export const PolicyConfigSchema = z.object({
   mode: z.enum(["managed", "advanced"]).default("advanced"),
