@@ -150,6 +150,44 @@ export async function discoverPayServices(
   return limit === undefined ? providers : providers.slice(0, limit);
 }
 
+export interface PayCatalogSummary {
+  generatedAt: string;
+  serviceCount: number;
+  endpointCount: number;
+  categories: Array<{ category: string; serviceCount: number }>;
+  providers: PayCatalogProvider[];
+}
+
+/**
+ * Synchronous, dependency-free view of the bundled pay.sh catalog. Safe to call
+ * from server components and build steps that just need to enumerate the
+ * supported x402 services without hitting the network.
+ */
+export function getPayCatalogSummary(): PayCatalogSummary {
+  const providers = localCatalogProviders();
+  const counts = new Map<string, number>();
+  for (const provider of providers) {
+    const category = provider.category || "other";
+    counts.set(category, (counts.get(category) ?? 0) + 1);
+  }
+  const index = catalogIndex as LocalCatalogIndex & {
+    generatedAt?: string;
+    serviceCount?: number;
+    endpointCount?: number;
+  };
+  return {
+    generatedAt: text(index.generatedAt),
+    serviceCount: number(index.serviceCount) || providers.length,
+    endpointCount:
+      number(index.endpointCount) ||
+      providers.reduce((sum, p) => sum + p.endpointCount, 0),
+    categories: [...counts.entries()]
+      .map(([category, serviceCount]) => ({ category, serviceCount }))
+      .sort((a, b) => b.serviceCount - a.serviceCount),
+    providers,
+  };
+}
+
 function urlJoin(base: string, path: string) {
   if (/^https?:\/\//i.test(path)) return path;
   return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
