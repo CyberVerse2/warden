@@ -286,10 +286,23 @@ function configuredSdkOperations(): PaidOperation[] {
   }
 
   if (process.env.RESEND_API_KEY) {
-    operations.push(...createResendOperations({ apiKey: process.env.RESEND_API_KEY }));
+    operations.push(
+      ...createResendOperations({
+        apiKey: process.env.RESEND_API_KEY,
+        from: requireRuntimeEnv("RESEND_FROM"),
+      }),
+    );
   }
 
   return operations;
+}
+
+function requireRuntimeEnv(name: string) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new WardenError("internal", `${name} is required`);
+  }
+  return value;
 }
 
 function configuredPublicOrigin() {

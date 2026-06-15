@@ -12,6 +12,7 @@ const envKeys = [
   "TAVILY_API_KEY",
   "ALCHEMY_API_KEY",
   "RESEND_API_KEY",
+  "RESEND_FROM",
   "WARDEN_X402_PAY_TO",
   "WARDEN_X402_ASSET",
   "WARDEN_X402_NETWORK",
@@ -78,4 +79,5 @@ function stubProviderEnv() {
   vi.stubEnv("TAVILY_API_KEY", "tavily-key");
   vi.stubEnv("ALCHEMY_API_KEY", "alchemy-key");
   vi.stubEnv("RESEND_API_KEY", "resend-key");
+  vi.stubEnv("RESEND_FROM", "Warden <nkiru.obi@bookings.skypadi.com>");
 }

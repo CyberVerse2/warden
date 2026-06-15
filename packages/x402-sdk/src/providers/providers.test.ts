@@ -114,8 +114,12 @@ describe("provider operations", () => {
   });
 
   it("maps Resend email to /emails", async () => {
-    const [operation] = createResendOperations({ apiKey: "resend-key" });
+    const [operation] = createResendOperations({
+      apiKey: "resend-key",
+      from: "Warden <nkiru.obi@bookings.skypadi.com>",
+    });
     let url = "";
+    let body: unknown;
     await operation!.handler(
       {
         from: "Warden <paid@example.com>",
@@ -130,11 +134,18 @@ describe("provider operations", () => {
           expect(init?.headers).toMatchObject({
             authorization: "Bearer resend-key",
           });
+          body = JSON.parse(String(init?.body));
           return jsonResponse({ id: "email_1" });
         },
       },
     );
 
     expect(url).toBe("https://api.resend.com/emails");
+    expect(body).toMatchObject({
+      from: "Warden <nkiru.obi@bookings.skypadi.com>",
+      to: "user@example.com",
+      subject: "Paid email",
+      text: "hello",
+    });
   });
 });

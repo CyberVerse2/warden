@@ -4,7 +4,7 @@ import type { PaidOperation } from "../types";
 
 const ResendSendEmailInputSchema = z
   .object({
-    from: z.string().min(1),
+    from: z.string().min(1).optional(),
     to: z.union([z.string().email(), z.array(z.string().email()).min(1).max(50)]),
     subject: z.string().min(1),
     html: z.string().optional(),
@@ -18,6 +18,7 @@ const ResendSendEmailInputSchema = z
 
 export interface ResendOperationsOptions {
   apiKey: string;
+  from?: string;
   baseUrl?: string;
   prices?: Partial<Record<"sendEmail", string>>;
 }
@@ -38,11 +39,15 @@ export function createResendOperations(
       input: ResendSendEmailInputSchema,
       async handler(input, context) {
         const parsed = ResendSendEmailInputSchema.parse(input);
+        const from = options.from ?? parsed.from;
+        if (!from) {
+          throw new Error("Resend sender address is required");
+        }
         return postJson(
           context.fetch,
           `${baseUrl}/emails`,
           { authorization: `Bearer ${options.apiKey}` },
-          parsed,
+          { ...parsed, from },
         );
       },
     },

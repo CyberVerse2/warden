@@ -59,6 +59,7 @@ describe("createWardenToolset", () => {
 
   it("describes hosted SDK operation request schemas", async () => {
     vi.stubEnv("RESEND_API_KEY", "resend_test");
+    vi.stubEnv("RESEND_FROM", "Warden <nkiru.obi@bookings.skypadi.com>");
 
     const tools = createWardenToolset({
       db: {} as ToolsetDeps["db"],
@@ -81,7 +82,7 @@ describe("createWardenToolset", () => {
       endpoints: [
         {
           requestSchema: {
-            required: ["from", "to", "subject"],
+            required: ["to", "subject"],
             properties: {
               from: { type: "string" },
               to: {

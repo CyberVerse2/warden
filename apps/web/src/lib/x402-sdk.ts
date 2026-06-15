@@ -72,7 +72,12 @@ export function configuredOperations(): PaidOperation[] {
     );
   }
   if (process.env.RESEND_API_KEY) {
-    operations.push(...createResendOperations({ apiKey: process.env.RESEND_API_KEY }));
+    operations.push(
+      ...createResendOperations({
+        apiKey: process.env.RESEND_API_KEY,
+        from: requireEnv("RESEND_FROM"),
+      }),
+    );
   }
 
   return operations;
