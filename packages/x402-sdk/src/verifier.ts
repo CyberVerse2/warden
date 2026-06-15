@@ -168,7 +168,7 @@ function toThirdwebPaymentRequirements(
       ? (requirements.extra as Record<string, unknown>)
       : {};
   const resource =
-    stringField(source["resource"]) ?? stringField(extra["resource"]);
+    absoluteUrlField(source["resource"]) ?? absoluteUrlField(extra["resource"]);
   const description =
     stringField(source["description"]) ?? stringField(extra["description"]);
   const mimeType =
@@ -185,6 +185,19 @@ function toThirdwebPaymentRequirements(
 
 function stringField(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function absoluteUrlField(value: unknown): string | undefined {
+  const field = stringField(value);
+  if (!field) return undefined;
+  try {
+    const url = new URL(field);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? field
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export type {

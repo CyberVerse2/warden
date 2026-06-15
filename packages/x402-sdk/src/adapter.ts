@@ -47,6 +47,7 @@ export async function handleWardenX402Request(
     operationId: operation.id,
     input,
     paymentHeader: paymentHeader(request),
+    resourceUrl: request.url,
   });
 
   if (result.kind === "payment_required") {

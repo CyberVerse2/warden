@@ -30,6 +30,7 @@ export interface ExecutePaidOperationInput {
   operationId: string;
   input: unknown;
   paymentHeader?: string | undefined;
+  resourceUrl?: string | undefined;
 }
 
 export interface WardenX402Sdk {
@@ -88,9 +89,10 @@ export function createWardenX402Sdk(
       operationId,
       input,
       paymentHeader,
+      resourceUrl,
     }: ExecutePaidOperationInput): Promise<ExecutePaidOperationResult<Output>> {
       const operation = sdk.operation(operationId);
-      const quote = sdk.quote(operationId);
+      const quote = quoteWithResource(sdk.quote(operationId), resourceUrl);
       if (!paymentHeader) {
         return { kind: "payment_required", quote };
       }
@@ -186,6 +188,33 @@ function manifestEntry(operation: PaidOperation): OperationManifestEntry {
     description: operation.description,
     price: operation.price,
   };
+}
+
+function quoteWithResource(
+  quote: PaymentQuote,
+  resourceUrl: string | undefined,
+): PaymentQuote {
+  if (!resourceUrl) return quote;
+  return {
+    ...quote,
+    accepts: quote.accepts.map((requirement) =>
+      paymentRequirementWithResource(requirement, resourceUrl),
+    ),
+  };
+}
+
+function paymentRequirementWithResource(
+  requirement: PaymentRequirements,
+  resourceUrl: string,
+): PaymentRequirements {
+  return {
+    ...requirement,
+    resource: resourceUrl,
+    extra: {
+      ...(requirement.extra ?? {}),
+      resource: resourceUrl,
+    },
+  } as PaymentRequirements;
 }
 
 export function usdToUsdcRaw(amountUsd: string): string {

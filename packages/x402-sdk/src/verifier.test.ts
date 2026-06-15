@@ -16,7 +16,9 @@ const paymentPayload = {
     payTo: "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5",
     amount: "10000",
     maxTimeoutSeconds: 300,
-    extra: {},
+    extra: {
+      resource: "/search/web",
+    },
   },
   payload: {
     authorization: { from: "0x0000000000000000000000000000000000000001" },
@@ -114,6 +116,7 @@ describe("createThirdwebPaymentVerifier", () => {
         ...verifierInput.requirements,
         maxAmountRequired: verifierInput.requirements.amount,
       });
+      expect(body.paymentRequirements.resource).toBeUndefined();
       return Response.json({
         success: true,
         payer: "0xpayer",
@@ -142,6 +145,37 @@ describe("createThirdwebPaymentVerifier", () => {
         }),
       }),
     );
+  });
+
+  it("only promotes absolute resource URLs into thirdweb payment requirements", async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      expect(body.paymentRequirements.resource).toBe("https://warden.example/api/x402/search/web");
+      return Response.json({
+        success: true,
+        payer: "0xpayer",
+        transaction: "0xtx",
+        network: "eip155:11142220",
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const verifier = createThirdwebPaymentVerifier({
+      secretKey: "thirdweb-secret-key",
+      serverWalletAddress: "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5",
+    });
+
+    await expect(
+      verifier.verify({
+        ...verifierInput,
+        requirements: {
+          ...verifierInput.requirements,
+          extra: {
+            resource: "https://warden.example/api/x402/search/web",
+          },
+        },
+      }),
+    ).resolves.toMatchObject({ valid: true });
   });
 
   it("denies thirdweb settlement failures", async () => {

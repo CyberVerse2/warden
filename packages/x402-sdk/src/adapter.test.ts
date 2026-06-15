@@ -53,6 +53,14 @@ describe("handleWardenX402Request", () => {
     expect(response.headers.get("payment-required")).toBeTruthy();
     await expect(response.json()).resolves.toMatchObject({
       operation: { id: "ai.generateText" },
+      accepts: [
+        {
+          resource: "https://example.com/x402/ai/generate-text",
+          extra: {
+            resource: "https://example.com/x402/ai/generate-text",
+          },
+        },
+      ],
     });
   });
 
@@ -61,7 +69,13 @@ describe("handleWardenX402Request", () => {
       payTo: "0x1111111111111111111111111111111111111111",
       operations: [paidEchoOperation],
       verifier: {
-        async verify() {
+        async verify(input) {
+          expect(input.requirements).toMatchObject({
+            resource: "https://example.com/x402/ai/generate-text",
+            extra: {
+              resource: "https://example.com/x402/ai/generate-text",
+            },
+          });
           return { valid: true, transaction: "0xpaid" };
         },
       },
