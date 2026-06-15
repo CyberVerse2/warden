@@ -10,6 +10,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "smoke:workflow": "pnpm --filter @warden/mcp exec tsx ../../scripts/smoke-workflow.ts",
+    "register:8004": "pnpm --filter @warden/mcp exec tsx ../../scripts/register-erc8004-celo.ts",
     "db:push": "turbo run db:push --filter=@warden/db",
     "db:studio": "turbo run db:studio --filter=@warden/db"
   },
