@@ -16,6 +16,7 @@ const envKeys = [
   "WARDEN_X402_PAY_TO",
   "WARDEN_X402_ASSET",
   "WARDEN_X402_NETWORK",
+  "THIRDWEB_SECRET_KEY",
 ] as const;
 
 describe("hosted Warden x402 SDK", () => {
@@ -46,8 +47,8 @@ describe("hosted Warden x402 SDK", () => {
 
   it("creates the app-hosted SDK manifest from env configuration", () => {
     stubProviderEnv();
-    vi.stubEnv("WARDEN_X402_FACILITATOR_URL", "https://facilitator.example");
     vi.stubEnv("WARDEN_X402_PAY_TO", "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5");
+    vi.stubEnv("THIRDWEB_SECRET_KEY", "thirdweb-secret-key");
 
     const manifest = createHostedWardenX402Sdk().manifest();
 

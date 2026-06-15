@@ -1,7 +1,10 @@
 import { encodePaymentSignatureHeader } from "@x402/core/http";
 import type { FacilitatorClient } from "@x402/core/server";
-import { describe, expect, it, vi } from "vitest";
-import { createFacilitatorPaymentVerifier } from "./verifier";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  createFacilitatorPaymentVerifier,
+  createThirdwebPaymentVerifier,
+} from "./verifier";
 import type { PaymentVerifierInput } from "./types";
 
 const paymentPayload = {
@@ -35,6 +38,10 @@ const verifierInput: PaymentVerifierInput = {
 };
 
 describe("createFacilitatorPaymentVerifier", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("verifies and settles payment headers with a facilitator", async () => {
     const facilitator = {
       verify: vi.fn(async () => ({ isValid: true, payer: "0xpayer" })),
@@ -87,5 +94,79 @@ describe("createFacilitatorPaymentVerifier", () => {
       reason: "insufficient_funds",
     });
     expect(facilitator.settle).not.toHaveBeenCalled();
+  });
+});
+
+describe("createThirdwebPaymentVerifier", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("settles payment headers through the thirdweb x402 facilitator", async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      expect(body.paymentPayload).toMatchObject({
+        x402Version: 2,
+        scheme: "exact",
+        network: "eip155:11142220",
+      });
+      expect(body.paymentRequirements).toMatchObject({
+        ...verifierInput.requirements,
+        maxAmountRequired: verifierInput.requirements.amount,
+      });
+      return Response.json({
+        success: true,
+        payer: "0xpayer",
+        transaction: "0xtx",
+        network: "eip155:11142220",
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const verifier = createThirdwebPaymentVerifier({
+      secretKey: "thirdweb-secret-key",
+      serverWalletAddress: "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5",
+    });
+
+    await expect(verifier.verify(verifierInput)).resolves.toEqual({
+      valid: true,
+      payer: "0xpayer",
+      transaction: "0xtx",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.thirdweb.com/v1/payments/x402/settle",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "x-secret-key": "thirdweb-secret-key",
+        }),
+      }),
+    );
+  });
+
+  it("denies thirdweb settlement failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          success: false,
+          errorReason: "insufficient_funds",
+          payer: "0xpayer",
+          transaction: "",
+          network: "eip155:11142220",
+        }),
+      ),
+    );
+
+    const verifier = createThirdwebPaymentVerifier({
+      secretKey: "thirdweb-secret-key",
+      serverWalletAddress: "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5",
+    });
+
+    await expect(verifier.verify(verifierInput)).resolves.toEqual({
+      valid: false,
+      payer: "0xpayer",
+      reason: "insufficient_funds",
+    });
   });
 });

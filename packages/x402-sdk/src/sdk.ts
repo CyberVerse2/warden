@@ -162,6 +162,8 @@ function paymentRequirement(
     amount: rawAmount,
     maxTimeoutSeconds: options.maxTimeoutSeconds ?? 300,
     extra: {
+      name: "USDC",
+      version: "2",
       operationId: operation.id,
       resource: operation.path,
       description: operation.description,

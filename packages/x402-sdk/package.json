@@ -16,6 +16,7 @@
   "dependencies": {
     "@warden/core": "workspace:*",
     "@x402/core": "^2.15.0",
+    "thirdweb": "^5.120.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

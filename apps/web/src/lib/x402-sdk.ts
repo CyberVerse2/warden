@@ -3,12 +3,12 @@ import {
   CELO_SEPOLIA_USDC,
   createAlchemyOperations,
   createExaOperations,
-  createFacilitatorPaymentVerifier,
   createFalOperations,
   createFishAudioOperations,
   createOpenAiOperations,
   createResendOperations,
   createTavilyOperations,
+  createThirdwebPaymentVerifier,
   createWardenX402Sdk,
   type CeloNetwork,
   type PaidOperation,
@@ -17,7 +17,7 @@ import {
 import { requireEnv } from "@warden/core";
 
 export function createHostedWardenX402Sdk(): WardenX402Sdk {
-  const facilitatorUrl = requireEnv("WARDEN_X402_FACILITATOR_URL");
+  const payTo = requireEnv("WARDEN_X402_PAY_TO");
   const operations = configuredOperations();
   if (operations.length === 0) {
     throw new Error("No Warden x402 SDK provider credentials are configured");
@@ -26,9 +26,13 @@ export function createHostedWardenX402Sdk(): WardenX402Sdk {
   return createWardenX402Sdk({
     network: networkEnv(),
     asset: envString("WARDEN_X402_ASSET") ?? CELO_SEPOLIA_USDC,
-    payTo: requireEnv("WARDEN_X402_PAY_TO"),
-    facilitatorUrl,
-    verifier: createFacilitatorPaymentVerifier({ facilitatorUrl }),
+    payTo,
+    facilitatorUrl: envString("WARDEN_X402_FACILITATOR_URL"),
+    verifier: createThirdwebPaymentVerifier({
+      secretKey: requireEnv("THIRDWEB_SECRET_KEY"),
+      serverWalletAddress: payTo,
+      baseUrl: envString("WARDEN_X402_FACILITATOR_URL"),
+    }),
     operations,
   });
 }

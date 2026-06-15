@@ -51,6 +51,8 @@ describe("createWardenX402Sdk", () => {
       amount: "12345",
       payTo: "0x1111111111111111111111111111111111111111",
       extra: {
+        name: "USDC",
+        version: "2",
         operationId: "ai.generateText",
         provider: "openai",
         category: "ai",

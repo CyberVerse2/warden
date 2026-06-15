@@ -13,7 +13,9 @@ export {
 } from "./adapter";
 export {
   createFacilitatorPaymentVerifier,
+  createThirdwebPaymentVerifier,
   type FacilitatorPaymentVerifierOptions,
+  type ThirdwebPaymentVerifierOptions,
 } from "./verifier";
 export type {
   CeloNetwork,
