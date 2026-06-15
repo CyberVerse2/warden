@@ -16,7 +16,7 @@ export function ResponseArtifact({ artifact }: { artifact: ResponseArtifactRow }
       </div>
       {imageUrls.length > 0 && (
         <div className="grid gap-2 sm:grid-cols-2">
-          {imageUrls.map((url) => (
+          {imageUrls.slice(0, 1).map((url) => (
             <a
               key={url}
               href={url}
