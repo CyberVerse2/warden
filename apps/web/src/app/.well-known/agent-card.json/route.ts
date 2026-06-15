@@ -41,6 +41,7 @@ export async function GET(): Promise<Response> {
     image: `${origin}/warden-project-banner.png`,
     version: "0.1.0",
     active: true,
+    agent_type: "service",
     x402Support: true,
     services: [
       { name: "web", endpoint: origin },
@@ -49,6 +50,25 @@ export async function GET(): Promise<Response> {
         name: "a2a",
         endpoint: `${origin}/.well-known/agent-card.json`,
         version: "0.3.0",
+      },
+      // OASF service drives the Skills/Domains shown on agent explorers
+      // (e.g. 8004scan reads oasf.skills / oasf.domains for the detail page).
+      {
+        name: "OASF",
+        endpoint: "https://github.com/agntcy/oasf/",
+        version: "v0.8.0",
+        skills: [
+          "tool_interaction/automation/workflow_automation",
+          "tool_interaction/api_calling/rest_api",
+          "natural_language_processing/analytical_and_logical_reasoning/problem_solving",
+          "security/access_control/policy_enforcement",
+        ],
+        domains: [
+          "technology/blockchain/cryptocurrency",
+          "technology/blockchain/smart_contracts",
+          "finance_and_business/finance",
+          "finance_and_business/payments",
+        ],
       },
       { name: "agentWallet", endpoint: `${CELO_MAINNET_NETWORK}:${wallet}` },
     ],
