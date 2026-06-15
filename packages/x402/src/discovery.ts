@@ -1,7 +1,5 @@
 import { WardenError } from "@warden/core";
-import { access, readFile } from "node:fs/promises";
-import { dirname, join, parse } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
 import catalogIndex from "../catalog/index.json" with { type: "json" };
 
 export interface PayCatalogProvider {
@@ -122,58 +120,15 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 
-async function findLocalCatalogRoot() {
-  const workspaceCatalog = await findWorkspaceCatalogRoot(process.cwd());
-  if (workspaceCatalog) return workspaceCatalog;
-
-  const candidates = [
-    join(dirname(fileURLToPath(import.meta.url)), "../catalog"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      await access(join(candidate, "index.json"));
-      return candidate;
-    } catch {
-      // Try the next likely workspace/package location.
-    }
-  }
-
-  return undefined;
-}
-
-async function findWorkspaceCatalogRoot(start: string) {
-  let current = start;
-  const root = parse(start).root;
-
-  while (true) {
-    const candidate = join(current, "packages/x402/catalog");
-    try {
-      await access(join(candidate, "index.json"));
-      return candidate;
-    } catch {
-      // Keep walking toward the workspace root.
-    }
-
-    if (current === root) return undefined;
-    current = dirname(current);
-  }
-}
-
 async function readLocalProvider(fqn: string) {
   const service = (catalogIndex as LocalCatalogIndex).services?.find(
     (entry) => entry.fqn === fqn,
   );
   if (!service?.providerFile) return undefined;
 
-  const catalogRoot = await findLocalCatalogRoot();
-  const providerPath = catalogRoot
-    ? join(catalogRoot, service.providerFile)
-    : undefined;
-
   try {
     const contents = await readFile(
-      providerPath ?? new URL(`../catalog/${service.providerFile}`, import.meta.url),
+      new URL(`../catalog/${service.providerFile}`, import.meta.url),
       "utf8",
     );
     return asRecord(JSON.parse(contents));
@@ -181,7 +136,6 @@ async function readLocalProvider(fqn: string) {
     throw new WardenError("internal", "Could not read pay.sh catalog provider", {
       fqn,
       providerFile: service.providerFile,
-      resolvedPath: providerPath,
       cause: (err as Error).message,
     });
   }

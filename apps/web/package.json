@@ -11,10 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ai-sdk/mcp": "^1.0.41",
-    "@ai-sdk/openai": "^3.0.63",
-    "@privy-io/react-auth": "^3.23.1",
-    "@privy-io/server-auth": "^1.32.5",
+    "@ai-sdk/mcp": "^1.0.51",
+    "@ai-sdk/openai": "^3.0.71",
+    "@privy-io/node": "0.21.0",
+    "@privy-io/react-auth": "^3.30.0",
     "@warden/core": "workspace:*",
     "@warden/db": "workspace:*",
     "@warden/policy": "workspace:*",
@@ -22,19 +22,19 @@
     "@warden/wallet": "workspace:*",
     "@warden/x402": "workspace:*",
     "@warden/x402-sdk": "workspace:*",
-    "ai": "^6.0.177",
+    "ai": "^6.0.205",
     "drizzle-orm": "^0.45.2",
-    "next": "16.2.6",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.0",
-    "@types/node": "^25.6.2",
-    "@types/react": "19.2.14",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^25.9.3",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "tailwindcss": "^4.3.0",
+    "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3"
   }
 }
