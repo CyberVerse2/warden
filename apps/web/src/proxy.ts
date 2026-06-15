@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
   "/api/agent-chat",
   // MCP endpoint authenticates via Bearer token, not Privy cookie.
   "/api/mcp",
+  // Hosted x402 SDK endpoints must be reachable by external payers before auth.
+  "/api/x402",
 ];
 
 export function proxy(req: NextRequest) {
