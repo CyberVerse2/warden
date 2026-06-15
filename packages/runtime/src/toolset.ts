@@ -1,6 +1,7 @@
 import {
   CELO_MAINNET_NETWORK,
   CELO_SEPOLIA_NETWORK,
+  blockscoutTxUrl,
   newId,
   WardenError,
 } from "@warden/core";
@@ -1169,7 +1170,10 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
                 isNull(agentTokens.revokedAt),
               ),
             );
-          return ok(rows);
+          return ok(rows.map((row) => ({
+            ...row,
+            explorerUrl: blockscoutTxUrl(row.network ?? "", row.txSignature ?? undefined),
+          })));
         } catch (e) {
           return err(e);
         }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { blockscoutTxUrl } from "@warden/core/explorer";
 import { ResponseArtifact } from "~/components/response-artifact";
 import { StatusGlyph } from "~/components/status-glyph";
 import { fmtNetwork, fmtRelative, fmtTime, fmtUsd, shortKey } from "~/lib/format";
@@ -96,6 +97,8 @@ export function ReceiptsLedger({ receipts }: { receipts: ReceiptRow[] }) {
 }
 
 function ReceiptInspector({ receipt }: { receipt: ReceiptRow }) {
+  const txUrl = blockscoutTxUrl(receipt.network, receipt.txSignature);
+
   return (
     <div className="motion-enter sticky top-4 space-y-4">
       <div className="motion-panel border border-hairline-strong bg-bg-base p-4">
@@ -124,6 +127,16 @@ function ReceiptInspector({ receipt }: { receipt: ReceiptRow }) {
           {receipt.txSignature ? (
             <DetailLine label="Tx">
               <span className="mono break-all">{receipt.txSignature}</span>
+              {txUrl ? (
+                <a
+                  href={txUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 block text-[11px] uppercase tracking-[0.12em] text-accent hover:text-accent-strong"
+                >
+                  View on Blockscout
+                </a>
+              ) : null}
             </DetailLine>
           ) : null}
           <DetailLine label="Created">{new Date(receipt.createdAt).toISOString()}</DetailLine>
