@@ -126,6 +126,16 @@ describe("provider operations", () => {
         to: "user@example.com",
         subject: "Paid email",
         text: "hello",
+        attachments: [
+          {
+            filename: "voice-note.mp3",
+            content: "AQID",
+          },
+          {
+            filename: "image.png",
+            path: "https://example.com/generated.png",
+          },
+        ],
       },
       {
         operationId: operation!.id,
@@ -146,6 +156,16 @@ describe("provider operations", () => {
       to: "user@example.com",
       subject: "Paid email",
       text: "hello",
+      attachments: [
+        {
+          filename: "voice-note.mp3",
+          content: "AQID",
+        },
+        {
+          filename: "image.png",
+          path: "https://example.com/generated.png",
+        },
+      ],
     });
   });
 });

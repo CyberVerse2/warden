@@ -488,7 +488,7 @@ export async function POST(
               system: AI_SDK_AGENT_SYSTEM_PROMPT,
               prompt,
               tools: guardedTools,
-              stopWhen: stepCountIs(14),
+              stopWhen: stepCountIs(40),
               providerOptions: {
                 openai: {
                   store: false,
