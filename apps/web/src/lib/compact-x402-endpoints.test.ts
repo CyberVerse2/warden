@@ -67,6 +67,11 @@ describe("compactX402EndpointResult", () => {
             summary: "Generate an image through fal.",
             requiredBodyFields: ["prompt"],
             optionalBodyFields: ["imageSize", "model"],
+            bodyFieldDetails: [
+              "prompt required type=string",
+              "imageSize optional type=string",
+              "model optional type=string",
+            ],
             requestHint: "Requires body fields: prompt",
             price: "$0.01",
             paymentRequired: true,
@@ -223,6 +228,47 @@ describe("compactX402EndpointResult", () => {
             optionalBodyFields: ["max_results", "search_language_filter"],
             requestHint: "Requires body fields: query",
             responseKind: "object",
+          },
+        ],
+      },
+    });
+  });
+
+  it("preserves compact body field types and enum values", () => {
+    const result = compactX402EndpointResult({
+      ok: true,
+      data: {
+        skill: { fqn: "search.web", title: "search.web" },
+        endpoints: [
+          {
+            method: "POST",
+            path: "/search/web",
+            url: "https://warden.example/api/x402/search/web",
+            summary: "Search the Web",
+            requestSchema: {
+              type: "object",
+              required: ["query"],
+              properties: {
+                query: { type: "string" },
+                type: {
+                  type: "string",
+                  enum: ["instant", "fast", "auto", "deep-lite", "deep", "deep-reasoning"],
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result).toMatchObject({
+      data: {
+        endpoints: [
+          {
+            bodyFieldDetails: [
+              "query required type=string",
+              "type optional type=string enum=instant|fast|auto|deep-lite|deep|deep-reasoning",
+            ],
           },
         ],
       },

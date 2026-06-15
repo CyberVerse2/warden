@@ -7,6 +7,7 @@ interface CompactEndpoint {
   parameters?: string[];
   requiredBodyFields: string[];
   optionalBodyFields: string[];
+  bodyFieldDetails?: string[];
   requestHint?: string;
   price?: string;
   paymentRequired?: boolean;
@@ -97,6 +98,27 @@ function schemaProperties(schema: unknown) {
   return properties ? Object.keys(properties) : [];
 }
 
+function compactBodyFieldDetails(schema: unknown) {
+  const record = isRecord(schema) ? schema : undefined;
+  const properties = isRecord(record?.properties) ? record.properties : undefined;
+  const required = new Set(stringArray(record?.required));
+  if (!properties) return [];
+
+  return Object.entries(properties)
+    .map(([name, value]) => {
+      const field = isRecord(value) ? value : undefined;
+      const type = stringField(field, "type");
+      const enumValues = stringArray(field?.enum);
+      return [
+        name,
+        required.has(name) ? "required" : "optional",
+        type ? `type=${type}` : undefined,
+        enumValues.length > 0 ? `enum=${enumValues.join("|")}` : undefined,
+      ].filter(Boolean).join(" ");
+    })
+    .filter(Boolean);
+}
+
 function parameterNames(parameters: unknown) {
   if (!Array.isArray(parameters)) return [];
   return parameters
@@ -151,6 +173,7 @@ function compactEndpoint(endpoint: unknown, root: unknown): CompactEndpoint | un
   const optionalBodyFields = schemaProperties(requestSchema).filter(
     (field) => !requiredBodyFields.includes(field),
   );
+  const bodyFieldDetails = compactBodyFieldDetails(requestSchema);
 
   return {
     ...(stringField(endpoint, "operationId")
@@ -167,6 +190,7 @@ function compactEndpoint(endpoint: unknown, root: unknown): CompactEndpoint | un
       : {}),
     requiredBodyFields,
     optionalBodyFields,
+    ...(bodyFieldDetails.length > 0 ? { bodyFieldDetails } : {}),
     ...(requestHint(endpoint, requestSchema) ? { requestHint: requestHint(endpoint, requestSchema) } : {}),
     ...(endpointPrice(endpoint) ? { price: endpointPrice(endpoint) } : {}),
     ...(endpointPaymentRequired(endpoint) !== undefined
