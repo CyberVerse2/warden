@@ -614,6 +614,21 @@ export function quoteData(value: unknown) {
 }
 
 function findQuoteData(value: unknown): Record<string, unknown> | undefined {
+  // Some MCP clients serialize object-valued arguments whose JSON schema is
+  // `unknown`/empty into JSON strings before sending them. Recover the object
+  // so a forwarded quote survives that round-trip.
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return findQuoteData(JSON.parse(trimmed));
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  }
+
   const record = asRecord(value);
   if (!record) return undefined;
   if (record.kind === "x402_challenge") return record;

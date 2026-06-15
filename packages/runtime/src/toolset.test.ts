@@ -170,5 +170,9 @@ describe("createWardenToolset", () => {
     expect(quoteData(quote)).toBe(quote);
     expect(quoteData({ ok: true, data: quote })).toBe(quote);
     expect(quoteData({ result: { ok: true, data: quote } })).toBe(quote);
+
+    // Some MCP clients stringify object args with an unknown JSON schema.
+    expect(quoteData(JSON.stringify(quote))).toEqual(quote);
+    expect(quoteData(JSON.stringify({ ok: true, data: quote }))).toEqual(quote);
   });
 });
