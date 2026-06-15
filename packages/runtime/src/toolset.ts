@@ -552,19 +552,30 @@ function parsedChallengeFromQuote(value: unknown): ParsedChallenge {
   return parsed as ParsedChallenge;
 }
 
-function quoteData(value: unknown) {
-  const record = asRecord(value);
-  if (!record) {
-    throw new WardenError("challenge_invalid", "warden_analyze requires a warden_quote result");
-  }
-  const data = record.kind ? record : asRecord(record.data);
+export function quoteData(value: unknown) {
+  const data = findQuoteData(value);
   if (!data || data.kind !== "x402_challenge") {
     throw new WardenError(
       "challenge_invalid",
-      "warden_analyze requires an x402_challenge quote from warden_quote",
+      "quote must be an x402_challenge returned by warden_quote",
     );
   }
   return data;
+}
+
+function findQuoteData(value: unknown): Record<string, unknown> | undefined {
+  const record = asRecord(value);
+  if (!record) return undefined;
+  if (record.kind === "x402_challenge") return record;
+
+  const data = asRecord(record.data);
+  if (data?.kind === "x402_challenge") return data;
+
+  const result = asRecord(record.result);
+  const resultData = asRecord(result?.data);
+  if (resultData?.kind === "x402_challenge") return resultData;
+
+  return undefined;
 }
 
 function canonicalBody(value: unknown) {

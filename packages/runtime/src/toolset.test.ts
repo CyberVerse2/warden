@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createWardenToolset } from "./toolset";
+import { createWardenToolset, quoteData } from "./toolset";
 import type { ToolsetDeps } from "./toolset";
 
 describe("createWardenToolset", () => {
@@ -99,5 +99,40 @@ describe("createWardenToolset", () => {
         },
       ],
     });
+  });
+
+  it("normalizes x402 quote envelopes accepted by warden_fetch", () => {
+    const quote = {
+      kind: "x402_challenge",
+      responseStatus: 402,
+      challenge: {
+        requirement: {
+          network: "eip155:11142220",
+          token: "USDC",
+          recipient: "0x010F980f735Af5b2cbd90CA500E94733264e6b71",
+          amountRaw: "60000",
+          amountUsd: 0.06,
+          nonce: "abc",
+        },
+        raw: {
+          scheme: "exact",
+          network: "eip155:11142220",
+          asset: "0x01C5C0122039549AD1493B8220cABEdD739BC44E",
+          payTo: "0x010F980f735Af5b2cbd90CA500E94733264e6b71",
+          amount: "60000",
+        },
+        x402Version: 2,
+        hash: "abc",
+      },
+      request: {
+        url: "https://warden.example/api/x402/media/generate-image",
+        method: "POST",
+        body: { prompt: "A girl dancing" },
+      },
+    };
+
+    expect(quoteData(quote)).toBe(quote);
+    expect(quoteData({ ok: true, data: quote })).toBe(quote);
+    expect(quoteData({ result: { ok: true, data: quote } })).toBe(quote);
   });
 });
