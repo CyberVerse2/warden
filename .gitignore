@@ -16,3 +16,4 @@ warden.db-journal
 *.sqlite
 *.sqlite-*
 HACKATHON_DEMO_SCRIPT.md
+.vercel
