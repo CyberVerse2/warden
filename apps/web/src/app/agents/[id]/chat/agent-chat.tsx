@@ -625,9 +625,7 @@ function renderableResults(calls?: ChatMessage["calls"], text?: string): Rendera
     }
     if (
       call.isError ||
-      (call.tool !== "warden_fetch" &&
-        call.tool !== "warden_pay" &&
-        call.tool !== "warden_poll")
+      (call.tool !== "warden_fetch" && call.tool !== "warden_pay")
     ) {
       return [];
     }

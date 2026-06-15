@@ -19,6 +19,7 @@
     "@warden/policy": "workspace:*",
     "@warden/wallet": "workspace:*",
     "@warden/x402": "workspace:*",
+    "@warden/x402-sdk": "workspace:*",
     "ai": "^6.0.205",
     "zod": "^4.4.3"
   },

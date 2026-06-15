@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { CELO_MAINNET_NETWORK, CELO_SEPOLIA_NETWORK } from "@warden/core";
-import { discoverPayServices } from "@warden/x402/discovery";
 import { Shell } from "~/components/shell";
 import { Section } from "~/components/section";
 import { Meter } from "~/components/meter";
@@ -14,6 +13,7 @@ import { CopyButton } from "~/components/copy-button";
 import { fmtNetwork, fmtRelative, fmtUsd, shortKey } from "~/lib/format";
 import { getOrigin } from "~/lib/origin";
 import { getAgent, getApprovals, getReceipts } from "~/lib/queries";
+import { configuredOperations } from "~/lib/x402-sdk";
 import {
   revokeAgent,
   rotateAgentToken,
@@ -29,18 +29,27 @@ export const dynamic = "force-dynamic";
 
 export default async function AgentDetailPage({ params }: Props) {
   const { id } = await params;
-  const [agent, allReceipts, pending, origin, payServices] = await Promise.all([
+  const [agent, allReceipts, pending, origin] = await Promise.all([
     getAgent(id),
     getReceipts({ agentId: id, limit: 100 }),
     getApprovals({ agentId: id }),
     getOrigin(),
-    discoverPayServices({ query: "x402", limit: 24 }).catch(() => []),
   ]);
   if (!agent) return notFound();
   const pct = agent.dailyCapUsd === 0 ? 0 : agent.spentTodayUsd / agent.dailyCapUsd;
   const mcpUrl = `${origin}/api/mcp/${agent.id}`;
+  const sdkOperations = configuredOperations().map((operation) => {
+    const price = Number(operation.price.amountUsd);
+    return {
+      fqn: operation.id,
+      title: operation.id,
+      serviceUrl: `${origin}/api/x402${operation.path}`,
+      minPriceUsd: Number.isFinite(price) ? price : 0,
+      maxPriceUsd: Number.isFinite(price) ? price : 0,
+    };
+  });
   const providerHosts = new Set(
-    payServices.map((service) => new URL(service.serviceUrl).host),
+    sdkOperations.map((operation) => new URL(operation.serviceUrl).host),
   );
   const customAllowedHosts = agent.policy.allowedHosts.filter(
     (host) => !providerHosts.has(host),
@@ -399,14 +408,14 @@ export default async function AgentDetailPage({ params }: Props) {
                   provider allowlist.
                 </p>
                 <input type="hidden" name="policyMode" value="advanced" />
-                <Field label="Allowed x402 providers">
-                  {payServices.length === 0 ? (
+                <Field label="Allowed Warden x402 API">
+                  {sdkOperations.length === 0 ? (
                     <p className="text-t3 text-[12.5px] leading-relaxed">
-                      Provider catalog unavailable. Use custom hosts below.
+                      No Warden SDK operations are configured. Use custom hosts below.
                     </p>
                   ) : (
                     <div className="max-h-[220px] overflow-auto border border-hairline-strong divide-y divide-hairline">
-                      {payServices.map((service) => {
+                      {sdkOperations.map((service) => {
                         const host = new URL(service.serviceUrl).host;
                         return (
                           <label

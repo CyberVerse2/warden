@@ -58,19 +58,6 @@ function urlHost(url: string): string {
   return new URL(url).host;
 }
 
-function isZeroValueFollowupRequest(request: HttpRequest) {
-  if (request.method.toUpperCase() !== "GET") return false;
-  try {
-    const url = new URL(request.url);
-    return (
-      url.hostname === "fal.x402.paysponge.com" &&
-      /\/requests\/[^/]+(?:\/status)?\/?$/.test(url.pathname)
-    );
-  } catch {
-    return false;
-  }
-}
-
 export interface Runtime {
   executePaidRequest(input: ExecutePaidRequestInput): Promise<ExecuteResult>;
   dryRun(input: ExecutePaidRequestInput): Promise<PolicyDecision | { kind: "no_payment_required" }>;
@@ -154,10 +141,7 @@ export function createRuntime(deps: RuntimeDeps): Runtime {
       allowedNetworks: policy.allowedNetworks,
       allowedTokens: policy.allowedTokens,
     }, initial.headers);
-    if (
-      challenge.requirement.amountUsd === 0 &&
-      !isZeroValueFollowupRequest(input.request)
-    ) {
+    if (challenge.requirement.amountUsd === 0) {
       const receiptId = newId.receipt();
       await db.insert(receipts).values({
         id: receiptId,

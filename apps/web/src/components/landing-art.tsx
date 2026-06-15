@@ -80,7 +80,7 @@ export function ControlPlaneDiagram() {
         <Node x={350} y={90} label="WALLET" sub="warden-signer" tone="t1">
           <WalletGlyph />
         </Node>
-        <Node x={490} y={90} label="X402" sub="pay.sh sdk" tone="signal">
+        <Node x={490} y={90} label="X402" sub="warden sdk" tone="signal">
           <X402Glyph />
         </Node>
         <Node x={630} y={90} label="RECEIPT" sub="append-only" tone="t1">

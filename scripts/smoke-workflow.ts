@@ -2,7 +2,7 @@ import { loadServerEnv, requireEnv } from "@warden/core";
 import { agents, and, createDb, desc, eq, receipts, wallets } from "@warden/db";
 import { createRuntime, resolveAgentByToken } from "@warden/runtime";
 import { createWalletService } from "@warden/wallet";
-import { createX402EvmProofBuilder, discoverPayServices } from "@warden/x402";
+import { createX402EvmProofBuilder } from "@warden/x402";
 
 loadServerEnv();
 
@@ -110,18 +110,37 @@ async function findFundedAgent(
 
 async function resolveSmokeUrl() {
   const explicit = arg("--url") ?? process.env.WARDEN_SMOKE_X402_URL;
-  if (explicit) return { url: explicit, source: "env" };
+  if (explicit) return { url: explicit, source: "env", method: undefined, body: undefined };
 
-  const query = process.env.WARDEN_SMOKE_DISCOVERY_QUERY ?? "x402 celo";
-  const services = await discoverPayServices({ query, limit: 10 });
-  const service =
-    services.find((candidate) => candidate.minPriceUsd > 0) ?? services[0];
-  if (!service) {
+  const origin = required(
+    "WARDEN_PUBLIC_URL",
+    "needed to discover the hosted Warden x402 SDK manifest",
+  ).replace(/\/$/, "");
+  const operationId = process.env.WARDEN_SMOKE_OPERATION_ID ?? "ai.generateText";
+  const manifestResponse = await fetch(`${origin}/api/x402/manifest`);
+  if (!manifestResponse.ok) {
     throw new Error(
-      "WARDEN_SMOKE_X402_URL is required because pay.sh discovery returned no x402 services",
+      `Warden x402 SDK manifest request failed with ${manifestResponse.status}`,
     );
   }
-  return { url: service.serviceUrl, source: `pay.sh:${service.fqn}` };
+  const manifest = (await manifestResponse.json()) as {
+    operations?: Array<{ id?: string; method?: string; path?: string }>;
+  };
+  const operation = manifest.operations?.find(
+    (candidate) => candidate.id === operationId,
+  );
+  if (!operation?.path) {
+    throw new Error(`Warden x402 SDK operation not found: ${operationId}`);
+  }
+  return {
+    url: `${origin}/api/x402${operation.path}`,
+    source: `warden-sdk:${operationId}`,
+    method: operation.method,
+    body:
+      operationId === "ai.generateText"
+        ? { prompt: "Reply with exactly: Warden smoke ok" }
+        : undefined,
+  };
 }
 
 async function main() {
@@ -135,7 +154,7 @@ async function main() {
 
   const smokeUrl = await resolveSmokeUrl();
 
-  const method = process.env.WARDEN_SMOKE_METHOD ?? "GET";
+  const method = process.env.WARDEN_SMOKE_METHOD ?? smokeUrl.method ?? "GET";
   const db = createDb(databaseUrl);
   const walletService = createWalletService({ db, rpcUrl });
   const proofBuilder = createX402EvmProofBuilder(walletService, {
@@ -166,6 +185,8 @@ async function main() {
       method,
       ...(process.env.WARDEN_SMOKE_BODY
         ? { body: JSON.parse(process.env.WARDEN_SMOKE_BODY) as unknown }
+        : smokeUrl.body !== undefined
+          ? { body: smokeUrl.body }
         : {}),
     },
   });

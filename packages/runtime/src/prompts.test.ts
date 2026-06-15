@@ -14,7 +14,7 @@ describe("runtime production prompts", () => {
   it("keeps the skill ranker prompt semantic and catalog-grounded", () => {
     expect(SKILL_SEARCH_RANKER_SYSTEM_PROMPT).toContain("semantic ranking");
     expect(SKILL_SEARCH_RANKER_SYSTEM_PROMPT).toContain("direct capability fit");
-    expect(SKILL_SEARCH_RANKER_SYSTEM_PROMPT).toContain("Use only FQNs from the provided catalog");
+    expect(SKILL_SEARCH_RANKER_SYSTEM_PROMPT).toContain("Use only FQNs from the provided operation catalog");
     expect(SKILL_SEARCH_RANKER_SYSTEM_PROMPT).toContain("empty matches array");
     expect(SKILL_SEARCH_RANKER_SYSTEM_PROMPT).toContain("copied exactly from the catalog");
   });

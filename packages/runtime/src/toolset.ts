@@ -15,10 +15,16 @@ import { createRuntime, type Runtime } from "./pipeline";
 import { getDailySpend } from "./spend";
 import { evaluate } from "@warden/policy";
 import {
-  describePayService,
-  discoverPayServices,
-  type PayCatalogProvider,
-} from "@warden/x402/discovery";
+  createAlchemyOperations,
+  createExaOperations,
+  createFalOperations,
+  createFishAudioOperations,
+  createOpenAiOperations,
+  createResendOperations,
+  createTavilyOperations,
+  type OperationManifestEntry,
+  type PaidOperation,
+} from "@warden/x402-sdk";
 import {
   parseChallenge,
   type ParsedChallenge,
@@ -54,12 +60,6 @@ export const ReceiptsQuerySchema = z.object({
 export const DiscoverPayServicesSchema = z.object({
   query: z.string().optional(),
   limit: z.number().int().min(1).optional(),
-});
-
-export const WardenPollSchema = z.object({
-  url: z.string().url(),
-  provider: z.literal("paysponge/fal").default("paysponge/fal").optional(),
-  maxAttempts: z.number().int().min(1).max(30).default(20).optional(),
 });
 
 const AnalyzeEndpointSchema = z.object({
@@ -124,22 +124,22 @@ const SkillSearchRankSchema = z.object({
 });
 
 export const SKILL_SEARCH_RANKER_SYSTEM_PROMPT = [
-  "You are Warden's semantic ranker for x402/pay.sh API skills.",
+  "You are Warden's semantic ranker for hosted Celo x402 SDK operations.",
   "",
   "Task:",
-  "Rank catalog skills by how well they can help an agent complete the operator task. This is an AI semantic ranking step; do not use keyword overlap, generic category matching, or hardcoded provider preferences as the primary signal.",
+  "Rank Warden SDK operations by how well they can help an agent complete the operator task. This is an AI semantic ranking step; do not use keyword overlap, generic category matching, or hardcoded provider preferences as the primary signal.",
   "",
   "Ranking criteria:",
   "- Prefer direct capability fit over broad category similarity.",
-  "- Prefer skills whose useCase, description, title, and category describe the actual requested task.",
-  "- Prefer executable endpoint fit when endpointCount and metadata suggest the skill can perform the task.",
+  "- Prefer operations whose description, provider, path, and category describe the actual requested task.",
+  "- Prefer executable endpoint fit when operation metadata suggests the operation can perform the task.",
   "- Consider pricing and metering only as secondary tie-breakers, not as relevance proof.",
-  "- Exclude unrelated skills even when they share generic words with the task.",
+  "- Exclude unrelated operations even when they share generic words with the task.",
   "",
   "Grounding rules:",
-  "- Use only FQNs from the provided catalog.",
-  "- Do not invent skills, endpoints, providers, pricing, or capabilities.",
-  "- If no catalog skill could reasonably help, return an empty matches array.",
+  "- Use only FQNs from the provided operation catalog.",
+  "- Do not invent operations, endpoints, providers, pricing, or capabilities.",
+  "- If no configured SDK operation could reasonably help, return an empty matches array.",
   "",
   "Output rules:",
   "- Return only the structured ranking object.",
@@ -147,7 +147,7 @@ export const SKILL_SEARCH_RANKER_SYSTEM_PROMPT = [
   "- Each reason must be short and explain the semantic fit to the task.",
   "",
   "Self-check before responding:",
-  "- Would the top skill plausibly be the first one inspected for this exact task?",
+  "- Would the top operation plausibly be the first one inspected for this exact task?",
   "- Did you remove generic or merely adjacent matches?",
   "- Are all FQNs copied exactly from the catalog?",
 ].join("\n");
@@ -181,6 +181,22 @@ export interface ToolResult {
 
 export type WardenToolDefinition = ToolDefinition<unknown, ToolResult>;
 
+interface WardenOperationCatalogEntry {
+  fqn: string;
+  title: string;
+  description: string;
+  useCase: string;
+  category: string;
+  serviceUrl: string;
+  endpointCount: number;
+  hasMetering: boolean;
+  hasFreeTier: boolean;
+  minPriceUsd: number;
+  maxPriceUsd: number;
+  provider: PaidOperation["provider"];
+  operation: PaidOperation;
+}
+
 function skillSearchModel() {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -202,7 +218,7 @@ async function rankSkillsWithAi({
   skills,
 }: {
   query: string;
-  skills: PayCatalogProvider[];
+  skills: WardenOperationCatalogEntry[];
 }) {
   const { object } = await generateObject({
     model: skillSearchModel(),
@@ -217,6 +233,8 @@ async function rankSkillsWithAi({
         description: skill.description,
         useCase: skill.useCase ?? "",
         category: skill.category,
+        provider: skill.provider,
+        path: skill.operation.path,
         endpointCount: skill.endpointCount,
         hasMetering: skill.hasMetering,
         hasFreeTier: skill.hasFreeTier,
@@ -235,7 +253,134 @@ async function rankSkillsWithAi({
   const byFqn = new Map(skills.map((skill) => [skill.fqn, skill]));
   return object.matches
     .map((match) => byFqn.get(match.fqn))
-    .filter((skill): skill is PayCatalogProvider => Boolean(skill));
+    .filter((skill): skill is WardenOperationCatalogEntry => Boolean(skill));
+}
+
+function configuredSdkOperations(): PaidOperation[] {
+  const operations: PaidOperation[] = [];
+
+  if (process.env.OPENAI_API_KEY) {
+    operations.push(...createOpenAiOperations({ apiKey: process.env.OPENAI_API_KEY }));
+  }
+
+  const falKey = process.env.FAL_KEY ?? process.env.FAL_API_KEY;
+  if (falKey) {
+    operations.push(...createFalOperations({ apiKey: falKey }));
+  }
+
+  const fishKey = process.env.FISH_API_KEY ?? process.env.FISH_AUDIO_API_KEY;
+  if (fishKey) {
+    operations.push(...createFishAudioOperations({ apiKey: fishKey }));
+  }
+
+  if (process.env.EXA_API_KEY) {
+    operations.push(...createExaOperations({ apiKey: process.env.EXA_API_KEY }));
+  } else if (process.env.TAVILY_API_KEY) {
+    operations.push(...createTavilyOperations({ apiKey: process.env.TAVILY_API_KEY }));
+  }
+
+  if (process.env.ALCHEMY_API_KEY) {
+    operations.push(...createAlchemyOperations({ apiKey: process.env.ALCHEMY_API_KEY }));
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    operations.push(...createResendOperations({ apiKey: process.env.RESEND_API_KEY }));
+  }
+
+  return operations;
+}
+
+function publicOrigin() {
+  const configured = process.env.WARDEN_PUBLIC_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl) return `https://${vercelUrl}`.replace(/\/$/, "");
+  return "http://localhost:3000";
+}
+
+function sdkOperationUrl(operation: Pick<OperationManifestEntry, "path">) {
+  return `${publicOrigin()}/api/x402${operation.path}`;
+}
+
+function sdkCatalogEntry(operation: PaidOperation): WardenOperationCatalogEntry {
+  const amount = Number(operation.price.amountUsd);
+  const price = Number.isFinite(amount) ? amount : 0;
+  return {
+    fqn: operation.id,
+    title: operation.id,
+    description: operation.description,
+    useCase: operation.description,
+    category: operation.category,
+    serviceUrl: sdkOperationUrl(operation),
+    endpointCount: 1,
+    hasMetering: true,
+    hasFreeTier: false,
+    minPriceUsd: price,
+    maxPriceUsd: price,
+    provider: operation.provider,
+    operation,
+  };
+}
+
+function publicSdkCatalogEntry({
+  operation: _operation,
+  ...entry
+}: WardenOperationCatalogEntry) {
+  return entry;
+}
+
+function sdkOperationCatalog({ limit }: { limit?: number } = {}) {
+  const operations = configuredSdkOperations();
+  if (operations.length === 0) {
+    throw new WardenError(
+      "internal",
+      "No Warden x402 SDK provider credentials are configured",
+    );
+  }
+  const entries = operations
+    .map(sdkCatalogEntry)
+    .sort((a, b) => a.title.localeCompare(b.title));
+  return limit === undefined ? entries : entries.slice(0, limit);
+}
+
+function describeSdkOperation(fqn: string) {
+  const skill = sdkOperationCatalog().find((entry) => entry.fqn === fqn);
+  if (!skill) {
+    throw new WardenError("internal", `Warden x402 operation not found: ${fqn}`);
+  }
+
+  const operation = skill.operation;
+  const endpoint = {
+    method: operation.method,
+    path: operation.path,
+    summary: operation.description,
+    url: sdkOperationUrl(operation),
+    operationId: operation.id,
+    x402: {
+      "x-payment-required": true,
+      "x-payment-info": {
+        price: `$${operation.price.amountUsd}`,
+        provider: operation.provider,
+        category: operation.category,
+      },
+    },
+  };
+
+  return {
+    fqn: skill.fqn,
+    title: skill.title,
+    description: skill.description,
+    useCase: skill.useCase,
+    category: skill.category,
+    serviceUrl: skill.serviceUrl,
+    endpointCount: 1,
+    hasMetering: true,
+    hasFreeTier: false,
+    minPriceUsd: skill.minPriceUsd,
+    maxPriceUsd: skill.maxPriceUsd,
+    pageUrl: `${publicOrigin()}/api/x402/manifest`,
+    operations: [endpoint],
+  };
 }
 
 async function searchPaySkills({
@@ -246,11 +391,13 @@ async function searchPaySkills({
   limit?: number;
 }) {
   if (!query?.trim()) {
-    return discoverPayServices(limit !== undefined ? { limit } : {});
+    return sdkOperationCatalog(limit !== undefined ? { limit } : {}).map(
+      publicSdkCatalogEntry,
+    );
   }
 
   const resultLimit = limit ?? 2;
-  const allSkills = await discoverPayServices();
+  const allSkills = sdkOperationCatalog();
   const ranked = await rankSkillsWithAi({
     query: query.trim(),
     skills: allSkills,
@@ -258,43 +405,11 @@ async function searchPaySkills({
   if (ranked.length === 0) {
     throw new WardenError(
       "internal",
-      "AI skill ranking found no relevant x402 skills",
+      "AI skill ranking found no relevant Warden x402 SDK operations",
       { query },
     );
   }
-  return ranked.slice(0, resultLimit);
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function normalizeFalPollUrl(url: string) {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new WardenError("internal", `warden_poll requires a valid URL: ${url}`);
-  }
-  if (
-    parsed.origin === "https://queue.fal.run" &&
-    parsed.pathname.includes("/requests/")
-  ) {
-    parsed = new URL(`https://fal.x402.paysponge.com${parsed.pathname}`);
-  }
-  if (
-    parsed.origin !== "https://fal.x402.paysponge.com" ||
-    !parsed.pathname.includes("/requests/")
-  ) {
-    throw new WardenError(
-      "internal",
-      "warden_poll only supports paysponge/fal request result or status URLs",
-    );
-  }
-  if (parsed.pathname.endsWith("/status")) {
-    parsed.pathname = parsed.pathname.replace(/\/status$/, "");
-  }
-  return parsed.toString();
+  return ranked.slice(0, resultLimit).map(publicSdkCatalogEntry);
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -312,36 +427,6 @@ function responseBody(result: unknown) {
 function stringField(record: Record<string, unknown> | undefined, key: string) {
   const value = record?.[key];
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function finalFalResultUrl(body: unknown) {
-  const record = asRecord(body);
-  const status = stringField(record, "status")?.toUpperCase();
-  const responseUrl = stringField(record, "response_url") ?? stringField(record, "responseUrl");
-  return status === "COMPLETED" && responseUrl ? responseUrl : undefined;
-}
-
-function isQueuedFalBody(body: unknown) {
-  const record = asRecord(body);
-  const status = stringField(record, "status")?.toUpperCase();
-  return (
-    status === "IN_QUEUE" ||
-    status === "IN_PROGRESS" ||
-    status === "PROCESSING" ||
-    status === "RUNNING"
-  );
-}
-
-function hasFalMediaResult(body: unknown) {
-  const record = asRecord(body);
-  if (!record) return false;
-  return (
-    Array.isArray(record.images) ||
-    Array.isArray(record.video) ||
-    Array.isArray(record.videos) ||
-    Array.isArray(record.audio) ||
-    Array.isArray(record.audios)
-  );
 }
 
 function parsedChallengeFromQuote(value: unknown): ParsedChallenge {
@@ -573,7 +658,7 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
   async function getSkillEndpoints(raw: unknown) {
     try {
       const input = GetSkillEndpointsSchema.parse(raw);
-      const skill = await describePayService({ fqn: input.fqn });
+      const skill = describeSdkOperation(input.fqn);
       return ok({ skill, endpoints: skill.operations });
     } catch (e) {
       return err(e);
@@ -732,7 +817,7 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
                 : undefined,
           },
           provenance: {
-            source: input.selectedSkill ? "local_x402_catalog" : undefined,
+            source: input.selectedSkill ? "warden_x402_sdk" : undefined,
             serviceUrlMatches:
               input.selectedSkill?.serviceUrl !== undefined
                 ? request.url.startsWith(input.selectedSkill.serviceUrl)
@@ -821,69 +906,25 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
     }
   }
 
-  async function pollFalRequest(raw: unknown) {
-    try {
-      const input = WardenPollSchema.parse(raw);
-      const initialUrl = normalizeFalPollUrl(input.url);
-      const maxAttempts = input.maxAttempts ?? 20;
-      let currentUrl = initialUrl;
-      let attempts = 0;
-      let lastResult: unknown;
-
-      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-        attempts = attempt;
-        if (attempt > 1) await wait(1_500);
-        const result = await runtime.executePaidRequest({
-          agentToken,
-          request: {
-            url: currentUrl,
-            method: "GET",
-          },
-        });
-        lastResult = result;
-        if (asRecord(result)?.kind !== "ok") break;
-
-        const body = responseBody({ data: result });
-        const finalUrl = finalFalResultUrl(body);
-        if (finalUrl && finalUrl !== currentUrl) {
-          currentUrl = finalUrl;
-          continue;
-        }
-        if (hasFalMediaResult(body) || !isQueuedFalBody(body)) {
-          break;
-        }
-      }
-
-      return ok({
-        provider: "paysponge/fal",
-        attempts,
-        finalUrl: currentUrl,
-        result: lastResult,
-      });
-    } catch (e) {
-      return err(e);
-    }
-  }
-
   return [
     {
       name: "search_skills",
       description:
-        "AI-rank pay.sh skills for x402-payable API capabilities. Use this first to find the best skill for a user task. Returns the top 2 skills by default; pass limit only when the user explicitly asks for a different number.",
+        "AI-rank configured Warden Celo x402 SDK operations. Use this first to find the best paid operation for a user task. Returns the top 2 operations by default; pass limit only when the user explicitly asks for a different number.",
       inputSchema: DiscoverPayServicesSchema,
       handler: searchSkills,
     },
     {
       name: "get_skill_endpoints",
       description:
-        "Get callable endpoint metadata for a pay.sh skill by FQN. Use this after search_skills to inspect paths, methods, and operation summaries.",
+        "Get callable endpoint metadata for a Warden x402 SDK operation by FQN. Use this after search_skills to inspect paths, methods, prices, and operation summaries.",
       inputSchema: GetSkillEndpointsSchema,
       handler: getSkillEndpoints,
     },
     {
       name: "warden_discover",
       description:
-        "Search the pay.sh catalog for x402-ready services and return gateway URLs that can be passed to warden_fetch.",
+        "Search configured Warden Celo x402 SDK operations and return hosted /api/x402 URLs that can be passed to warden_fetch.",
       inputSchema: DiscoverPayServicesSchema,
       handler: discoverServices,
     },
@@ -914,13 +955,6 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
         "Force payment against the exact request returned by warden_quote (alias of warden_fetch). Requires the quote object from warden_quote.",
       inputSchema: WardenQuotedFetchSchema,
       handler: executeRequest,
-    },
-    {
-      name: "warden_poll",
-      description:
-        "Poll a paysponge/fal async request URL until the generated media result is available. Required after a fal image or video generation request returns a response_url, status_url, request_id, IN_QUEUE, IN_PROGRESS, PROCESSING, or RUNNING status; do not ask the operator before polling.",
-      inputSchema: WardenPollSchema,
-      handler: pollFalRequest,
     },
     {
       name: "warden_receipts",

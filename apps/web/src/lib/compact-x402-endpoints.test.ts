@@ -7,33 +7,33 @@ describe("compactX402EndpointResult", () => {
       ok: true,
       data: {
         skill: {
-          fqn: "paysponge/fal",
-          title: "fal.ai",
+          fqn: "media.generateImage",
+          title: "media.generateImage",
           description: "Generate images and videos.",
-          serviceUrl: "https://fal.x402.paysponge.com",
-          endpointCount: 30,
+          serviceUrl: "https://warden.example/api/x402/media/generate-image",
+          endpointCount: 1,
           operations: [{ noisy: true }],
         },
         endpoints: [
           {
             method: "POST",
-            path: "fal-ai/fast-sdxl",
-            url: "https://fal.x402.paysponge.com/fal-ai/fast-sdxl",
-            operationId: "submitFastSdxl",
-            summary: "Submit a Fast SDXL image generation request",
+            path: "/media/generate-image",
+            url: "https://warden.example/api/x402/media/generate-image",
+            operationId: "media.generateImage",
+            summary: "Generate an image through fal.",
             requestSchema: {
               type: "object",
               required: ["prompt"],
               properties: {
                 prompt: { type: "string" },
-                image_size: { type: "string" },
-                num_images: { type: "integer" },
+                imageSize: { type: "string" },
+                model: { type: "string" },
               },
             },
             responseSchema: {
               type: "object",
               properties: {
-                request_id: { type: "string" },
+                output: { type: "object" },
               },
             },
             x402: {
@@ -52,21 +52,21 @@ describe("compactX402EndpointResult", () => {
       ok: true,
       data: {
         skill: {
-          fqn: "paysponge/fal",
-          title: "fal.ai",
+          fqn: "media.generateImage",
+          title: "media.generateImage",
           description: "Generate images and videos.",
-          serviceUrl: "https://fal.x402.paysponge.com",
-          endpointCount: 30,
+          serviceUrl: "https://warden.example/api/x402/media/generate-image",
+          endpointCount: 1,
         },
         endpoints: [
           {
             method: "POST",
-            path: "fal-ai/fast-sdxl",
-            url: "https://fal.x402.paysponge.com/fal-ai/fast-sdxl",
-            operationId: "submitFastSdxl",
-            summary: "Submit a Fast SDXL image generation request",
+            path: "/media/generate-image",
+            url: "https://warden.example/api/x402/media/generate-image",
+            operationId: "media.generateImage",
+            summary: "Generate an image through fal.",
             requiredBodyFields: ["prompt"],
-            optionalBodyFields: ["image_size", "num_images"],
+            optionalBodyFields: ["imageSize", "model"],
             requestHint: "Requires body fields: prompt",
             price: "$0.01",
             paymentRequired: true,
@@ -88,15 +88,15 @@ describe("compactX402EndpointResult", () => {
       data: {
         endpoints: [],
         skill: {
-          fqn: "paysponge/fal",
-          title: "fal.ai",
+          fqn: "media.generateImage",
+          title: "media.generateImage",
           endpointCount: 1,
           operations: [
             {
               method: "POST",
-              path: "fal-ai/flux/dev",
-              url: "https://fal.x402.paysponge.com/fal-ai/flux/dev",
-              operationId: "submitFluxDev",
+              path: "/media/generate-image",
+              url: "https://warden.example/api/x402/media/generate-image",
+              operationId: "media.generateImage",
               requestSchema: {
                 type: "object",
                 required: ["prompt"],
@@ -114,16 +114,16 @@ describe("compactX402EndpointResult", () => {
       ok: true,
       data: {
         skill: {
-          fqn: "paysponge/fal",
-          title: "fal.ai",
+          fqn: "media.generateImage",
+          title: "media.generateImage",
           endpointCount: 1,
         },
         endpoints: [
           {
             method: "POST",
-            path: "fal-ai/flux/dev",
-            url: "https://fal.x402.paysponge.com/fal-ai/flux/dev",
-            operationId: "submitFluxDev",
+            path: "/media/generate-image",
+            url: "https://warden.example/api/x402/media/generate-image",
+            operationId: "media.generateImage",
             requiredBodyFields: ["prompt"],
             requestHint: "Requires body fields: prompt",
           },
@@ -136,12 +136,12 @@ describe("compactX402EndpointResult", () => {
     const result = compactX402EndpointResult({
       ok: true,
       data: {
-        skill: { fqn: "paysponge/perplexity", title: "Perplexity" },
+        skill: { fqn: "search.web", title: "search.web" },
         endpoints: [
           {
             method: "POST",
-            path: "search",
-            url: "https://pplx.x402.paysponge.com/search",
+            path: "/search/web",
+            url: "https://warden.example/api/x402/search/web",
             summary: "Search the Web",
             parameters: [
               { name: "query", in: "query", required: true },
@@ -168,12 +168,12 @@ describe("compactX402EndpointResult", () => {
     const result = compactX402EndpointResult({
       ok: true,
       data: {
-        skill: { fqn: "paysponge/perplexity", title: "Perplexity" },
+        skill: { fqn: "search.web", title: "search.web" },
         endpoints: [
           {
             method: "POST",
-            path: "search",
-            url: "https://pplx.x402.paysponge.com/search",
+            path: "/search/web",
+            url: "https://warden.example/api/x402/search/web",
             summary: "Search the Web",
             requestSchema: {
               $ref: "#/components/schemas/ApiSearchRequest",

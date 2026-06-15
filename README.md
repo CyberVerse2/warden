@@ -65,7 +65,6 @@ Current MCP tools include:
 - `warden_discover`
 - `warden_fetch`
 - `warden_pay`
-- `warden_poll`
 - `warden_policy_check`
 - `warden_receipts`
 - `warden_wallet_status`

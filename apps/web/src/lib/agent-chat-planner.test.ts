@@ -79,7 +79,7 @@ describe("agent chat planner contract", () => {
   it("rejects Warden control tools unless the selected skill is warden/control", () => {
     const plan = SkillPlanSchema.parse({
       phase: "execute",
-      skillFqn: "paysponge/fal",
+      skillFqn: "media.generateImage",
       selectedEndpoint: null,
       reasoning: "Wrong skill for a control tool.",
       calls: [
@@ -163,7 +163,7 @@ describe("agent chat planner contract", () => {
   it("rejects executable URLs with unresolved placeholders", () => {
     const plan = SkillPlanSchema.parse({
       phase: "execute",
-      skillFqn: "paysponge/fal",
+      skillFqn: "media.generateImage",
       selectedEndpoint: "https://example.com/requests/{request_id}",
       reasoning: "The URL was not made executable.",
       calls: [
@@ -187,7 +187,7 @@ describe("agent chat planner contract", () => {
       validateSkillPlan(plan, {
         classification: {
           phase: "execute",
-          skillFqn: "paysponge/fal",
+          skillFqn: "media.generateImage",
           intentKind: "external_execution",
           shouldExecute: true,
           confidence: 0.9,
@@ -214,7 +214,7 @@ describe("agent chat planner contract", () => {
         {
           tool: "search_skills",
           arguments: { query: "image generation" },
-          result: { ok: true, data: { skills: [{ fqn: "paysponge/fal" }] } },
+          result: { ok: true, data: { skills: [{ fqn: "media.generateImage" }] } },
           isError: false,
         },
       ]),
@@ -224,7 +224,7 @@ describe("agent chat planner contract", () => {
       shouldAskAiForMoreSkillWork(executionClassification, [
         {
           tool: "get_skill_endpoints",
-          arguments: { fqn: "paysponge/fal" },
+          arguments: { fqn: "media.generateImage" },
           result: { ok: true, data: { endpoints: [] } },
           isError: false,
         },

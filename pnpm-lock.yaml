@@ -199,6 +199,9 @@ importers:
       '@warden/x402':
         specifier: workspace:*
         version: link:../x402
+      '@warden/x402-sdk':
+        specifier: workspace:*
+        version: link:../x402-sdk
       ai:
         specifier: ^6.0.205
         version: 6.0.205(zod@4.4.3)
