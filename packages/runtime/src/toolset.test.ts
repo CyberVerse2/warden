@@ -3,6 +3,21 @@ import { createWardenToolset } from "./toolset";
 import type { ToolsetDeps } from "./toolset";
 
 describe("createWardenToolset", () => {
+  it("requires an explicit public origin for hosted x402 operation endpoints", () => {
+    vi.stubEnv("FAL_KEY", "fal_test");
+    vi.stubEnv("WARDEN_PUBLIC_URL", "");
+    vi.stubEnv("VERCEL_URL", "");
+
+    expect(() =>
+      createWardenToolset({
+        db: {} as ToolsetDeps["db"],
+        walletService: {} as ToolsetDeps["walletService"],
+        proofBuilder: {} as ToolsetDeps["proofBuilder"],
+        agentToken: "wt_test",
+      }),
+    ).toThrow("WARDEN_PUBLIC_URL is required");
+  });
+
   it("uses the request public origin for hosted x402 operation endpoints", async () => {
     vi.stubEnv("FAL_KEY", "fal_test");
 

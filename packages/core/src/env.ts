@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-let loaded = false;
-
 function unquote(value: string) {
   const trimmed = value.trim();
   if (
@@ -31,9 +29,6 @@ function loadEnvFile(path: string) {
 }
 
 export function loadServerEnv() {
-  if (loaded) return;
-  loaded = true;
-
   const cwd = process.cwd();
   for (const file of [
     resolve(cwd, ".env"),

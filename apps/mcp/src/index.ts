@@ -21,6 +21,12 @@ if (!RPC_URL) {
   process.exit(1);
 }
 
+const PUBLIC_URL = process.env.WARDEN_PUBLIC_URL;
+if (!PUBLIC_URL) {
+  console.error("WARDEN_PUBLIC_URL env var is required");
+  process.exit(1);
+}
+
 const db = createDb(process.env.DATABASE_URL);
 const walletService = createWalletService({
   db,
@@ -43,6 +49,7 @@ const tools = createWardenToolset({
   walletService,
   proofBuilder,
   agentToken: AGENT_TOKEN,
+  publicOrigin: PUBLIC_URL,
 });
 
 const server = new McpServer({ name: "warden", version: "0.1.0" });

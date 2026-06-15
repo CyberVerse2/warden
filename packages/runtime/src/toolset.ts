@@ -297,7 +297,10 @@ function configuredPublicOrigin() {
   if (configured) return configured.replace(/\/$/, "");
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl) return `https://${vercelUrl}`.replace(/\/$/, "");
-  return "http://localhost:3000";
+  throw new WardenError(
+    "internal",
+    "WARDEN_PUBLIC_URL is required when publicOrigin is not provided",
+  );
 }
 
 function normalizePublicOrigin(origin: string) {
