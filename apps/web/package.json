@@ -21,6 +21,7 @@
     "@warden/runtime": "workspace:*",
     "@warden/wallet": "workspace:*",
     "@warden/x402": "workspace:*",
+    "@warden/x402-sdk": "workspace:*",
     "ai": "^6.0.177",
     "drizzle-orm": "^0.45.2",
     "next": "16.2.6",

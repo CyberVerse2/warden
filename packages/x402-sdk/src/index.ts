@@ -11,6 +11,10 @@ export {
   handleWardenX402Request,
   type WardenX402HttpAdapterOptions,
 } from "./adapter";
+export {
+  createFacilitatorPaymentVerifier,
+  type FacilitatorPaymentVerifierOptions,
+} from "./verifier";
 export type {
   CeloNetwork,
   ExecutePaidOperationResult,

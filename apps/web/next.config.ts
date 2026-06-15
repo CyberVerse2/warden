@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
     "@warden/runtime",
     "@warden/wallet",
     "@warden/x402",
+    "@warden/x402-sdk",
   ],
 };
 
