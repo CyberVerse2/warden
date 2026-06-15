@@ -16,6 +16,7 @@ const envKeys = [
   "WARDEN_X402_ASSET",
   "WARDEN_X402_NETWORK",
   "THIRDWEB_SECRET_KEY",
+  "THIRDWEB_SERVER_WALLET_ADDRESS",
   "THIRDWEB_VAULT_ACCESS_TOKEN",
 ] as const;
 
@@ -49,6 +50,10 @@ describe("hosted Warden x402 SDK", () => {
     stubProviderEnv();
     vi.stubEnv("WARDEN_X402_PAY_TO", "0xed1AFc4DCfb39b9ab9d67f3f7f7d02803cEA9FC5");
     vi.stubEnv("THIRDWEB_SECRET_KEY", "thirdweb-secret-key");
+    vi.stubEnv(
+      "THIRDWEB_SERVER_WALLET_ADDRESS",
+      "0xB9B5B4acA30291991bf88E30eee3e5b53a2566C2",
+    );
 
     const manifest = createHostedWardenX402Sdk().manifest();
 
