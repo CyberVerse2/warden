@@ -7,7 +7,6 @@ import { StatusGlyph } from "~/components/status-glyph";
 import { CopyButton } from "~/components/copy-button";
 import { fmtRelative, fmtUsd, shortKey } from "~/lib/format";
 import { getAgents } from "~/lib/queries";
-import { createAgent } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +27,11 @@ export default async function AgentsPage() {
           <h1 className="mt-2 text-[28px] tracking-[-0.025em] text-t1 font-medium">
             Agents
           </h1>
-          <form action={createAgent} className="flex items-center gap-2">
+          <form
+            action="/agents/create"
+            method="post"
+            className="flex items-center gap-2"
+          >
             <input
               name="name"
               placeholder="Agent name"
