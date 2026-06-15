@@ -24,6 +24,8 @@ export interface AgentRow {
   publicKey: string;
   network: Network;
   balanceUsd: number;
+  celoBalance: number;
+  usdcBalance: number;
   spentTodayUsd: number;
   dailyCapUsd: number;
   lastActivityAt: number;
@@ -229,6 +231,8 @@ export async function getAgents(): Promise<AgentRow[]> {
       publicKey: r.publicKey,
       network: r.network,
       balanceUsd: 0,
+      celoBalance: 0,
+      usdcBalance: 0,
       spentTodayUsd: r.spentTodayUsd ?? 0,
       dailyCapUsd: policy.maxUsdPerDay,
       lastActivityAt,
@@ -247,9 +251,17 @@ export async function getAgents(): Promise<AgentRow[]> {
   });
   const withBalances = await Promise.all(
     [...byAgent.values()].map(async (agent) => {
-      const balance = await walletService.getUsdcBalance(agent.walletId);
+      const [nativeBalance, usdcBalance] = await Promise.all([
+        walletService.getBalance(agent.walletId),
+        walletService.getUsdcBalance(agent.walletId),
+      ]);
       const { walletId, policyVersion, ...row } = agent;
-      return { ...row, balanceUsd: balance.usd };
+      return {
+        ...row,
+        balanceUsd: usdcBalance.usd,
+        celoBalance: nativeBalance.celo,
+        usdcBalance: usdcBalance.usd,
+      };
     }),
   );
   return withBalances.sort((a, b) => a.name.localeCompare(b.name));

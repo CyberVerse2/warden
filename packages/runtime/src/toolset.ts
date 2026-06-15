@@ -171,6 +171,8 @@ export interface ToolsetDeps {
   proofBuilder: ProofBuilder;
   /** Bearer token for the current request — bound at request time. */
   agentToken: string;
+  /** Externally reachable Warden app origin for hosted x402 operation URLs. */
+  publicOrigin?: string;
 }
 
 export interface ToolResult {
@@ -290,7 +292,7 @@ function configuredSdkOperations(): PaidOperation[] {
   return operations;
 }
 
-function publicOrigin() {
+function configuredPublicOrigin() {
   const configured = process.env.WARDEN_PUBLIC_URL?.trim();
   if (configured) return configured.replace(/\/$/, "");
   const vercelUrl = process.env.VERCEL_URL?.trim();
@@ -298,11 +300,21 @@ function publicOrigin() {
   return "http://localhost:3000";
 }
 
-function sdkOperationUrl(operation: Pick<OperationManifestEntry, "path">) {
-  return `${publicOrigin()}/api/x402${operation.path}`;
+function normalizePublicOrigin(origin: string) {
+  return origin.trim().replace(/\/$/, "");
 }
 
-function sdkCatalogEntry(operation: PaidOperation): WardenOperationCatalogEntry {
+function sdkOperationUrl(
+  operation: Pick<OperationManifestEntry, "path">,
+  publicOrigin: string,
+) {
+  return `${publicOrigin}/api/x402${operation.path}`;
+}
+
+function sdkCatalogEntry(
+  operation: PaidOperation,
+  publicOrigin: string,
+): WardenOperationCatalogEntry {
   const amount = Number(operation.price.amountUsd);
   const price = Number.isFinite(amount) ? amount : 0;
   return {
@@ -311,7 +323,7 @@ function sdkCatalogEntry(operation: PaidOperation): WardenOperationCatalogEntry 
     description: operation.description,
     useCase: operation.description,
     category: operation.category,
-    serviceUrl: sdkOperationUrl(operation),
+    serviceUrl: sdkOperationUrl(operation, publicOrigin),
     endpointCount: 1,
     hasMetering: true,
     hasFreeTier: false,
@@ -329,7 +341,13 @@ function publicSdkCatalogEntry({
   return entry;
 }
 
-function sdkOperationCatalog({ limit }: { limit?: number } = {}) {
+function sdkOperationCatalog({
+  limit,
+  publicOrigin,
+}: {
+  limit?: number;
+  publicOrigin: string;
+}) {
   const operations = configuredSdkOperations();
   if (operations.length === 0) {
     throw new WardenError(
@@ -338,13 +356,15 @@ function sdkOperationCatalog({ limit }: { limit?: number } = {}) {
     );
   }
   const entries = operations
-    .map(sdkCatalogEntry)
+    .map((operation) => sdkCatalogEntry(operation, publicOrigin))
     .sort((a, b) => a.title.localeCompare(b.title));
   return limit === undefined ? entries : entries.slice(0, limit);
 }
 
-function describeSdkOperation(fqn: string) {
-  const skill = sdkOperationCatalog().find((entry) => entry.fqn === fqn);
+function describeSdkOperation(fqn: string, publicOrigin: string) {
+  const skill = sdkOperationCatalog({ publicOrigin }).find(
+    (entry) => entry.fqn === fqn,
+  );
   if (!skill) {
     throw new WardenError("internal", `Warden x402 operation not found: ${fqn}`);
   }
@@ -354,7 +374,7 @@ function describeSdkOperation(fqn: string) {
     method: operation.method,
     path: operation.path,
     summary: operation.description,
-    url: sdkOperationUrl(operation),
+    url: sdkOperationUrl(operation, publicOrigin),
     operationId: operation.id,
     x402: {
       "x-payment-required": true,
@@ -378,7 +398,7 @@ function describeSdkOperation(fqn: string) {
     hasFreeTier: false,
     minPriceUsd: skill.minPriceUsd,
     maxPriceUsd: skill.maxPriceUsd,
-    pageUrl: `${publicOrigin()}/api/x402/manifest`,
+    pageUrl: `${publicOrigin}/api/x402/manifest`,
     operations: [endpoint],
   };
 }
@@ -386,18 +406,23 @@ function describeSdkOperation(fqn: string) {
 async function searchPaySkills({
   query,
   limit,
+  publicOrigin,
 }: {
   query?: string;
   limit?: number;
+  publicOrigin: string;
 }) {
   if (!query?.trim()) {
-    return sdkOperationCatalog(limit !== undefined ? { limit } : {}).map(
+    return sdkOperationCatalog({
+      publicOrigin,
+      ...(limit !== undefined ? { limit } : {}),
+    }).map(
       publicSdkCatalogEntry,
     );
   }
 
   const resultLimit = limit ?? 2;
-  const allSkills = sdkOperationCatalog();
+  const allSkills = sdkOperationCatalog({ publicOrigin });
   const ranked = await rankSkillsWithAi({
     query: query.trim(),
     skills: allSkills,
@@ -607,6 +632,9 @@ function x402BridgeDemoChallenge(request: z.infer<typeof HttpRequestSchema>) {
 export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
   const { db, walletService, agentToken } = deps;
   const runtime: Runtime = createRuntime(deps);
+  const hostedOrigin = normalizePublicOrigin(
+    deps.publicOrigin ?? configuredPublicOrigin(),
+  );
 
   function ok(data: unknown): ToolResult {
     return { ok: true, data };
@@ -635,6 +663,7 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
       const skills = await searchPaySkills({
         ...(input.limit !== undefined ? { limit: input.limit } : {}),
         ...(input.query !== undefined ? { query: input.query } : {}),
+        publicOrigin: hostedOrigin,
       });
       return ok({ skills });
     } catch (e) {
@@ -648,6 +677,7 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
       const services = await searchPaySkills({
         ...(input.limit !== undefined ? { limit: input.limit } : {}),
         ...(input.query !== undefined ? { query: input.query } : {}),
+        publicOrigin: hostedOrigin,
       });
       return ok({ services });
     } catch (e) {
@@ -658,7 +688,7 @@ export function createWardenToolset(deps: ToolsetDeps): WardenToolDefinition[] {
   async function getSkillEndpoints(raw: unknown) {
     try {
       const input = GetSkillEndpointsSchema.parse(raw);
-      const skill = describeSdkOperation(input.fqn);
+      const skill = describeSdkOperation(input.fqn, hostedOrigin);
       return ok({ skill, endpoints: skill.operations });
     } catch (e) {
       return err(e);

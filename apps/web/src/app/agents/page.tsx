@@ -11,6 +11,13 @@ import { createAgent } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+function fmtToken(n: number, symbol: string): string {
+  return `${n.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: n === 0 ? 0 : 4,
+  })} ${symbol}`;
+}
+
 export default async function AgentsPage() {
   const agents = await getAgents();
   return (
@@ -100,8 +107,10 @@ export default async function AgentsPage() {
                     <CopyButton text={a.publicKey} />
                   </div>
                   <span className="label-num text-t1 text-[12.5px]">
-                    {fmtUsd(a.balanceUsd)}{" "}
-                    <span className="text-t4">balance</span>
+                    {fmtToken(a.celoBalance, "CELO")}{" "}
+                    <span className="text-t4">·</span>{" "}
+                    {fmtUsd(a.usdcBalance)}{" "}
+                    <span className="text-t4">USDC</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-3">

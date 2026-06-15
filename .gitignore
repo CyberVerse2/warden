@@ -17,3 +17,4 @@ warden.db-journal
 *.sqlite-*
 HACKATHON_DEMO_SCRIPT.md
 .vercel
+.mcp.json

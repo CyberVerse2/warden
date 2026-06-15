@@ -8,8 +8,8 @@ export function fmtUsd(n: number, opts: { precise?: boolean } = {}): string {
 }
 
 export function fmtNetwork(network: string): string {
-  if (network === "eip155:42220") return "Celo";
-  if (network === "eip155:11142220") return "Celo Sepolia";
+  if (network === "eip155:42220") return "Celo Mainnet";
+  if (network === "eip155:11142220") return "Celo Testnet";
   return network;
 }
 

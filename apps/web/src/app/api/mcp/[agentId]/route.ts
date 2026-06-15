@@ -9,6 +9,7 @@ import { createX402EvmProofBuilder } from "@warden/x402/proof";
 import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "~/lib/db";
 import { loadServerEnv } from "~/lib/env";
+import { getOrigin } from "~/lib/origin";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -202,6 +203,7 @@ export async function POST(
     walletService,
     proofBuilder,
     agentToken: token,
+    publicOrigin: await getOrigin(),
   });
   const byName = new Map(tools.map((t) => [t.name, t]));
 
