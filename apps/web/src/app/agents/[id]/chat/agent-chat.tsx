@@ -78,13 +78,13 @@ const STREAM_PLACEHOLDER_TEXT = "Starting agent run...";
 
 const EXAMPLES = [
   "what's my wallet status",
-  "generate an image of girl dancing",
-  "get the latest AI news",
   "find the price of CELO",
-  "take a screenshot of example.com",
-  "find restaurants in Lagos",
-  "parse a PDF document",
-  "find Instagram creators for fitness",
+  "get the latest AI news",
+  "generate audio saying celo is pretty cool",
+  "generate an image of a girl dancing",
+  "show my recent x402 receipts",
+  "show x402 transaction hashes",
+  "show explorer links for my latest x402 payments",
 ] as const;
 
 const DEFAULT_MESSAGE = EXAMPLES[0];
