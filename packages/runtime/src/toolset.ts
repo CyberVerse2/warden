@@ -190,6 +190,8 @@ interface WardenOperationCatalogEntry {
   useCase: string;
   category: string;
   serviceUrl: string;
+  endpointUrl?: string;
+  pageUrl?: string;
   endpointCount: number;
   hasMetering: boolean;
   hasFreeTier: boolean;
@@ -371,8 +373,10 @@ function sdkOperationCatalog({
       "No Warden x402 SDK provider credentials are configured",
     );
   }
-  const entries = operations
-    .map((operation) => sdkCatalogEntry(operation, publicOrigin))
+  const entries = [
+    ...operations.map((operation) => sdkCatalogEntry(operation, publicOrigin)),
+    maliciousBridgeDemoOperation(),
+  ]
     .sort((a, b) => a.title.localeCompare(b.title));
   return limit === undefined ? entries : entries.slice(0, limit);
 }
@@ -390,7 +394,7 @@ function describeSdkOperation(fqn: string, publicOrigin: string) {
     method: operation.method,
     path: operation.path,
     summary: operation.description,
-    url: sdkOperationUrl(operation, publicOrigin),
+    url: skill.endpointUrl ?? sdkOperationUrl(operation, publicOrigin),
     operationId: operation.id,
     requestSchema: zodToJsonSchema(operation.input),
     x402: {
@@ -415,8 +419,53 @@ function describeSdkOperation(fqn: string, publicOrigin: string) {
     hasFreeTier: false,
     minPriceUsd: skill.minPriceUsd,
     maxPriceUsd: skill.maxPriceUsd,
-    pageUrl: `${publicOrigin}/api/x402/manifest`,
+    pageUrl: skill.pageUrl ?? `${publicOrigin}/api/x402/manifest`,
     operations: [endpoint],
+  };
+}
+
+function maliciousBridgeDemoOperation(): WardenOperationCatalogEntry {
+  const operation: PaidOperation = {
+    id: "x402bridge/bridge",
+    category: "crypto",
+    provider: "x402bridge",
+    method: "POST",
+    path: "/v1/bridge",
+    description:
+      "Demo cross-chain bridge endpoint used to exercise Warden threat-intel blocking.",
+    price: { amountUsd: "0.10" },
+    input: z.object({
+      fromChain: z.string().default("ethereum"),
+      toChain: z.string().default("solana"),
+      amountUsd: z.number().positive().default(1),
+      asset: z.string().default("ETH"),
+      destinationAddress: z.string().optional(),
+    }),
+    async handler() {
+      throw new WardenError(
+        "internal",
+        "x402bridge demo is external and must be called through warden_quote",
+      );
+    },
+  };
+
+  return {
+    fqn: operation.id,
+    title: operation.id,
+    description: operation.description,
+    useCase:
+      "Use for testing Warden's malicious x402 endpoint blocking on bridge requests such as ETH to SOL, Ethereum to Solana, and cross-chain treasury transfer attempts.",
+    category: operation.category,
+    serviceUrl: "https://x402bridge.example",
+    endpointUrl: "https://x402bridge.example/v1/bridge",
+    pageUrl: "https://pay.sh/services/x402bridge/bridge",
+    endpointCount: 1,
+    hasMetering: true,
+    hasFreeTier: false,
+    minPriceUsd: 0.1,
+    maxPriceUsd: 0.1,
+    provider: operation.provider,
+    operation,
   };
 }
 

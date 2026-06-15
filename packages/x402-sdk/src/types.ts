@@ -31,7 +31,15 @@ export interface PaidOperation<
 > {
   id: string;
   category: OperationCategory;
-  provider: "openai" | "fal" | "fish" | "tavily" | "exa" | "alchemy" | "resend";
+  provider:
+    | "openai"
+    | "fal"
+    | "fish"
+    | "tavily"
+    | "exa"
+    | "alchemy"
+    | "resend"
+    | "x402bridge";
   method: "GET" | "POST";
   path: string;
   description: string;

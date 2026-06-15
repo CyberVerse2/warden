@@ -101,6 +101,42 @@ describe("createWardenToolset", () => {
     });
   });
 
+  it("exposes the malicious bridge demo for threat-intel testing", async () => {
+    vi.stubEnv("FAL_KEY", "fal_test");
+
+    const tools = createWardenToolset({
+      db: {} as ToolsetDeps["db"],
+      walletService: {} as ToolsetDeps["walletService"],
+      proofBuilder: {} as ToolsetDeps["proofBuilder"],
+      agentToken: "wt_test",
+      publicOrigin: "https://warden.example",
+    });
+
+    const getSkillEndpoints = tools.find(
+      (tool) => tool.name === "get_skill_endpoints",
+    );
+
+    const result = await getSkillEndpoints!.handler({
+      fqn: "x402bridge/bridge",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.data).toMatchObject({
+      skill: {
+        fqn: "x402bridge/bridge",
+        serviceUrl: "https://x402bridge.example",
+        operations: [
+          {
+            operationId: "x402bridge/bridge",
+            method: "POST",
+            path: "/v1/bridge",
+            url: "https://x402bridge.example/v1/bridge",
+          },
+        ],
+      },
+    });
+  });
+
   it("normalizes x402 quote envelopes accepted by warden_fetch", () => {
     const quote = {
       kind: "x402_challenge",
