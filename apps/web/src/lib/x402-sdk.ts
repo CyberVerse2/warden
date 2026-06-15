@@ -31,6 +31,7 @@ export function createHostedWardenX402Sdk(): WardenX402Sdk {
     verifier: createThirdwebPaymentVerifier({
       secretKey: requireEnv("THIRDWEB_SECRET_KEY"),
       serverWalletAddress: payTo,
+      vaultAccessToken: envString("THIRDWEB_VAULT_ACCESS_TOKEN"),
       baseUrl: envString("WARDEN_X402_FACILITATOR_URL"),
     }),
     operations,

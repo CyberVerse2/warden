@@ -64,6 +64,7 @@ export function createFacilitatorPaymentVerifier(
 export interface ThirdwebPaymentVerifierOptions {
   secretKey: string;
   serverWalletAddress: string;
+  vaultAccessToken?: string | undefined;
   waitUntil?: WaitUntil;
   baseUrl?: string | undefined;
 }
@@ -76,6 +77,9 @@ export function createThirdwebPaymentVerifier(
     client,
     serverWalletAddress: options.serverWalletAddress,
     waitUntil: options.waitUntil ?? "submitted",
+    ...(options.vaultAccessToken
+      ? { vaultAccessToken: options.vaultAccessToken }
+      : {}),
     ...(options.baseUrl ? { baseUrl: options.baseUrl } : {}),
   });
 

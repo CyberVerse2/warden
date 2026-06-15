@@ -17,6 +17,7 @@ const envKeys = [
   "WARDEN_X402_ASSET",
   "WARDEN_X402_NETWORK",
   "THIRDWEB_SECRET_KEY",
+  "THIRDWEB_VAULT_ACCESS_TOKEN",
 ] as const;
 
 describe("hosted Warden x402 SDK", () => {
