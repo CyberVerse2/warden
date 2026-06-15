@@ -64,6 +64,27 @@ describe("handleWardenX402Request", () => {
     });
   });
 
+  it("rejects invalid operation input before returning a payment quote", async () => {
+    const sdk = createWardenX402Sdk({
+      payTo: "0x1111111111111111111111111111111111111111",
+      operations: [paidEchoOperation],
+    });
+
+    const response = await handleWardenX402Request(
+      sdk,
+      new Request("https://example.com/x402/ai/generate-text", {
+        method: "POST",
+        body: JSON.stringify({}),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get("payment-required")).toBeNull();
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("message"),
+    });
+  });
+
   it("executes an operation after payment verification", async () => {
     const sdk = createWardenX402Sdk({
       payTo: "0x1111111111111111111111111111111111111111",

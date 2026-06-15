@@ -54,6 +54,10 @@ export async function handleWardenX402Request(
     return quoteResponse(result.quote);
   }
 
+  if (result.kind === "invalid_input") {
+    return jsonResponse(400, { error: result.reason });
+  }
+
   if (result.kind === "denied") {
     return jsonResponse(403, { error: result.reason });
   }

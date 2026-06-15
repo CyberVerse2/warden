@@ -379,6 +379,7 @@ function describeSdkOperation(fqn: string, publicOrigin: string) {
     summary: operation.description,
     url: sdkOperationUrl(operation, publicOrigin),
     operationId: operation.id,
+    requestSchema: zodToJsonSchema(operation.input),
     x402: {
       "x-payment-required": true,
       "x-payment-info": {
@@ -404,6 +405,82 @@ function describeSdkOperation(fqn: string, publicOrigin: string) {
     pageUrl: `${publicOrigin}/api/x402/manifest`,
     operations: [endpoint],
   };
+}
+
+function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
+  const zodDef = (schema as unknown as { _def: Record<string, unknown> })._def;
+  const def = zodDef.typeName ?? zodDef.type;
+  switch (def) {
+    case "ZodObject":
+    case "object": {
+      const shape = (schema as z.ZodObject<z.ZodRawShape>).shape;
+      const properties: Record<string, unknown> = {};
+      const required: string[] = [];
+      for (const [key, value] of Object.entries(shape)) {
+        const child = value as z.ZodTypeAny;
+        properties[key] = zodToJsonSchema(child);
+        if (!child.isOptional()) required.push(key);
+      }
+      return {
+        type: "object",
+        properties,
+        ...(required.length > 0 ? { required } : {}),
+        additionalProperties: false,
+      };
+    }
+    case "ZodString":
+    case "string":
+      return { type: "string" };
+    case "ZodNumber":
+    case "number":
+      return { type: "number" };
+    case "ZodBoolean":
+    case "boolean":
+      return { type: "boolean" };
+    case "ZodEnum":
+    case "enum":
+      return {
+        type: "string",
+        enum: (schema as unknown as { options: string[] }).options,
+      };
+    case "ZodArray":
+    case "array": {
+      const element =
+        (zodDef.element as z.ZodTypeAny | undefined) ??
+        (zodDef.type as z.ZodTypeAny | undefined);
+      return {
+        type: "array",
+        ...(element ? { items: zodToJsonSchema(element) } : {}),
+      };
+    }
+    case "ZodUnion":
+    case "union": {
+      const options = Array.isArray(zodDef.options) ? zodDef.options : [];
+      return {
+        anyOf: options.map((option) =>
+          zodToJsonSchema(option as z.ZodTypeAny),
+        ),
+      };
+    }
+    case "ZodOptional":
+    case "optional":
+      return zodToJsonSchema(
+        (schema as z.ZodOptional<z.ZodTypeAny>).unwrap(),
+      );
+    case "ZodDefault":
+    case "default":
+      return zodToJsonSchema(
+        (schema as z.ZodDefault<z.ZodTypeAny>)._def.innerType as z.ZodTypeAny,
+      );
+    case "ZodRecord":
+    case "record":
+      return { type: "object", additionalProperties: { type: "string" } };
+    case "ZodUnknown":
+    case "unknown":
+      return {};
+    default:
+      return {};
+  }
 }
 
 async function searchPaySkills({

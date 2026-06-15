@@ -1,5 +1,6 @@
 import { CELO_SEPOLIA_NETWORK } from "@warden/core";
 import type { PaymentRequirements } from "@x402/core/types";
+import { ZodError } from "zod";
 import {
   type CeloNetwork,
   type ExecutePaidOperationResult,
@@ -92,6 +93,13 @@ export function createWardenX402Sdk(
       resourceUrl,
     }: ExecutePaidOperationInput): Promise<ExecutePaidOperationResult<Output>> {
       const operation = sdk.operation(operationId);
+      const parsedInput = operation.input.safeParse(input);
+      if (!parsedInput.success) {
+        return {
+          kind: "invalid_input",
+          reason: inputErrorMessage(parsedInput.error),
+        };
+      }
       const quote = quoteWithResource(sdk.quote(operationId), resourceUrl);
       if (!paymentHeader) {
         return { kind: "payment_required", quote };
@@ -115,8 +123,7 @@ export function createWardenX402Sdk(
         };
       }
 
-      const parsedInput = operation.input.parse(input);
-      const output = await operation.handler(parsedInput, {
+      const output = await operation.handler(parsedInput.data, {
         fetch: fetchImpl,
         operationId,
       });
@@ -147,6 +154,15 @@ export function createWardenX402Sdk(
   }
 
   return sdk;
+}
+
+function inputErrorMessage(error: ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
+      return `${path}${issue.message}`;
+    })
+    .join("; ");
 }
 
 function paymentRequirement(

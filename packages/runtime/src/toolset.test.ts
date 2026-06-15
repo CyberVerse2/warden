@@ -56,4 +56,47 @@ describe("createWardenToolset", () => {
       ],
     });
   });
+
+  it("describes hosted SDK operation request schemas", async () => {
+    vi.stubEnv("RESEND_API_KEY", "resend_test");
+
+    const tools = createWardenToolset({
+      db: {} as ToolsetDeps["db"],
+      walletService: {} as ToolsetDeps["walletService"],
+      proofBuilder: {} as ToolsetDeps["proofBuilder"],
+      agentToken: "wt_test",
+      publicOrigin: "https://warden.example",
+    });
+
+    const getSkillEndpoints = tools.find(
+      (tool) => tool.name === "get_skill_endpoints",
+    );
+
+    const result = await getSkillEndpoints!.handler({
+      fqn: "messaging.sendEmail",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.data).toMatchObject({
+      endpoints: [
+        {
+          requestSchema: {
+            required: ["from", "to", "subject"],
+            properties: {
+              from: { type: "string" },
+              to: {
+                anyOf: [
+                  { type: "string" },
+                  { type: "array", items: { type: "string" } },
+                ],
+              },
+              subject: { type: "string" },
+              html: { type: "string" },
+              text: { type: "string" },
+            },
+          },
+        },
+      ],
+    });
+  });
 });

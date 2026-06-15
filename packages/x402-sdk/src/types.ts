@@ -83,6 +83,10 @@ export interface PaymentVerifier {
 
 export type ExecutePaidOperationResult<Output = unknown> =
   | {
+      kind: "invalid_input";
+      reason: string;
+    }
+  | {
       kind: "payment_required";
       quote: PaymentQuote;
     }
