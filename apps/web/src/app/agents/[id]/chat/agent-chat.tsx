@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ResponseArtifact as StoredResponseArtifact } from "~/components/response-artifact";
+import { shortKey } from "~/lib/format";
 import type { ResponseArtifactRow } from "~/lib/queries";
 
 interface AgentChatProps {
@@ -113,6 +114,7 @@ export function AgentChat({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const activeRun = useMemo(() => latestRunMessage(messages), [messages]);
   const latestMessageKey = messages
     .map((item) => `${item.id ?? ""}:${item.role}:${item.text.length}:${item.calls?.length ?? 0}:${item.activity?.length ?? 0}`)
     .join("|");
@@ -395,7 +397,11 @@ export function AgentChat({
                   )}
                 </div>
                 {item.activity?.length ? (
-                  <StreamActivityList activity={item.activity} />
+                  <AgentRunPanel
+                    activity={item.activity}
+                    calls={item.calls}
+                    hasFinalText={Boolean(item.text)}
+                  />
                 ) : null}
                 {item.text ? <MessageText text={item.text} /> : null}
                 <ResponseArtifacts
@@ -403,22 +409,6 @@ export function AgentChat({
                   calls={item.calls}
                   text={item.text}
                 />
-                {item.calls?.map((call) => (
-                  <details
-                    key={`${call.tool}-${JSON.stringify(call.arguments)}`}
-                    className="group mt-4 border-t border-hairline pt-3"
-                  >
-                    <summary className="label flex cursor-pointer list-none items-center justify-between text-t3 hover:text-t1">
-                      MCP JSON-RPC TRACE
-                      <span className="mono text-[13px] text-t4 group-open:rotate-45 transition-transform">
-                        +
-                      </span>
-                    </summary>
-                    <pre className="mt-3 max-h-[220px] overflow-auto border border-hairline bg-bg-base p-3 mono text-[11px] leading-relaxed text-t2">
-                      {JSON.stringify(call, null, 2)}
-                    </pre>
-                  </details>
-                ))}
               </article>
             ))}
           </div>
@@ -488,30 +478,160 @@ export function AgentChat({
           </span>
         </label>
 
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <span className="label">Exposed tools</span>
-          <div className="mt-3 min-h-0 overflow-y-auto border border-hairline-strong">
-            {tools.length === 0 ? (
-              <p className="p-3 text-[12.5px] leading-relaxed text-t3">
-                Tools appear after the first successful MCP handshake.
-              </p>
-            ) : (
-              tools.map((tool) => (
-                <div key={tool.name} className="border-b border-hairline p-3 last:border-b-0">
-                  <code className="mono text-[11.5px] text-signal">
-                    {tool.name}
-                  </code>
-                  <p className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-t3">
-                    {tool.description}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <RunTraceSidebar message={activeRun} exposedCount={tools.length} />
       </aside>
     </div>
   );
+}
+
+function latestRunMessage(messages: ChatMessage[]) {
+  return [...messages]
+    .reverse()
+    .find((item) => item.role === "assistant" && ((item.activity?.length ?? 0) > 0 || (item.calls?.length ?? 0) > 0));
+}
+
+function RunTraceSidebar({
+  message,
+  exposedCount,
+}: {
+  message?: ChatMessage;
+  exposedCount: number;
+}) {
+  const calls = message?.calls ?? [];
+  const apis = selectedApis(calls);
+  const events = traceEvents(message);
+
+  return (
+    <div className="mt-4 flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center justify-between gap-3">
+        <span className="label">Run trace</span>
+        <span className="mono text-[10.5px] text-t4">
+          {events.length} events · {exposedCount} MCP caps
+        </span>
+      </div>
+
+      {apis.length > 0 ? (
+        <div className="mt-3 border border-hairline-strong bg-bg-base">
+          <div className="border-b border-hairline px-3 py-2">
+            <span className="label text-t4">x402 APIs in play</span>
+          </div>
+          {apis.map((api) => (
+            <div key={`${api.operationId}-${api.url}`} className="border-b border-hairline p-3 last:border-b-0">
+              <div className="flex items-center justify-between gap-2">
+                <code className="mono truncate text-[11.5px] text-signal">
+                  {api.operationId}
+                </code>
+                {api.price ? (
+                  <span className="label-num shrink-0 text-[11px] text-t1">
+                    {api.price}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 truncate mono text-[10.5px] text-t4">
+                {[api.method, api.path].filter(Boolean).join(" ")}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-3 min-h-0 overflow-y-auto border border-hairline-strong bg-bg-base">
+        {events.length === 0 ? (
+          <p className="p-3 text-[12.5px] leading-relaxed text-t3">
+            MCP trace appears here during an x402 run.
+          </p>
+        ) : (
+          events.map((event) => (
+            <details key={event.id} className="group border-b border-hairline last:border-b-0">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-3 hover:bg-bg-row/40">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                        event.state === "error"
+                          ? "bg-deny"
+                          : event.state === "done"
+                            ? "bg-signal"
+                            : "bg-t4 motion-status-running"
+                      }`}
+                    />
+                    <span className="label text-t4">{event.kind}</span>
+                  </div>
+                  <p className="mt-1 truncate mono text-[11.5px] text-t1">
+                    {event.title}
+                  </p>
+                  {event.subtitle ? (
+                    <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-t3">
+                      {event.subtitle}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="mono text-[13px] text-t4 group-open:rotate-45 transition-transform">
+                  +
+                </span>
+              </summary>
+              {event.payload !== undefined ? (
+                <pre className="max-h-[220px] overflow-auto border-t border-hairline bg-bg-deep p-3 mono text-[10.5px] leading-relaxed text-t2">
+                  {JSON.stringify(event.payload, null, 2)}
+                </pre>
+              ) : null}
+            </details>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function traceEvents(message?: ChatMessage) {
+  if (!message) return [];
+  const statusEvents = (message.activity ?? []).map((item, index) => ({
+    id: `activity-${index}-${item.id}`,
+    kind: item.kind === "tool" ? "MCP" : "RUN",
+    state: item.state,
+    title: item.kind === "tool" ? item.label : phaseLabel(item),
+    subtitle: item.arguments ? truncateText(JSON.stringify(item.arguments), 150) : undefined,
+    payload: item.arguments,
+  }));
+  const callEvents = (message.calls ?? []).map((call, index) => ({
+    id: `call-${index}-${call.tool}`,
+    kind: call.tool.startsWith("warden_") ? "WARDEN" : "MCP",
+    state: call.isError ? "error" as const : "done" as const,
+    title: traceCallTitle(call),
+    subtitle: traceCallSubtitle(call),
+    payload: call,
+  }));
+  return [...statusEvents, ...callEvents];
+}
+
+function traceCallTitle(call: NonNullable<ChatMessage["calls"]>[number]) {
+  if (call.tool === "search_skills" || call.tool === "warden_discover") return "Discovered x402 APIs";
+  if (call.tool === "get_skill_endpoints") return "Prepared paid operation";
+  if (call.tool === "warden_quote") return "Quoted x402 payment";
+  if (call.tool === "warden_analyze") return "Checked policy";
+  if (call.tool === "warden_fetch" || call.tool === "warden_pay") return "Called paid x402 API";
+  if (call.tool === "warden_receipts") return "Loaded receipts";
+  if (call.tool === "warden_wallet_status") return "Checked wallet";
+  return call.tool;
+}
+
+function traceCallSubtitle(call: NonNullable<ChatMessage["calls"]>[number]) {
+  if (call.tool === "get_skill_endpoints") {
+    return stringValue(call.arguments.fqn);
+  }
+  if (call.tool === "warden_quote" || call.tool === "warden_fetch" || call.tool === "warden_pay") {
+    return stringValue(call.arguments.url);
+  }
+  if (call.tool === "warden_analyze") {
+    const data = toolData(call.result);
+    if (!isRecord(data)) return undefined;
+    return [
+      stringValue(data.decision) ? decisionLabel(stringValue(data.decision)!) : undefined,
+      isRecord(data.risk) ? stringValue(data.risk.level) : undefined,
+      isRecord(data.x402) ? usdValue(data.x402.amountUsd) : undefined,
+    ].filter(Boolean).join(" · ");
+  }
+  return truncateText(JSON.stringify(call.arguments), 150);
 }
 
 function ResponseArtifacts({
@@ -547,65 +667,274 @@ function ResponseArtifacts({
   );
 }
 
-function StreamActivityList({ activity }: { activity: StreamActivity[] }) {
-  const visible = compactActivity(activity);
-  if (visible.length === 0) return null;
+function AgentRunPanel({
+  activity,
+  calls,
+  hasFinalText,
+}: {
+  activity: StreamActivity[];
+  calls?: ChatMessage["calls"];
+  hasFinalText: boolean;
+}) {
+  const summary = runSummary(activity, calls, hasFinalText);
   return (
-    <div className="motion-enter mb-3 border border-hairline bg-bg-base/60">
-      {visible.map((item) => (
-        <div
-          key={item.id}
-          className="flex min-w-0 items-start justify-between gap-3 border-b border-hairline px-3 py-2 last:border-b-0"
-        >
-          <div className="min-w-0">
-            <div className="flex min-w-0 items-center gap-2">
-              <span
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                  item.state === "error"
-                    ? "bg-deny"
-                    : item.state === "done"
-                      ? "bg-signal"
-                      : "bg-t4"
-                } ${item.state === "running" ? "motion-status-running" : ""}`}
-              />
-              <span className="label truncate text-t3">
-                {item.kind === "tool" ? "Tool call" : "Run step"}
-              </span>
-            </div>
-            <p className="mt-1 truncate mono text-[11.5px] leading-relaxed text-t1">
-              {item.label}
-            </p>
-            {item.arguments && Object.keys(item.arguments).length > 0 ? (
-              <p className="mt-1 truncate mono text-[10.5px] text-t4">
-                {JSON.stringify(item.arguments)}
-              </p>
-            ) : null}
-          </div>
+    <div className="motion-enter mb-3 border border-hairline bg-bg-base/70">
+      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-hairline px-3 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           <span
-            className={`label shrink-0 ${
-              item.state === "error"
-                ? "text-deny"
-                : item.state === "done"
-                  ? "text-signal"
-                  : "text-t4"
+            className={`h-2 w-2 shrink-0 rounded-full ${summary.statusClass} ${
+              summary.state === "running" ? "motion-status-running" : ""
             }`}
-          >
-            {item.state === "running" ? "RUNNING" : item.state === "done" ? "DONE" : "ERROR"}
+          />
+          <span className="truncate text-[13px] text-t1">
+            {summary.label}
           </span>
         </div>
-      ))}
+        <span className={`label shrink-0 ${summary.textClass}`}>
+          {summary.state === "running" ? "RUNNING" : summary.state === "error" ? "ERROR" : "DONE"}
+        </span>
+      </div>
+
+      {summary.apis.length > 0 ? (
+        <div className="border-b border-hairline px-3 py-2.5">
+          <span className="label text-t4">Selected x402 APIs</span>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {summary.apis.map((api) => (
+              <div key={`${api.operationId}-${api.url}`} className="min-w-0 border border-hairline bg-bg-deep px-2.5 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <code className="mono truncate text-[11px] text-signal">
+                    {api.operationId}
+                  </code>
+                  {api.price ? (
+                    <span className="label-num shrink-0 text-[11px] text-t1">
+                      {api.price}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 truncate mono text-[10.5px] text-t4">
+                  {[api.method, api.path].filter(Boolean).join(" ")}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {(summary.policy || summary.payment) ? (
+        <div className="grid border-b border-hairline sm:grid-cols-2">
+          {summary.policy ? (
+            <div className="border-b border-hairline p-3 sm:border-b-0 sm:border-r">
+              <span className="label text-t4">Policy</span>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className={`label ${summary.policy.className}`}>
+                  {summary.policy.decision}
+                </span>
+                <span className="mono text-[11px] text-t3">
+                  {summary.policy.risk}
+                </span>
+              </div>
+              {summary.policy.reason ? (
+                <p className="mt-2 line-clamp-2 text-[12px] leading-relaxed text-t3">
+                  {summary.policy.reason}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {summary.payment ? (
+            <div className="p-3">
+              <span className="label text-t4">Payment</span>
+              <p className="mt-1 mono text-[11.5px] text-t1">
+                {summary.payment.amount} {summary.payment.token} · {summary.payment.network}
+              </p>
+              <p className="mt-1 truncate mono text-[10.5px] text-t4">
+                to {summary.payment.recipient}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {summary.receipts.length > 0 ? (
+        <div className="px-3 py-2.5">
+          <span className="label text-t4">Receipts</span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {summary.receipts.map((receipt) => (
+              receipt.explorerUrl ? (
+                <a
+                  key={receipt.id}
+                  href={receipt.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mono border border-signal-dim px-2 py-1 text-[10.5px] text-signal hover:border-signal hover:text-t1"
+                >
+                  {receipt.id} · Blockscout
+                </a>
+              ) : (
+                <span key={receipt.id} className="mono border border-hairline px-2 py-1 text-[10.5px] text-t3">
+                  {receipt.id}
+                </span>
+              )
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function compactActivity(activity: StreamActivity[]) {
+function runSummary(
+  activity: StreamActivity[],
+  calls: ChatMessage["calls"] = [],
+  hasFinalText: boolean,
+) {
+  const errored = activity.some((item) => item.state === "error") || calls.some((call) => call.isError);
+  const running = [...activity].reverse().find((item) => item.state === "running");
+  const latest = running ?? [...activity].reverse()[0];
+  const state = errored ? "error" : running ? "running" : hasFinalText ? "done" : "running";
+  const label = state === "done"
+    ? "Completed"
+    : state === "error"
+      ? "x402 run needs attention"
+      : phaseLabel(latest);
+  const statusClass =
+    state === "error" ? "bg-deny" : state === "done" ? "bg-allow" : "bg-signal";
+  const textClass =
+    state === "error" ? "text-deny" : state === "done" ? "text-allow" : "text-signal";
+
+  return {
+    state,
+    label,
+    statusClass,
+    textClass,
+    apis: selectedApis(calls),
+    policy: policySummary(calls),
+    payment: paymentSummary(calls),
+    receipts: receiptSummary(calls),
+  };
+}
+
+function phaseLabel(activity?: StreamActivity) {
+  if (!activity) return "Starting x402 run...";
+  const label = activity.label;
+  const tool = activity.tool ?? label.replace(/^Preparing\s+/, "");
+  if (label === "Starting agent run...") return "Starting x402 run...";
+  if (label === "Loading MCP tools") return "Discovering x402 APIs...";
+  if (label === "Running AI SDK tool loop") return "Planning paid operations...";
+  if (tool === "search_skills" || tool === "warden_discover") return "Discovering x402 APIs...";
+  if (tool === "get_skill_endpoints") return "Preparing paid operations...";
+  if (tool === "warden_quote") return "Quoting x402 payment...";
+  if (tool === "warden_analyze") return "Checking policy...";
+  if (tool === "warden_fetch" || tool === "warden_pay") return "Settling x402 payment...";
+  if (tool === "warden_receipts") return "Reading x402 receipts...";
+  if (tool === "warden_wallet_status") return "Checking wallet status...";
+  return label.endsWith("...") ? label : `${label}...`;
+}
+
+function selectedApis(calls: ChatMessage["calls"] = []) {
   const seen = new Set<string>();
-  return activity.filter((item) => {
-    const key = `${item.kind}:${item.label}:${item.state}`;
-    if (item.kind === "status" && seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const apis: Array<{
+    operationId: string;
+    method?: string;
+    path?: string;
+    url?: string;
+    price?: string;
+  }> = [];
+  for (const call of calls) {
+    if (call.tool !== "get_skill_endpoints") continue;
+    const data = toolData(call.result);
+    if (!isRecord(data) || !Array.isArray(data.endpoints)) continue;
+    for (const endpoint of data.endpoints) {
+      if (!isRecord(endpoint)) continue;
+      const operationId = stringValue(endpoint.operationId);
+      if (!operationId || seen.has(operationId)) continue;
+      seen.add(operationId);
+      apis.push({
+        operationId,
+        method: stringValue(endpoint.method),
+        path: stringValue(endpoint.path) ?? stringValue(endpoint.url),
+        url: stringValue(endpoint.url),
+        price: stringValue(endpoint.price),
+      });
+    }
+  }
+  return apis.slice(0, 5);
+}
+
+function policySummary(calls: ChatMessage["calls"] = []) {
+  const analyze = [...calls].reverse().find((call) => !call.isError && call.tool === "warden_analyze");
+  const data = analyze ? toolData(analyze.result) : undefined;
+  if (!isRecord(data)) return undefined;
+  const decision = stringValue(data.decision) ?? "unknown";
+  const risk = isRecord(data.risk) ? data.risk : undefined;
+  const policyPreview = isRecord(data.policyPreview) ? data.policyPreview : undefined;
+  const policyDecision = isRecord(policyPreview?.decision)
+    ? stringValue(policyPreview.decision.kind)
+    : undefined;
+  return {
+    decision: decisionLabel(decision),
+    risk: stringValue(risk?.level) ?? policyDecision ?? "unknown",
+    reason: stringValue(data.rationale) ?? stringValue(risk?.summary),
+    className:
+      decision === "execute"
+        ? "text-allow"
+        : decision === "blocked"
+          ? "text-deny"
+          : decision === "approval_likely"
+            ? "text-pending"
+            : "text-t3",
+  };
+}
+
+function paymentSummary(calls: ChatMessage["calls"] = []) {
+  const analyze = [...calls].reverse().find((call) => !call.isError && call.tool === "warden_analyze");
+  const analyzeData = analyze ? toolData(analyze.result) : undefined;
+  const x402 = isRecord(analyzeData) && isRecord(analyzeData.x402) ? analyzeData.x402 : undefined;
+  if (x402) {
+    return {
+      amount: usdValue(x402.amountUsd) ?? "unknown",
+      token: stringValue(x402.token) ?? "USDC",
+      network: networkLabel(stringValue(x402.network)),
+      recipient: shortKey(stringValue(x402.recipient) ?? "unknown", 6, 4),
+    };
+  }
+
+  const quote = [...calls].reverse().find((call) => !call.isError && call.tool === "warden_quote");
+  const quoteData = quote ? toolData(quote.result) : undefined;
+  const payment = isRecord(quoteData) && isRecord(quoteData.payment) ? quoteData.payment : undefined;
+  if (!payment) return undefined;
+  return {
+    amount: usdValue(payment.amountUsd) ?? "unknown",
+    token: stringValue(payment.token) ?? "USDC",
+    network: networkLabel(stringValue(payment.network)),
+    recipient: shortKey(stringValue(payment.recipient) ?? "unknown", 6, 4),
+  };
+}
+
+function receiptSummary(calls: ChatMessage["calls"] = []) {
+  const receipts = new Map<string, { id: string; explorerUrl?: string }>();
+  for (const call of calls) {
+    const data = toolData(call.result);
+    const addReceipt = (candidate: unknown) => {
+      if (!isRecord(candidate)) return;
+      const id = stringValue(candidate.receiptId) ?? stringValue(candidate.id);
+      if (!id) return;
+      receipts.set(id, {
+        id,
+        explorerUrl: stringValue(candidate.explorerUrl),
+      });
+    };
+    addReceipt(data);
+    if (isRecord(data) && Array.isArray(data.receipts)) data.receipts.forEach(addReceipt);
+    if (Array.isArray(data)) data.forEach(addReceipt);
+  }
+  return [...receipts.values()].slice(0, 5);
+}
+
+function networkLabel(network: string | undefined) {
+  if (network === "eip155:42220") return "Celo Mainnet";
+  if (network === "eip155:11142220") return "Celo Testnet";
+  return network ?? "unknown network";
 }
 
 function renderableResults(calls?: ChatMessage["calls"], text?: string): RenderableResult[] {
